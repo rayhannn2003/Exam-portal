@@ -1,0 +1,579 @@
+import { useEffect, useState } from 'react';
+
+export default function App() {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [translateX, setTranslateX] = useState(0); 
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন 
+              </h1>
+            </div>lide] = useState(0);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [translateX, setTranslateX] = useState(0);
+
+  // Create animated particles
+  useEffect(() => {
+    const createParticles = () => {
+      const particlesContainer = document.getElementById('particles');
+      if (!particlesContainer) return;
+      
+      particlesContainer.innerHTML = '';
+      
+      for (let i = 0; i < 60; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 20 + 's';
+        particle.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        particle.style.opacity = Math.random() * 0.6 + 0.2;
+        
+        // Different particle types with Bangladesh colors
+        const particleTypes = ['leaf', 'circle', 'star'];
+        const particleType = particleTypes[Math.floor(Math.random() * particleTypes.length)];
+        particle.classList.add(particleType);
+        
+        particlesContainer.appendChild(particle);
+      }
+    };
+
+    createParticles();
+  }, []);
+
+  const slides = [
+    {
+      image: 'https://scontent.fdac181-1.fna.fbcdn.net/v/t39.30808-6/484247249_1049049640370320_1931830327377763720_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=833d8c&_nc_ohc=lZjFY1e2g9oQ7kNvwHHqSsO&_nc_oc=AdnXNc5EY5yFrWgufQ0SQ0_Vzfl3rwISVETqc-YaCs-BxTTaKtJecfH-NR7dDx2kDLE&_nc_zt=23&_nc_ht=scontent.fdac181-1.fna&_nc_gid=uQmarz0IfTq4CaFLn-0UyQ&oh=00_AfZVQNemxqn0BvTwrWgcLyqcaR-PDgo0b2b4tGVN3HtoDw&oe=68D61779',
+      title: 'উপবৃত্তি পরীক্ষা -২০২৫',
+      subtitle: 'শিক্ষার নতুন দিগন্ত',
+      description: 'মেধাবী শিক্ষার্থীদের স্বপ্ন পূরণের পথে এগিয়ে নিয়ে যাচ্ছি আমরা। যোগ দিন আমাদের সাথে শিক্ষার এই মহান যজ্ঞে।'
+    },
+    {
+      image: 'https://scontent.fdac181-1.fna.fbcdn.net/v/t39.30808-6/481050486_1039641511311133_4883031842829511149_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=833d8c&_nc_ohc=bE0T6g-sypwQ7kNvwFLCJ6a&_nc_oc=AdnOWR1vwB8xf26EtU1FOPt6Xc7hQPP4qd1yrz6bDAHfwTLW4Bm0OFfnKXv5qzHhQNY&_nc_zt=23&_nc_ht=scontent.fdac181-1.fna&_nc_gid=_PfKRHMxldiMHzUrUHCqNg&oh=00_AfYbrphdw_LSuUyyf4PiUmH2312mXRF1PM68HpGcviXh_Q&oe=68D61C90',
+      title: 'সমান সুযোগের নিশ্চয়তা',
+      subtitle: 'প্রতিটি শিশুর অধিকার',
+      description: 'আর্থিক অবস্থা যাই হোক, মেধা ও প্রতিভা থাকলেই পাবেন উচ্চশিক্ষার সুযোগ। আমাদের বৃত্তি পরীক্ষায় অংশগ্রহণ করুন।'
+    },
+    {
+      image: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+      title: 'ভবিষ্যতের নেতা তৈরি',
+      subtitle: 'আগামীর স্বপ্নদ্রষ্টা',
+      description: 'আজকের শিক্ষার্থীরাই আগামীর নেতা। তাদের শিক্ষা ও দক্ষতা বৃদ্ধিতে আমরা সর্বদা প্রতিবদ্ধ।'
+    }
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!isDragging) {
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [slides.length, isDragging]);
+
+  // Touch and mouse drag handlers
+  const handleDragStart = (clientX) => {
+    setIsDragging(true);
+    setStartX(clientX);
+  };
+
+  const handleDragMove = (clientX) => {
+    if (!isDragging) return;
+    const currentX = clientX;
+    const diffX = startX - currentX;
+    setTranslateX(-diffX);
+  };
+
+  const handleDragEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    
+    if (Math.abs(translateX) > 100) {
+      if (translateX < 0) {
+        // Swipe right - previous slide
+        setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+      } else {
+        // Swipe left - next slide
+        setCurrentSlide((prev) => (prev + 1) % slides.length);
+      }
+    }
+    
+    setTranslateX(0);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-red-50 to-yellow-50 relative overflow-hidden">
+      {/* Animated Particles Background */}
+      <div id="particles" className="fixed inset-0 overflow-hidden pointer-events-none z-0"></div>
+      {/* Navigation Bar */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-800/80 via-red-800/80 to-yellow-700/80 backdrop-blur-md border-b border-white/20 transition-all duration-300 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center">
+              <h1 className="text-2xl md:text-3xl font-bold text-white drop-shadow-lg" 
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন 
+              </h1>
+            </div>
+            
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center space-x-8">
+              <a href="#home" className="text-white hover:text-yellow-300 px-4 py-2 rounded-lg text-lg font-medium transition-all hover:bg-white/10" 
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                মূলপাতা
+              </a>
+              <a href="#exam" className="text-white hover:text-yellow-300 px-4 py-2 rounded-lg text-lg font-medium transition-all hover:bg-white/10"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                পরীক্ষা
+              </a>
+              <a href="#about" className="text-white hover:text-yellow-300 px-4 py-2 rounded-lg text-lg font-medium transition-all hover:bg-white/10"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                আমাদের সম্পর্কে
+              </a>
+              <a href="#blogs" className="text-white hover:text-yellow-300 px-4 py-2 rounded-lg text-lg font-medium transition-all hover:bg-white/10"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                ব্লগ
+              </a>
+              <a href="#contact" className="text-white hover:text-yellow-300 px-4 py-2 rounded-lg text-lg font-medium transition-all hover:bg-white/10"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                যোগাযোগ
+              </a>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-white hover:text-yellow-300 transition-colors"
+              >
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          {isMenuOpen && (
+            <div className="md:hidden bg-black/50 backdrop-blur-md border-t border-gray-700/50">
+              <div className="px-2 pt-2 pb-3 space-y-1">
+                <a href="#home" className="block px-3 py-2 text-white hover:text-yellow-300 hover:bg-white/10 rounded-md text-base font-medium"
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                  মূলপাতা
+                </a>
+                <a href="#exam" className="block px-3 py-2 text-white hover:text-yellow-300 hover:bg-white/10 rounded-md text-base font-medium"
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                  পরীক্ষা
+                </a>
+                <a href="#about" className="block px-3 py-2 text-white hover:text-yellow-300 hover:bg-white/10 rounded-md text-base font-medium"
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                  আমাদের সম্পর্কে
+                </a>
+                <a href="#blogs" className="block px-3 py-2 text-white hover:text-yellow-300 hover:bg-white/10 rounded-md text-base font-medium"
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                  ব্লগ
+                </a>
+                <a href="#contact" className="block px-3 py-2 text-white hover:text-yellow-300 hover:bg-white/10 rounded-md text-base font-medium"
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                  যোগাযোগ
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Hero Section with Image Slider */}
+      <section id="home" className="relative h-screen flex items-center justify-start overflow-hidden">
+        {/* Image Slider */}
+        <div 
+          className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing"
+          onMouseDown={(e) => handleDragStart(e.clientX)}
+          onMouseMove={(e) => handleDragMove(e.clientX)}
+          onMouseUp={handleDragEnd}
+          onMouseLeave={handleDragEnd}
+          onTouchStart={(e) => handleDragStart(e.touches[0].clientX)}
+          onTouchMove={(e) => handleDragMove(e.touches[0].clientX)}
+          onTouchEnd={handleDragEnd}
+        >
+          {slides.map((slide, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 w-full h-full transition-all duration-500 ${
+                index === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-105'
+              }`}
+              style={{
+                transform: isDragging ? `translateX(${translateX}px)` : 'translateX(0)'
+              }}
+            >
+              <img
+                src={slide.image}
+                alt={`Slide ${index + 1}`}
+                className="w-full h-full object-cover select-none"
+                draggable={false}
+              />
+              <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent"></div>
+            </div>
+          ))}
+        </div>
+
+        {/* Overlay Content - Left Aligned */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="max-w-3xl">
+            <div className="animate-fade-in-up">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-white drop-shadow-2xl" 
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-red-300 bg-clip-text text-transparent">
+                  {slides[currentSlide].title}
+                </span>
+              </h1>
+              <h2 className="text-2xl md:text-3xl lg:text-4xl font-semibold mb-6 text-yellow-200 drop-shadow-lg"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                {slides[currentSlide].subtitle}
+              </h2>
+              <p className="text-lg md:text-xl lg:text-2xl mb-8 text-gray-200 leading-relaxed drop-shadow-lg max-w-2xl"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                {slides[currentSlide].description}
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 items-start">
+                <button className="group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-4 px-8 rounded-full text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                  <span className="mr-2">🎓</span>
+                  এখনই নিবন্ধন করুন
+                </button>
+                <button className="group bg-transparent border-2 border-white hover:bg-white hover:text-black text-white font-bold py-4 px-8 rounded-full text-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                  আরো জানুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Slide Indicators */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 flex space-x-3">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                index === currentSlide 
+                  ? 'bg-yellow-400 w-8' 
+                  : 'bg-white/50 hover:bg-white/70'
+              }`}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="py-20 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 to-pink-400/10"></div>
+          <div className="absolute top-0 left-0 w-full h-full opacity-20">
+            <div className="absolute top-20 left-10 w-32 h-32 bg-yellow-400/30 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-20 right-10 w-48 h-48 bg-pink-400/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-2xl"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+              <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-red-300 bg-clip-text text-transparent">
+                পরীক্ষা ও সংস্থা সম্পর্কে
+              </span>
+            </h2>
+            <div className="w-32 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 mx-auto mb-8 rounded-full shadow-lg"></div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <p className="text-xl text-gray-200 leading-relaxed drop-shadow-lg"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                আমাদের সংস্থা স্বেচ্ছাসেবকদের নিয়ে গঠিত, যার উদ্দেশ্য শিক্ষার্থীদের উন্নতি সাধন, সুযোগ সৃষ্টি, 
+                এবং অঞ্চলের উন্নয়ন। আমাদের মিশন হল সব পটভূমির মেধাবী শিক্ষার্থীদের চিহ্নিত করা এবং তাদের 
+                লালন করা, যাতে প্রতিটি যোগ্য শিক্ষার্থী উৎকর্ষতার সুযোগ পায়।
+              </p>
+              <p className="text-xl text-gray-300 leading-relaxed drop-shadow-lg"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                ২০১৫ সাল থেকে চালু, আমরা সফলভাবে বিভিন্ন অঞ্চলে ২০,০০০+ শিক্ষার্থীর কাছে পৌঁছেছি, 
+                একাডেমিক উৎকর্ষতা এবং সমাজ উন্নয়নের পথ তৈরি করেছি।
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-black/40 to-black/20 backdrop-blur-lg p-10 rounded-3xl shadow-2xl border border-yellow-400/20">
+              <h3 className="text-3xl font-bold text-yellow-300 mb-6 drop-shadow-lg"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                আমাদের মিশন
+              </h3>
+              <ul className="space-y-4 text-gray-200">
+                <li className="flex items-center text-lg"
+                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  <span className="text-yellow-400 mr-3 text-2xl">✓</span>
+                  একাডেমিক প্রতিভা চিহ্নিত ও লালন করা
+                </li>
+                <li className="flex items-center text-lg"
+                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  <span className="text-yellow-400 mr-3 text-2xl">✓</span>
+                  সবার জন্য সমান সুযোগ প্রদান
+                </li>
+                <li className="flex items-center text-lg"
+                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  <span className="text-yellow-400 mr-3 text-2xl">✓</span>
+                  আঞ্চলিক শিক্ষার মান উন্নয়ন
+                </li>
+                <li className="flex items-center text-lg"
+                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  <span className="text-yellow-400 mr-3 text-2xl">✓</span>
+                  শক্তিশালী সমাজ গঠন
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Impact Section */}
+      <section id="impact" className="py-20 bg-gradient-to-br from-indigo-900 via-purple-800 to-pink-700 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0">
+          <div className="absolute top-10 right-20 w-64 h-64 bg-yellow-400/20 rounded-full blur-3xl animate-pulse delay-500"></div>
+          <div className="absolute bottom-10 left-20 w-48 h-48 bg-orange-400/30 rounded-full blur-3xl animate-pulse delay-1500"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 drop-shadow-2xl"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+              <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-red-300 bg-clip-text text-transparent">
+                প্রভাব ও উন্নয়ন
+              </span>
+            </h2>
+            <div className="w-32 h-2 bg-gradient-to-r from-yellow-400 to-pink-400 mx-auto mb-8 rounded-full shadow-lg"></div>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
+            <div className="text-center bg-black/20 backdrop-blur-md p-10 rounded-3xl shadow-2xl border border-yellow-400/30 transform hover:scale-105 transition-all duration-300 hover:border-yellow-400/50">
+              <div className="text-6xl mb-6">🏅</div>
+              <div className="text-4xl font-bold mb-3 text-yellow-300 drop-shadow-lg" 
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>২০,০০০+</div>
+              <div className="text-xl text-gray-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>উপকৃত শিক্ষার্থী</div>
+            </div>
+            <div className="text-center bg-black/20 backdrop-blur-md p-10 rounded-3xl shadow-2xl border border-orange-400/30 transform hover:scale-105 transition-all duration-300 hover:border-orange-400/50">
+              <div className="text-6xl mb-6">🏫</div>
+              <div className="text-4xl font-bold mb-3 text-orange-300 drop-shadow-lg" 
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>৩০০+</div>
+              <div className="text-xl text-gray-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>অন্তর্ভুক্ত স্কুল</div>
+            </div>
+            <div className="text-center bg-black/20 backdrop-blur-md p-10 rounded-3xl shadow-2xl border border-pink-400/30 transform hover:scale-105 transition-all duration-300 hover:border-pink-400/50">
+              <div className="text-6xl mb-6">🌍</div>
+              <div className="text-4xl font-bold mb-3 text-pink-300 drop-shadow-lg" 
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>৫০০+</div>
+              <div className="text-xl text-gray-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>স্বেচ্ছাসেবক</div>
+            </div>
+          </div>
+
+          <div className="text-center bg-black/20 backdrop-blur-md p-12 rounded-3xl shadow-2xl border border-yellow-400/20">
+            <blockquote className="text-2xl md:text-3xl italic mb-6 leading-relaxed text-gray-100 drop-shadow-lg"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              "এই পরীক্ষা আমাকে নতুন কিছু শিখিয়েছে। আমাকে নতুন প্রতিযোগিতার সম্মুখীন করে 
+              আমার মেধা যাচাইয়ের সুযোগ দিয়েছে।"
+            </blockquote>
+            <cite className="text-yellow-300 text-lg font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              - পূর্ববর্তী অংশগ্রহণকারী
+            </cite>
+          </div>
+        </div>
+      </section>
+
+      {/* Archive Section */}
+      <section id="archive" className="py-20 bg-gradient-to-br from-gray-900 via-purple-900 to-indigo-900 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/5 to-pink-400/10"></div>
+          <div className="absolute top-0 left-0 w-full h-full opacity-20">
+            <div className="absolute top-32 right-16 w-40 h-40 bg-yellow-400/20 rounded-full blur-3xl animate-pulse delay-300"></div>
+            <div className="absolute bottom-32 left-16 w-56 h-56 bg-pink-400/15 rounded-full blur-3xl animate-pulse delay-1200"></div>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-bold text-white mb-6 drop-shadow-2xl"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+              <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-red-300 bg-clip-text text-transparent">
+                আর্কাইভ ও হাইলাইটস
+              </span>
+            </h2>
+            <div className="w-32 h-2 bg-gradient-to-r from-yellow-400 to-orange-500 mx-auto mb-8 rounded-full shadow-lg"></div>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/30 backdrop-blur-lg p-10 rounded-3xl text-center transform hover:scale-105 transition-all duration-300 shadow-2xl border border-blue-400/20 hover:border-blue-400/40">
+              <div className="text-5xl mb-6">📚</div>
+              <h3 className="text-2xl font-bold text-blue-300 mb-4 drop-shadow-lg"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                পূর্ববর্তী পরীক্ষা
+              </h3>
+              <p className="text-gray-200 text-lg leading-relaxed"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                আমাদের পরীক্ষার আর্কাইভ ব্রাউজ করুন এবং বছরের পর বছরের বৃদ্ধি দেখুন।
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-green-500/20 to-emerald-500/30 backdrop-blur-lg p-10 rounded-3xl text-center transform hover:scale-105 transition-all duration-300 shadow-2xl border border-green-400/20 hover:border-green-400/40">
+              <div className="text-5xl mb-6">🏆</div>
+              <h3 className="text-2xl font-bold text-green-300 mb-4 drop-shadow-lg"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                পুরস্কার বিতরণী অনুষ্ঠান
+              </h3>
+              <p className="text-gray-200 text-lg leading-relaxed"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                উৎকর্ষতা উদযাপন এবং অসাধারণ অর্জনের স্বীকৃতি।
+              </p>
+            </div>
+            <div className="bg-gradient-to-br from-pink-500/20 to-rose-500/30 backdrop-blur-lg p-10 rounded-3xl text-center transform hover:scale-105 transition-all duration-300 shadow-2xl border border-pink-400/20 hover:border-pink-400/40">
+              <div className="text-5xl mb-6">🌟</div>
+              <h3 className="text-2xl font-bold text-pink-300 mb-4 drop-shadow-lg"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                সফলতার গল্প
+              </h3>
+              <p className="text-gray-200 text-lg leading-relaxed"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                আমাদের প্রাক্তন ছাত্রদের অনুপ্রেরণামূলক যাত্রা এবং তাদের অব্যাহত সাফল্য।
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-purple-900 via-pink-800 to-indigo-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-black/40"></div>
+          <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-yellow-400/10 to-pink-400/10"></div>
+          <div className="absolute top-10 left-10 w-72 h-72 bg-yellow-400/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-10 right-10 w-48 h-48 bg-pink-400/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+          <h2 className="text-4xl md:text-6xl font-bold mb-8 drop-shadow-2xl"
+              style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+            <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-red-300 bg-clip-text text-transparent">
+              অংশগ্রহণের জন্য প্রস্তুত?
+            </span>
+          </h2>
+          <p className="text-2xl mb-12 text-gray-200 leading-relaxed drop-shadow-lg"
+             style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+            হাজার হাজার শিক্ষার্থীর সাথে উৎকর্ষতার যাত্রায় যোগ দিন
+          </p>
+          <button className="group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-6 px-12 rounded-full text-2xl transition-all duration-300 transform hover:scale-110 hover:shadow-2xl mb-6"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+            ছাত্র নিবন্ধন
+          </button>
+          <p className="text-yellow-200 text-lg drop-shadow-lg"
+             style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+            সাহায্য প্রয়োজন? <a href="#contact" className="text-yellow-300 hover:text-yellow-100 hover:underline font-bold transition-colors">আমাদের হেল্পডেস্কে যোগাযোগ করুন</a>
+          </p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white py-16 relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-yellow-400/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 right-0 w-48 h-48 bg-pink-400/10 rounded-full blur-3xl"></div>
+        </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid md:grid-cols-3 gap-12">
+            <div>
+              <h3 className="text-3xl font-bold mb-6 drop-shadow-lg"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                <span className="bg-gradient-to-r from-yellow-300 via-orange-300 to-red-300 bg-clip-text text-transparent">
+                  বৃত্তি পরীক্ষা
+                </span>
+              </h3>
+              <p className="text-gray-300 text-lg leading-relaxed"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                মানসম্পন্ন শিক্ষা এবং ন্যায্য মূল্যায়নের মাধ্যমে শিক্ষার্থীদের ক্ষমতায়ন এবং সমাজের রূপান্তর।
+              </p>
+            </div>
+            <div>
+              <h4 className="text-2xl font-semibold mb-6 text-yellow-300 drop-shadow-lg"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                দ্রুত লিঙ্ক
+              </h4>
+              <ul className="space-y-3 text-gray-300">
+                <li><a href="#about" className="hover:text-yellow-300 transition-colors text-lg hover:drop-shadow-lg" 
+                       style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>আমাদের সম্পর্কে</a></li>
+                <li><a href="#exam" className="hover:text-yellow-300 transition-colors text-lg hover:drop-shadow-lg"
+                       style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>পরীক্ষা</a></li>
+                <li><a href="#contact" className="hover:text-yellow-300 transition-colors text-lg hover:drop-shadow-lg"
+                       style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>যোগাযোগ</a></li>
+                <li><a href="#login" className="hover:text-yellow-300 transition-colors text-lg hover:drop-shadow-lg"
+                       style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>প্রবেশ</a></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-2xl font-semibold mb-6 text-orange-300 drop-shadow-lg"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                যোগাযোগের তথ্য
+              </h4>
+              <p className="text-gray-300 mb-3 text-lg"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                📧 support@scholarshipexam.org
+              </p>
+              <p className="text-gray-300 mb-3 text-lg"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                📞 +৮৮০-XXX-XXXXXX
+              </p>
+              <p className="text-gray-300 text-lg"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                📍 ঢাকা, বাংলাদেশ
+              </p>
+            </div>
+          </div>
+          <div className="border-t border-gray-700 mt-12 pt-8 text-center text-gray-400">
+            <p className="text-lg" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              &copy; ২০২৪ বৃত্তি পরীক্ষা ব্যবস্থাপনা সিস্টেম। সকল অধিকার সংরক্ষিত।
+            </p>
+          </div>
+        </div>
+      </footer>
+
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Baloda:wght@300;400;500;600;700&display=swap');
+        
+        .animate-fade-in-up {
+          animation: fadeInUp 1s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+          background: #1a1a1a;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+          background: linear-gradient(to bottom, #fbbf24, #f59e0b);
+          border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(to bottom, #f59e0b, #d97706);
+        }
+      `}</style>
+    </div>
+  );
+}

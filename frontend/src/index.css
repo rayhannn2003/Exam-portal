@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Test if Tailwind is loading */
+body {
+  margin: 0;
+  padding: 0;
+}
