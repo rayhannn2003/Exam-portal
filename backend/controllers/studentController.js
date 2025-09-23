@@ -6,9 +6,9 @@ const jwt = require("jsonwebtoken");
 // Register a student
 exports.registerStudent = async (req, res) => {
   try {
-    const { name, school, email_id, student_class,class_roll, gender, phone, entry_fee } = req.body;
-    if (!name || !school || !student_class  || !phone || !entry_fee) {
-      return res.status(400).json({ error: "All fields are required" });
+    const { name, father_name, mother_name, school, email_id, student_class,class_roll, gender, phone, entry_fee } = req.body;
+    if (!name || !school || !student_class || !phone || !entry_fee) {
+      return res.status(400).json({ error: "All required fields are needed" });
     }
     console.log("Generating roll number...");
     const roll_number = await generateRoll();
@@ -17,9 +17,9 @@ exports.registerStudent = async (req, res) => {
     const passwordHash = await bcrypt.hash(rawPassword, 10);
 
     const result = await pool.query(
-      `INSERT INTO students (name, school, class,class_roll, email_id, gender, phone, roll_number, payment_status, entry_fee, password)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, false, $9, $10) RETURNING id, name, school, class, email_id, gender, phone, roll_number, payment_status, entry_fee, created_at `,
-      [name, school, student_class,class_roll, email_id, gender, phone, roll_number, entry_fee, passwordHash]
+      `INSERT INTO students (name, father_name, mother_name, school, class, class_roll, email_id, gender, phone, roll_number, payment_status, entry_fee, password)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, $11, $12) RETURNING id, name, father_name, mother_name, school, class, email_id, gender, phone, roll_number, payment_status, entry_fee, created_at `,
+      [name, father_name, mother_name, school, student_class, class_roll, email_id, gender, phone, roll_number, entry_fee, passwordHash]
     );
 
     res.status(201).json({ message: "Student registered", student: result.rows[0], temp_password: rawPassword });
@@ -158,6 +158,25 @@ exports.getStudentsBySchoolAndClass = async (req, res) => {
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Error fetching students by school and class:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+//registration count over time (day wise) 
+exports.getRegistrationCountOverTime = async (req, res) => {
+  try {
+
+   const result = await pool.query(`SELECT 
+    DATE(created_at) AS registration_date,
+    COUNT(*) AS registration_count
+FROM students
+GROUP BY DATE(created_at)
+ORDER BY registration_date;
+`);
+ 
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error fetching registration count over time:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

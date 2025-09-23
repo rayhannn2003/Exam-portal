@@ -1,0 +1,424 @@
+import { useState, useEffect } from 'react';
+import { addExamSet, editExamSet, deleteExamSet } from '../assets/services/api';
+import { useToast } from '../contexts/ToastContext';
+
+const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = null }) => {
+  const [formData, setFormData] = useState({
+    set_name: '',
+    questions: [
+      {
+        qno: 1,
+        question: '',
+        options: { A: '', B: '', C: '', D: '' }
+      }
+    ],
+    answer_key: {}
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showJsonPreview, setShowJsonPreview] = useState(false);
+  const { success, error: showError } = useToast();
+
+  useEffect(() => {
+    if (editingSet) {
+      setFormData({
+        set_name: editingSet.set_name || '',
+        questions: editingSet.questions || [
+          {
+            qno: 1,
+            question: '',
+            options: { A: '', B: '', C: '', D: '' }
+          }
+        ],
+        answer_key: editingSet.answer_key || {}
+      });
+    } else {
+      setFormData({
+        set_name: '',
+        questions: [
+          {
+            qno: 1,
+            question: '',
+            options: { A: '', B: '', C: '', D: '' }
+          }
+        ],
+        answer_key: {}
+      });
+    }
+  }, [editingSet]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      if (editingSet) {
+        await editExamSet(exam.id, editingSet.id, formData);
+        success('Exam set updated successfully');
+      } else {
+        await addExamSet(exam.id, formData);
+        success('Exam set added successfully');
+      }
+      onSuccess();
+      onClose();
+    } catch (err) {
+      const errorMessage = err.message || 'Failed to save exam set';
+      setError(errorMessage);
+      showError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editingSet) return;
+    
+    if (window.confirm('Are you sure you want to delete this exam set?')) {
+      setLoading(true);
+      try {
+        await deleteExamSet(exam.id, editingSet.id);
+        success('Exam set deleted successfully');
+        onSuccess();
+        onClose();
+      } catch (err) {
+        const errorMessage = err.message || 'Failed to delete exam set';
+        setError(errorMessage);
+        showError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const addQuestion = () => {
+    const newQuestion = {
+      qno: formData.questions.length + 1,
+      question: '',
+      options: { A: '', B: '', C: '', D: '' }
+    };
+    setFormData({
+      ...formData,
+      questions: [...formData.questions, newQuestion]
+    });
+  };
+
+  const removeQuestion = (index) => {
+    if (formData.questions.length <= 1) return;
+    
+    const newQuestions = formData.questions.filter((_, i) => i !== index);
+    // Renumber questions
+    const renumberedQuestions = newQuestions.map((q, i) => ({
+      ...q,
+      qno: i + 1
+    }));
+    
+    // Update answer key
+    const newAnswerKey = {};
+    renumberedQuestions.forEach((q, i) => {
+      if (formData.answer_key[q.qno]) {
+        newAnswerKey[i + 1] = formData.answer_key[q.qno];
+      }
+    });
+    
+    setFormData({
+      ...formData,
+      questions: renumberedQuestions,
+      answer_key: newAnswerKey
+    });
+  };
+
+  const updateQuestion = (index, field, value) => {
+    const newQuestions = [...formData.questions];
+    newQuestions[index] = {
+      ...newQuestions[index],
+      [field]: value
+    };
+    setFormData({
+      ...formData,
+      questions: newQuestions
+    });
+  };
+
+  const updateOption = (questionIndex, option, value) => {
+    const newQuestions = [...formData.questions];
+    newQuestions[questionIndex].options[option] = value;
+    setFormData({
+      ...formData,
+      questions: newQuestions
+    });
+  };
+
+  const updateAnswerKey = (questionNo, answer) => {
+    setFormData({
+      ...formData,
+      answer_key: {
+        ...formData.answer_key,
+        [questionNo]: answer
+      }
+    });
+  };
+
+  if (!isOpen || !exam) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white/90 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 shadow-2xl shadow-green-500/25 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+            {editingSet ? 'সেট সম্পাদনা করুন' : 'নতুন সেট যোগ করুন'} - {exam.title}
+          </h2>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowJsonPreview(!showJsonPreview)}
+              className="px-4 py-2 text-sm bg-blue-500/20 text-blue-600 rounded-lg hover:bg-blue-500/30 transition-all border border-blue-500/30"
+              style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+            >
+              {showJsonPreview ? 'ফর্ম দেখুন' : 'JSON দেখুন'}
+            </button>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-red-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {showJsonPreview ? (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              JSON Preview
+            </h3>
+            <pre className="bg-gray-100 p-4 rounded-lg text-sm overflow-x-auto">
+              {JSON.stringify(formData, null, 2)}
+            </pre>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                সেটের নাম
+              </label>
+              <input
+                type="text"
+                value={formData.set_name}
+                onChange={(e) => setFormData({ ...formData, set_name: e.target.value })}
+                required
+                placeholder="সেট A, সেট B, ইত্যাদি"
+                className="w-full px-4 py-3 border border-green-500/30 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+              />
+            </div>
+
+            {/* Existing Sets */}
+            {!editingSet && exam.sets && exam.sets.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  বিদ্যমান সেটসমূহ
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {exam.sets.map((set) => (
+                    <div key={set.id} className="bg-white/60 backdrop-blur-sm border border-green-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-green-500/25 transition-all">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          {set.set_name}
+                        </h4>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingSet(set);
+                              setFormData({
+                                set_name: set.set_name || '',
+                                questions: set.questions || [
+                                  {
+                                    qno: 1,
+                                    question: '',
+                                    options: { A: '', B: '', C: '', D: '' }
+                                  }
+                                ],
+                                answer_key: set.answer_key || {}
+                              });
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                            title="Edit Set"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('Are you sure you want to delete this exam set?')) {
+                                setLoading(true);
+                                try {
+                                  await deleteExamSet(exam.id, set.id);
+                                  success('Exam set deleted successfully');
+                                  onSuccess();
+                                } catch (err) {
+                                  const errorMessage = err.message || 'Failed to delete exam set';
+                                  setError(errorMessage);
+                                  showError(errorMessage);
+                                } finally {
+                                  setLoading(false);
+                                }
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                            title="Delete Set"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        {set.questions ? set.questions.length : 0} টি প্রশ্ন
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  {editingSet ? 'প্রশ্নসমূহ সম্পাদনা করুন' : 'নতুন প্রশ্নসমূহ'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={addQuestion}
+                  className="px-4 py-2 bg-green-500/20 text-green-600 rounded-lg hover:bg-green-500/30 transition-all border border-green-500/30"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                >
+                  + প্রশ্ন যোগ করুন
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {formData.questions.map((question, index) => (
+                  <div key={index} className="bg-white/60 backdrop-blur-sm border border-green-500/20 rounded-xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-md font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        প্রশ্ন {question.qno}
+                      </h4>
+                      {formData.questions.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeQuestion(index)}
+                          className="text-red-500 hover:text-red-700 transition-colors"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          প্রশ্ন
+                        </label>
+                        <textarea
+                          value={question.question}
+                          onChange={(e) => updateQuestion(index, 'question', e.target.value)}
+                          required
+                          placeholder="প্রশ্ন লিখুন..."
+                          rows={3}
+                          className="w-full px-4 py-3 border border-green-500/30 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
+                          style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {['A', 'B', 'C', 'D'].map((option) => (
+                          <div key={option}>
+                            <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                              অপশন {option}
+                            </label>
+                            <input
+                              type="text"
+                              value={question.options[option]}
+                              onChange={(e) => updateOption(index, option, e.target.value)}
+                              required
+                              placeholder={`অপশন ${option}`}
+                              className="w-full px-4 py-3 border border-green-500/30 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
+                              style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          সঠিক উত্তর
+                        </label>
+                        <select
+                          value={formData.answer_key[question.qno] || ''}
+                          onChange={(e) => updateAnswerKey(question.qno, e.target.value)}
+                          required
+                          className="w-full px-4 py-3 border border-green-500/30 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
+                          style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                        >
+                          <option value="">সঠিক উত্তর নির্বাচন করুন</option>
+                          <option value="A">A</option>
+                          <option value="B">B</option>
+                          <option value="C">C</option>
+                          <option value="D">D</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 text-red-600 px-4 py-3 rounded-xl text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {error}
+              </div>
+            )}
+
+            <div className="flex space-x-4">
+              {editingSet && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="px-6 py-3 bg-red-500/20 text-red-600 rounded-xl hover:bg-red-500/30 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-red-500/30"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                >
+                  মুছুন
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+              >
+                বাতিল
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+              >
+                {loading ? 'সংরক্ষণ হচ্ছে...' : editingSet ? 'আপডেট করুন' : 'সেট যোগ করুন'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default SetManagementModal;

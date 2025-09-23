@@ -68,12 +68,94 @@ export const getExams = async () => {
   }
 };
 
+export const getAllExams = async () => {
+  try {
+    const res = await api.get("/exams");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch exams" };
+  }
+};
+
 export const createExam = async (examData) => {
   try {
     const res = await api.post("/exams", examData);
     return res.data;
   } catch (err) {
     throw err.response?.data || { message: "Failed to create exam" };
+  }
+};
+
+export const editExam = async (examId, examData) => {
+  try {
+    const res = await api.put(`/exams/${examId}`, examData);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to edit exam" };
+  }
+};
+
+export const deleteExam = async (examId) => {
+  try {
+    const res = await api.delete(`/exams/${examId}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to delete exam" };
+  }
+};
+
+export const getExamWithSets = async (examId) => {
+  try {
+    const res = await api.get(`/exams/${examId}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch exam details" };
+  }
+};
+
+export const addExamSet = async (examId, setData) => {
+  try {
+    const res = await api.post(`/exams/${examId}/sets`, setData);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to add exam set" };
+  }
+};
+
+export const editExamSet = async (examId, setId, setData) => {
+  try {
+    const res = await api.put(`/exams/${examId}/sets/${setId}`, setData);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to edit exam set" };
+  }
+};
+
+export const deleteExamSet = async (examId, setId) => {
+  try {
+    const res = await api.delete(`/exams/${examId}/sets/${setId}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to delete exam set" };
+  }
+};
+
+// ----- Student APIs -----
+export const getAllStudents = async () => {
+  try {
+    const res = await api.get("/students");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch students" };
+  }
+};
+
+export const getRegistrationCountOverTime = async () => {
+  try {
+    const res = await api.get("/students/registration-count-over-time");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch registration count over time" };
   }
 };
 
@@ -88,7 +170,6 @@ export const getResults = async (examId) => {
 };
 
 // You can add more APIs as needed, for example:
-// - getStudents
 // - assignExam
 // - submitAnswers
 

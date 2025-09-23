@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import { registerStudent, loginStudent, loginAdmin } from './assets/services/api';
+import Login from './components/Login';
+import Registration from './components/Registration';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import ToastContainer from './components/ToastContainer';
 
 export default function App() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -16,6 +20,8 @@ export default function App() {
   const [loginUserType, setLoginUserType] = useState('student');
   const [user, setUser] = useState(null);
   const [registrationSuccess, setRegistrationSuccess] = useState(null);
+  const [showDashboard, setShowDashboard] = useState(false);
+  
 
   const slides = [
     {
@@ -70,56 +76,32 @@ export default function App() {
     const username = localStorage.getItem('username');
     if (token && role && username) {
       setUser({ token, role, username });
+      // If superadmin, show dashboard immediately
+      if (role === 'superadmin') {
+        setShowDashboard(true);
+      }
     }
   }, []);
 
+  // Handle user role changes
+  useEffect(() => {
+    if (user && user.role === 'superadmin') {
+      setShowDashboard(true);
+    } else if (user && user.role !== 'superadmin') {
+      setShowDashboard(false);
+    }
+  }, [user]);
+
   // Authentication functions
-  const handleLogin = async (credentials, userType) => {
-    try {
-      let response;
-      if (userType === 'student') {
-        response = await loginStudent(credentials);
-      } else {
-        response = await loginAdmin(credentials);
-      }
-      
-      // Store in localStorage
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('role', userType);
-      localStorage.setItem('username', credentials.username || credentials.roll_number);
-      
-      setUser({ 
-        token: response.token, 
-        role: userType, 
-        username: credentials.username || credentials.roll_number 
-      });
-      setIsLoginModalOpen(false);
-      
-      alert(`${userType === 'student' ? 'ছাত্র' : 'অ্যাডমিন'} সফলভাবে লগইন হয়েছেন!`);
-    } catch (error) {
-      console.error('Login error:', error);
-      alert(error.error || error.message || 'লগইন ব্যর্থ হয়েছে!');
-    }
-  };
-
-  const handleRegistration = async (formData) => {
-    try {
-      const response = await registerStudent(formData);
-      setRegistrationSuccess(response);
-      setIsRegistrationModalOpen(false);
-      setIsSuccessModalOpen(true);
-    } catch (error) {
-      console.error('Registration error:', error);
-      alert(error.error || error.message || 'রেজিস্ট্রেশন ব্যর্থ হয়েছে!');
-    }
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     localStorage.removeItem('username');
     setUser(null);
-    alert('সফলভাবে লগআউট হয়েছেন!');
+    setShowDashboard(false);
+    if (window.showToast) {
+      window.showToast('সফলভাবে লগআউট হয়েছেন!', 'success');
+    }
   };
 
   // Touch and mouse drag handlers
@@ -151,6 +133,13 @@ export default function App() {
     
     setTranslateX(0);
   };
+
+  // If user is superadmin, show dashboard
+  console.log('Rendering check:', { user, isSuperadmin: user?.role === 'superadmin' });
+  if (user && user.role === 'superadmin') {
+    console.log('Rendering SuperAdminDashboard');
+    return <SuperAdminDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 relative overflow-hidden">
@@ -704,7 +693,7 @@ export default function App() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/85 to-black/90"></div>
         </div>
         <div className="text-white py-16 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-12">
             <div>
               <h3 className="text-3xl font-bold mb-6 drop-shadow-lg"
@@ -1153,259 +1142,54 @@ export default function App() {
 
       {/* Login Modal */}
       {isLoginModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                প্রবেশ করুন
-              </h2>
-              <button
-                onClick={() => setIsLoginModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-              >
-                ×
-              </button>
-            </div>
+        <Login
+          onClose={() => setIsLoginModalOpen(false)}
+          onSuccess={(response, userType, username) => {
+            console.log('Login success callback:', { response, userType, username });
             
-            {/* User Type Selection */}
-            <div className="mb-6">
-              <div className="flex space-x-4">
-                <button
-                  onClick={() => setLoginUserType('student')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    loginUserType === 'student'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-                >
-                  ছাত্র
-                </button>
-                <button
-                  onClick={() => setLoginUserType('admin')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    loginUserType === 'admin'
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-                >
-                  অ্যাডমিন
-                </button>
-              </div>
-            </div>
-
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target);
-              const credentials = {};
-              
-              if (loginUserType === 'student') {
-                credentials.roll_number = formData.get('username');
-                credentials.password = formData.get('password');
-              } else {
-                credentials.username = formData.get('username');
-                credentials.password = formData.get('password');
+            // Store in localStorage
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('role', userType);
+            localStorage.setItem('username', username);
+            
+            const userData = { 
+              token: response.token, 
+              role: userType, 
+              username: username 
+            };
+            
+            console.log('Setting user data:', userData);
+            setUser(userData);
+            setIsLoginModalOpen(false);
+            
+            // Check if superadmin and show appropriate message
+            if (userType === 'superadmin') {
+              console.log('Superadmin detected, should show dashboard');
+              if (window.showToast) {
+                window.showToast('সুপার অ্যাডমিন সফলভাবে লগইন হয়েছেন! ড্যাশবোর্ডে রিডাইরেক্ট হচ্ছে...', 'success', 2000);
               }
-              
-              handleLogin(credentials, loginUserType);
-            }}>
-              <div className="mb-4">
-                <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  {loginUserType === 'student' ? 'রোল নম্বর' : 'ব্যবহারকারীর নাম'}
-                </label>
-                <input
-                  type="text"
-                  name="username"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder={loginUserType === 'student' ? 'আপনার রোল নম্বর লিখুন' : 'আপনার ব্যবহারকারীর নাম লিখুন'}
-                />
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  পাসওয়ার্ড
-                </label>
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="আপনার পাসওয়ার্ড লিখুন"
-                />
-              </div>
-              
-              <button
-                type="submit"
-                className="w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-              >
-                প্রবেশ করুন
-              </button>
-            </form>
-          </div>
-        </div>
+            } else {
+              if (window.showToast) {
+                window.showToast(`${userType === 'student' ? 'ছাত্র' : 'অ্যাডমিন'} সফলভাবে লগইন হয়েছেন!`, 'success');
+              }
+            }
+          }}
+        />
       )}
 
       {/* Registration Modal */}
       {isRegistrationModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                ছাত্র নিবন্ধন
-              </h2>
-              <button
-                onClick={() => setIsRegistrationModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
-              >
-                ×
-              </button>
-            </div>
-            
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target);
-              const registrationData = {
-                name: formData.get('name'),
-                school: formData.get('school'),
-                student_class: formData.get('student_class'),
-                class_roll: formData.get('class_roll'),
-                email_id: formData.get('email_id'),
-                gender: formData.get('gender'),
-                phone: formData.get('phone'),
-                entry_fee: parseFloat(formData.get('entry_fee'))
-              };
-              
-              handleRegistration(registrationData);
-            }}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    নাম *
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="আপনার পূর্ণ নাম লিখুন"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    স্কুল/কলেজ *
-                  </label>
-                  <input
-                    type="text"
-                    name="school"
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="আপনার শিক্ষা প্রতিষ্ঠানের নাম"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    শ্রেণী *
-                  </label>
-                  <select
-                    name="student_class"
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">শ্রেণী নির্বাচন করুন</option>
-                    <option value="6">ষষ্ঠ</option>
-                    <option value="7">সপ্তম</option>
-                    <option value="8">অষ্টম</option>
-                    <option value="9">নবম</option>
-                    <option value="10">দশম</option>
-                    <option value="11">একাদশ</option>
-                    <option value="12">দ্বাদশ</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    ক্লাস রোল
-                  </label>
-                  <input
-                    type="number"
-                    name="class_roll"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="আপনার ক্লাস রোল"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    ইমেইল
-                  </label>
-                  <input
-                    type="email"
-                    name="email_id"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="আপনার ইমেইল ঠিকানা"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    লিঙ্গ *
-                  </label>
-                  <select
-                    name="gender"
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  >
-                    <option value="">লিঙ্গ নির্বাচন করুন</option>
-                    <option value="male">পুরুষ</option>
-                    <option value="female">মহিলা</option>
-                    <option value="other">অন্যান্য</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    ফোন নম্বর *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="আপনার ফোন নম্বর"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-gray-700 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    ভর্তি ফি *
-                  </label>
-                  <input
-                    type="number"
-                    name="entry_fee"
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    placeholder="ভর্তি ফি (টাকা)"
-                  />
-                </div>
-              </div>
-              
-              <button
-                type="submit"
-                className="w-full bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition-colors"
-                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-              >
-                নিবন্ধন সম্পূর্ণ করুন
-              </button>
-            </form>
-          </div>
-        </div>
+        <Registration
+          onClose={() => setIsRegistrationModalOpen(false)}
+          onSuccess={(response) => {
+            setRegistrationSuccess(response);
+            setIsRegistrationModalOpen(false);
+            setIsSuccessModalOpen(true);
+            if (window.showToast) {
+              window.showToast('নিবন্ধন সফল! আপনার রোল নম্বর এবং পাসওয়ার্ড সংরক্ষণ করুন।', 'success');
+            }
+          }}
+        />
       )}
 
       {/* Success Modal */}
@@ -1453,6 +1237,9 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 }

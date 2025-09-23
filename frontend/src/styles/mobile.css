@@ -1,0 +1,150 @@
+/* Mobile Responsive Styles */
+
+/* Hide scrollbar for navigation tabs */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Extra small screens */
+@media (max-width: 475px) {
+  .xs\:inline {
+    display: inline;
+  }
+  
+  .xs\:hidden {
+    display: none;
+  }
+}
+
+/* Mobile navigation improvements */
+@media (max-width: 640px) {
+  .mobile-nav-item {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .mobile-nav-icon {
+    margin-right: 0.25rem;
+    font-size: 0.875rem;
+  }
+}
+
+/* Mobile modal improvements */
+@media (max-width: 640px) {
+  .mobile-modal {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+  
+  .mobile-modal-content {
+    padding: 1rem;
+  }
+}
+
+/* Mobile button improvements */
+@media (max-width: 640px) {
+  .mobile-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .mobile-btn-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+/* Mobile card improvements */
+@media (max-width: 640px) {
+  .mobile-card {
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  .mobile-card-title {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .mobile-card-text {
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+}
+
+/* Mobile grid improvements */
+@media (max-width: 640px) {
+  .mobile-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}
+
+/* Mobile spacing improvements */
+@media (max-width: 640px) {
+  .mobile-spacing {
+    padding: 0.5rem;
+    margin: 0.5rem;
+  }
+  
+  .mobile-spacing-lg {
+    padding: 1rem;
+    margin: 1rem;
+  }
+}
+
+/* Mobile text improvements */
+@media (max-width: 640px) {
+  .mobile-text-sm {
+    font-size: 0.75rem;
+  }
+  
+  .mobile-text-xs {
+    font-size: 0.625rem;
+  }
+}
+
+/* Mobile flex improvements */
+@media (max-width: 640px) {
+  .mobile-flex-col {
+    flex-direction: column;
+  }
+  
+  .mobile-flex-wrap {
+    flex-wrap: wrap;
+  }
+  
+  .mobile-space-y-2 > * + * {
+    margin-top: 0.5rem;
+  }
+}
+
+/* Mobile overflow improvements */
+@media (max-width: 640px) {
+  .mobile-overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .mobile-overflow-hidden {
+    overflow: hidden;
+  }
+}
+
+/* Mobile touch improvements */
+@media (max-width: 640px) {
+  .mobile-touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .mobile-touch-friendly {
+    padding: 0.75rem;
+    margin: 0.25rem;
+  }
+}

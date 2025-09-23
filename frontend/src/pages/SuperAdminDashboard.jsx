@@ -1,0 +1,951 @@
+import { useState, useEffect } from 'react';
+import { getAllExams, getAllStudents, getRegistrationCountOverTime, getExamWithSets, deleteExam } from '../assets/services/api';
+import CreateExamModal from '../components/CreateExamModal';
+import EditExamModal from '../components/EditExamModal';
+import SetManagementModal from '../components/SetManagementModal';
+import ExamManagement from '../components/ExamManagement';
+import { ToastProvider } from '../contexts/ToastContext';
+
+// Logout function
+const handleLogout = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('role');
+  localStorage.removeItem('username');
+  window.location.href = '/';
+  if (window.showToast) {
+    window.showToast('সফলভাবে লগআউট হয়েছেন!', 'success');
+  }
+};
+
+const SuperAdminDashboard = () => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [exams, setExams] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [registrationData, setRegistrationData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedExam, setSelectedExam] = useState(null);
+  const [showCreateExamModal, setShowCreateExamModal] = useState(false);
+  const [showEditExamModal, setShowEditExamModal] = useState(false);
+  const [showSetManagementModal, setShowSetManagementModal] = useState(false);
+  const [editingSet, setEditingSet] = useState(null);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      // Fetch exams data
+      const examsData = await getAllExams();
+      setExams(examsData);
+      
+      // Fetch students data
+      const studentsData = await getAllStudents();
+      setStudents(studentsData);
+      
+      // Fetch registration count over time
+      const registrationCountData = await getRegistrationCountOverTime();
+      setRegistrationData(registrationCountData);
+      
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateExam = () => {
+    setShowCreateExamModal(true);
+  };
+
+  const handleEditExam = (exam) => {
+    setSelectedExam(exam);
+    setShowEditExamModal(true);
+  };
+
+  const handleDeleteExam = async (examId) => {
+    if (window.confirm('Are you sure you want to delete this exam?')) {
+      try {
+        await deleteExam(examId);
+        await fetchDashboardData();
+        if (window.showToast) {
+          window.showToast('Exam deleted successfully!', 'success');
+        }
+      } catch (error) {
+        console.error('Error deleting exam:', error);
+        if (window.showToast) {
+          window.showToast('Failed to delete exam', 'error');
+        }
+      }
+    }
+  };
+
+  const handleManageSets = async (exam) => {
+    try {
+      const examWithSets = await getExamWithSets(exam.id);
+      setSelectedExam(examWithSets);
+      setShowSetManagementModal(true);
+    } catch (error) {
+      console.error('Error fetching exam details:', error);
+    }
+  };
+
+  const handleEditSet = (set) => {
+    setEditingSet(set);
+    setShowSetManagementModal(true);
+  };
+
+  const handleModalSuccess = () => {
+    fetchDashboardData();
+    if (window.showToast) {
+      window.showToast('Operation completed successfully!', 'success');
+    }
+  };
+
+  const tabs = [
+    { id: 'overview', name: 'Overview', icon: '📊' },
+    { id: 'exams', name: 'Exams', icon: '📝' },
+    { id: 'results', name: 'Results', icon: '📈' },
+    { id: 'students', name: 'Students', icon: '👥' },
+    { id: 'admins', name: 'Admins', icon: '👨‍💼' },
+    { id: 'finance', name: 'Finance', icon: '💰' }
+  ];
+
+  const renderOverview = () => (
+    <div className="space-y-8">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="group bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-green-500/25 transition-all duration-500 transform hover:scale-105 hover:border-green-400/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                মোট পরীক্ষা
+              </p>
+              <p className="text-3xl font-bold text-gray-800 mb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {exams.length}
+              </p>
+              <div className="flex items-center text-green-600 text-xs">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+                +12% from last month
+              </div>
+            </div>
+            <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25 group-hover:shadow-green-500/40 transition-all duration-300">
+              <span className="text-3xl">📝</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="group bg-white/80 backdrop-blur-xl border border-red-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-red-500/25 transition-all duration-500 transform hover:scale-105 hover:border-red-400/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                নিবন্ধিত ছাত্র
+              </p>
+              <p className="text-3xl font-bold text-gray-800 mb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {students.length}
+              </p>
+              <div className="flex items-center text-red-600 text-xs">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+                +8% from last week
+              </div>
+            </div>
+            <div className="w-16 h-16 bg-gradient-to-br from-red-500/20 to-rose-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-red-500/25 group-hover:shadow-red-500/40 transition-all duration-300">
+              <span className="text-3xl">👥</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="group bg-white/80 backdrop-blur-xl border border-yellow-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-yellow-500/25 transition-all duration-500 transform hover:scale-105 hover:border-yellow-400/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                প্রশ্ন সেট
+              </p>
+              <p className="text-3xl font-bold text-gray-800 mb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {exams.reduce((total, exam) => total + parseInt(exam.set_count || 0), 0)}
+              </p>
+              <div className="flex items-center text-yellow-600 text-xs">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+                +15% from last month
+              </div>
+            </div>
+            <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-amber-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-yellow-500/25 group-hover:shadow-yellow-500/40 transition-all duration-300">
+              <span className="text-3xl">📚</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="group bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-green-500/25 transition-all duration-500 transform hover:scale-105 hover:border-green-400/50">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                মোট আয়
+              </p>
+              <p className="text-3xl font-bold text-gray-800 mb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                ৳0
+              </p>
+              <div className="flex items-center text-green-600 text-xs">
+                <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+                +0% from last month
+              </div>
+            </div>
+            <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-2xl flex items-center justify-center shadow-lg shadow-green-500/25 group-hover:shadow-green-500/40 transition-all duration-300">
+              <span className="text-3xl">💰</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        {/* Class-wise Student Registration Professional Bar Chart */}
+        <div className="bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 shadow-2xl hover:shadow-green-500/25 transition-all duration-500">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                শ্রেণীভিত্তিক নিবন্ধিত ছাত্র
+              </h3>
+              <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                মোট {students.length} জন ছাত্র নিবন্ধিত
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-gray-700 text-sm font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                নিবন্ধিত ছাত্র
+              </span>
+            </div>
+          </div>
+          
+          {students.length > 0 ? (
+            <div className="space-y-6">
+              {(() => {
+                // Group students by class
+                const classGroups = students.reduce((acc, student) => {
+                  const className = student.class || 'অজানা';
+                  acc[className] = (acc[className] || 0) + 1;
+                  return acc;
+                }, {});
+                
+                // Get max count for scaling
+                const maxCount = Math.max(...Object.values(classGroups), 1);
+                
+                // Define distinct colors for each bar
+                const barColors = [
+                  'bg-gradient-to-t from-green-500 to-green-600', // Green
+                  'bg-gradient-to-t from-red-500 to-red-600', // Red
+                  'bg-gradient-to-t from-yellow-500 to-yellow-600', // Yellow
+                  'bg-gradient-to-t from-emerald-500 to-emerald-600', // Emerald
+                  'bg-gradient-to-t from-rose-500 to-rose-600', // Rose
+                  'bg-gradient-to-t from-amber-500 to-amber-600', // Amber
+                  'bg-gradient-to-t from-lime-500 to-lime-600', // Lime
+                  'bg-gradient-to-t from-orange-500 to-orange-600', // Orange
+                ];
+                
+                return (
+                  <div className="space-y-6">
+                    {/* Chart Area */}
+                    <div className="relative">
+                      {/* Y-axis */}
+                      <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between">
+                        <div className="text-right text-xs text-gray-600 font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          {maxCount}
+                        </div>
+                        <div className="text-right text-xs text-gray-600 font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          {Math.round(maxCount * 0.75)}
+                        </div>
+                        <div className="text-right text-xs text-gray-600 font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          {Math.round(maxCount * 0.5)}
+                        </div>
+                        <div className="text-right text-xs text-gray-600 font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          {Math.round(maxCount * 0.25)}
+                        </div>
+                        <div className="text-right text-xs text-gray-600 font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          0
+                        </div>
+                      </div>
+                      
+                      {/* Chart Content */}
+                      <div className="ml-10">
+                        {/* Y-axis label */}
+                        <div className="absolute -left-18 top-1/2 transform -rotate-90 text-sm font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          Number of students
+                        </div>
+                        
+                        {/* Bars Container */}
+                        <div className="flex items-end justify-between space-x-3 h-64">
+                          {Object.entries(classGroups)
+                            .sort(([a], [b]) => {
+                              // Convert to numbers for proper numerical sorting
+                              const numA = parseInt(a);
+                              const numB = parseInt(b);
+                              if (!isNaN(numA) && !isNaN(numB)) {
+                                return numA - numB;
+                              }
+                              // Fallback to string comparison for non-numeric values
+                              return a.localeCompare(b, 'bn-BD');
+                            })
+                            .map(([className, count], index) => {
+                              const height = (count / maxCount) * 200; // Max height 200px
+                              const colorClass = barColors[index % barColors.length];
+                              
+                              return (
+                                <div key={className} className="group flex-1 flex flex-col items-center">
+                                  {/* Tooltip */}
+                                  <div className="absolute -top-12 bg-white/95 backdrop-blur-xl text-gray-800 px-3 py-2 rounded-lg text-xs font-bold shadow-2xl shadow-green-500/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 border border-green-500/30" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                                    <div className="text-center">
+                                      <div className="font-bold text-green-600">{count} জন</div>
+                                      <div className="text-gray-600">{className}</div>
+                                    </div>
+                                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/95"></div>
+                                  </div>
+                                  
+                                  {/* Bar */}
+                                  <div className="relative w-full flex flex-col items-center">
+                                    <div 
+                                      className={`w-full ${colorClass} rounded-t-lg shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 relative overflow-hidden`}
+                                      style={{ 
+                                        height: `${height}px`,
+                                        minHeight: '4px'
+                                      }}
+                                    >
+                                      {/* Subtle texture overlay */}
+                                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out"></div>
+                                      
+                                      {/* Value display on top of bar */}
+                                      <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                                        {count}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* X-axis label */}
+                                  <div className="mt-3 text-xs text-gray-700 font-medium text-center" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                                    {className}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                        
+                        {/* X-axis line */}
+                        <div className="w-full h-0.5 bg-gray-400 mt-4"></div>
+                        
+                        {/* X-axis label */}
+                        <div className="text-center mt-2 text-sm font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          Class categories
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-green-500/25 border border-green-500/30">
+                <span className="text-green-600 text-2xl">👥</span>
+              </div>
+              <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                এখনও কোন ছাত্র নিবন্ধিত হয়নি
+              </h4>
+              <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                ছাত্র নিবন্ধন শুরু হলে এখানে চার্ট দেখতে পাবেন
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Student Registration Over Time Line Chart */}
+        <div className="bg-white/80 backdrop-blur-xl border border-red-500/30 rounded-3xl p-8 shadow-2xl hover:shadow-red-500/25 transition-all duration-500">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                নিবন্ধন সময়সূচী
+              </h3>
+              <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                দিনভিত্তিক ছাত্র নিবন্ধন সংখ্যা
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-gradient-to-r from-red-500 to-rose-500 rounded-full animate-pulse"></div>
+              <span className="text-gray-700 text-sm font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                নিবন্ধন সংখ্যা
+              </span>
+            </div>
+          </div>
+          
+          {registrationData.length > 0 ? (
+            <div className="space-y-4">
+              {/* Chart Container with Grid */}
+              <div className="relative h-80 bg-white/60 backdrop-blur-xl rounded-lg border border-red-500/30 overflow-hidden">
+                {/* Grid Lines */}
+                <div className="absolute inset-0">
+                  {/* Horizontal Grid Lines */}
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                    <div
+                      key={`h-${i}`}
+                      className="absolute w-full h-px bg-gray-300/50"
+                      style={{ top: `${i * 10}%` }}
+                    />
+                  ))}
+                  {/* Vertical Grid Lines */}
+                  {registrationData.map((_, i) => (
+                    <div
+                      key={`v-${i}`}
+                      className="absolute h-full w-px bg-gray-300/50"
+                      style={{ left: `${(i / (registrationData.length - 1)) * 100}%` }}
+                    />
+                  ))}
+                </div>
+
+                {/* Y-axis Labels */}
+                <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between">
+                  {(() => {
+                    const maxCount = Math.max(...registrationData.map(d => d.registration_count), 1);
+                    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+                      <div
+                        key={i}
+                        className="text-right text-xs text-gray-600 font-medium"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                      >
+                        {Math.round((maxCount * (9 - i)) / 9)}
+                      </div>
+                    ));
+                  })()}
+                </div>
+
+                {/* Y-axis Label */}
+                <div className="absolute -left-12 top-1/2 transform -rotate-90 text-sm font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  Value
+                </div>
+
+                {/* Chart Content */}
+                <div className="ml-10 h-full relative">
+                  {/* Filled Area and Line */}
+                  <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    {(() => {
+                      const maxCount = Math.max(...registrationData.map(d => d.registration_count), 1);
+                      const points = registrationData.map((data, index) => {
+                        const x = (index / (registrationData.length - 1)) * 100;
+                        const y = 100 - (data.registration_count / maxCount) * 100;
+                        return `${x},${y}`;
+                      }).join(' ');
+
+                      return (
+                        <>
+                          {/* Filled Area */}
+                          <polygon
+                            points={`0,100 ${points} 100,100`}
+                            fill="url(#gradient)"
+                            opacity="0.3"
+                          />
+                          {/* Line */}
+                          <polyline
+                            points={points}
+                            fill="none"
+                            stroke="#ef4444"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          {/* Gradient Definition */}
+                          <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
+                              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.1" />
+                            </linearGradient>
+                          </defs>
+                        </>
+                      );
+                    })()}
+                  </svg>
+
+                  {/* Data Points */}
+                  {registrationData.map((data, index) => {
+                    const maxCount = Math.max(...registrationData.map(d => d.registration_count), 1);
+                    const x = (index / (registrationData.length - 1)) * 100;
+                    const y = 100 - (data.registration_count / maxCount) * 100;
+                    
+                    return (
+                      <div
+                        key={index}
+                        className="absolute group"
+                        style={{
+                          left: `${x}%`,
+                          top: `${y}%`,
+                          transform: 'translate(-50%, -50%)'
+                        }}
+                      >
+                        {/* Tooltip */}
+                        <div className="absolute -top-12 bg-white/95 backdrop-blur-xl text-gray-800 px-3 py-2 rounded-lg text-xs font-bold shadow-2xl shadow-red-500/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 whitespace-nowrap border border-red-500/30" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          <div className="text-center">
+                            <div className="font-bold text-red-600">{data.registration_count} জন</div>
+                            <div className="text-gray-600">{new Date(data.registration_date).toLocaleDateString('bn-BD', { month: 'short', day: 'numeric' })}</div>
+                          </div>
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/95"></div>
+                        </div>
+                        
+                        {/* Data Point Circle */}
+                        <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg group-hover:scale-125 transition-transform duration-300"></div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* X-axis Labels */}
+                <div className="absolute bottom-0 left-10 right-0 h-8 flex justify-between items-end">
+                  {registrationData.map((data, index) => {
+                    const date = new Date(data.registration_date);
+                    const formattedDate = date.toLocaleDateString('bn-BD', { 
+                      month: 'short', 
+                      day: 'numeric' 
+                    });
+                    
+                    return (
+                      <div
+                        key={index}
+                        className="text-xs text-gray-600 font-medium text-center"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                      >
+                        {formattedDate}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* X-axis Label */}
+                <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-8 text-sm font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  Date
+                </div>
+              </div>
+              
+              {/* Chart Summary */}
+              <div className="mt-6 pt-4 border-t border-gray-300/50">
+                <div className="grid grid-cols-2 gap-4 text-center">
+                  <div>
+                    <div className="text-xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      {registrationData.length}
+                    </div>
+                    <div className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      মোট দিন
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      {registrationData.reduce((sum, data) => sum + data.registration_count, 0)}
+                    </div>
+                    <div className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      মোট নিবন্ধন
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500/20 to-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-red-500/25 border border-red-500/30">
+                <span className="text-red-600 text-2xl">📈</span>
+              </div>
+              <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                এখনও কোন নিবন্ধন ডেটা নেই
+              </h4>
+              <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                ছাত্র নিবন্ধন শুরু হলে এখানে লাইন চার্ট দেখতে পাবেন
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Exams */}
+      <div className="bg-white/80 backdrop-blur-xl border border-yellow-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-yellow-500/25 transition-all duration-500">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+            সাম্প্রতিক পরীক্ষা
+          </h3>
+          <button 
+            onClick={() => setActiveTab('exams')}
+            className="text-gray-700 hover:text-yellow-600 text-sm font-medium transition-colors bg-yellow-500/20 px-4 py-2 rounded-lg hover:bg-yellow-500/30 border border-yellow-500/50 backdrop-blur-xl"
+            style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+          >
+            সব দেখুন →
+          </button>
+        </div>
+        
+        <div className="space-y-4">
+          {exams.slice(0, 3).map((exam) => (
+            <div key={exam.id} className="bg-white/60 backdrop-blur-xl border border-yellow-500/30 rounded-xl p-4 hover:shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-[1.02] hover:border-yellow-400/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {exam.title}
+                  </h4>
+                  <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    শ্রেণী: {exam.class} | বছর: {exam.year}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-yellow-600 font-bold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {exam.set_count} সেট
+                  </p>
+                  <p className="text-gray-500 text-xs" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {new Date(exam.created_at).toLocaleDateString('bn-BD')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Class-wise Exam Distribution */}
+      <div className="bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-green-500/25 transition-all duration-500">
+        <h3 className="text-2xl font-bold text-gray-800 mb-6" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+          শ্রেণীভিত্তিক পরীক্ষা
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {exams.map((exam) => (
+            <div key={exam.id} className="bg-white/60 backdrop-blur-xl border border-green-500/30 rounded-xl p-4 hover:shadow-lg hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 hover:border-green-400/50">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  {exam.class}
+                </h4>
+                <span className="bg-green-500/20 text-green-600 px-3 py-1 rounded-full text-xs font-medium border border-green-500/50 backdrop-blur-xl">
+                  {exam.set_count} সেট
+                </span>
+              </div>
+              <p className="text-gray-600 text-sm mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {exam.title}
+              </p>
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>বছর: {exam.year}</span>
+                <span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  {new Date(exam.created_at).toLocaleDateString('bn-BD')}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderExams = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+          পরীক্ষা ব্যবস্থাপনা
+        </h2>
+        <button 
+          onClick={handleCreateExam}
+          className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg shadow-green-500/25 border border-green-400/50 backdrop-blur-xl"
+          style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+        >
+          <span className="mr-2">➕</span>
+          নতুন পরীক্ষা
+        </button>
+      </div>
+      
+      <div className="bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-green-500/25 transition-all duration-500">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-green-500/30">
+                <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  পরীক্ষার নাম
+                </th>
+                <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  শ্রেণী
+                </th>
+                <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  বছর
+                </th>
+                <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  সেট সংখ্যা
+                </th>
+                <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  তৈরি হয়েছে
+                </th>
+                <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  কাজ
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {exams.map((exam) => (
+                <tr key={exam.id} className="border-b border-green-500/20 hover:bg-green-500/10 transition-colors">
+                  <td className="py-4 px-2 text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {exam.title}
+                  </td>
+                  <td className="py-4 px-2 text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {exam.class}
+                  </td>
+                  <td className="py-4 px-2 text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {exam.year}
+                  </td>
+                  <td className="py-4 px-2">
+                    <span className="bg-green-500/20 text-green-600 px-3 py-1 rounded-full text-sm font-medium border border-green-500/50 backdrop-blur-xl">
+                      {exam.set_count}
+                    </span>
+                  </td>
+                  <td className="py-4 px-2 text-gray-500 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {new Date(exam.created_at).toLocaleDateString('bn-BD')}
+                  </td>
+                  <td className="py-4 px-2">
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleEditExam(exam)}
+                        className="text-gray-700 hover:text-green-600 text-sm font-medium bg-green-500/20 px-3 py-1 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/50 backdrop-blur-xl"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                      >
+                        সম্পাদনা
+                      </button>
+                      <button 
+                        onClick={() => handleManageSets(exam)}
+                        className="text-gray-700 hover:text-blue-600 text-sm font-medium bg-blue-500/20 px-3 py-1 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                      >
+                        সেট
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteExam(exam.id)}
+                        className="text-gray-700 hover:text-red-600 text-sm font-medium bg-red-500/20 px-3 py-1 rounded-lg hover:bg-red-500/30 transition-colors border border-red-500/50 backdrop-blur-xl"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                      >
+                        মুছুন
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return renderOverview();
+      case 'exams':
+        return <ExamManagement />;
+      case 'results':
+        return (
+          <div className="bg-white/80 backdrop-blur-xl border border-red-500/30 rounded-2xl p-12 shadow-2xl hover:shadow-red-500/25 transition-all duration-500">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500/20 to-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-red-500/25 border border-red-500/30">
+                <span className="text-red-600 text-2xl">📈</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                ফলাফল বিভাগ
+              </h3>
+              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                শীঘ্রই আসছে...
+              </p>
+            </div>
+          </div>
+        );
+      case 'students':
+        return (
+          <div className="bg-white/80 backdrop-blur-xl border border-yellow-500/30 rounded-2xl p-12 shadow-2xl hover:shadow-yellow-500/25 transition-all duration-500">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-yellow-500/25 border border-yellow-500/30">
+                <span className="text-yellow-600 text-2xl">👥</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                ছাত্র বিভাগ
+              </h3>
+              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                শীঘ্রই আসছে...
+              </p>
+            </div>
+          </div>
+        );
+      case 'admins':
+        return (
+          <div className="bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-12 shadow-2xl hover:shadow-green-500/25 transition-all duration-500">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-green-500/25 border border-green-500/30">
+                <span className="text-green-600 text-2xl">👨‍💼</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                অ্যাডমিন বিভাগ
+              </h3>
+              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                শীঘ্রই আসছে...
+              </p>
+            </div>
+          </div>
+        );
+      case 'finance':
+        return (
+          <div className="bg-white/80 backdrop-blur-xl border border-red-500/30 rounded-2xl p-12 shadow-2xl hover:shadow-red-500/25 transition-all duration-500">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-br from-red-500/20 to-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-red-500/25 border border-red-500/30">
+                <span className="text-red-600 text-2xl">💰</span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                আর্থিক বিভাগ
+              </h3>
+              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                শীঘ্রই আসছে...
+              </p>
+            </div>
+          </div>
+        );
+      default:
+        return renderOverview();
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 flex items-center justify-center relative overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+        </div>
+        
+        <div className="text-center relative z-10">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-6 shadow-lg shadow-green-500/25"></div>
+          <p className="text-gray-800 text-xl font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+            লোড হচ্ছে...
+          </p>
+          <div className="mt-4 flex justify-center space-x-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+            <div className="w-2 h-2 bg-red-500 rounded-full animate-bounce delay-100"></div>
+            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-bounce delay-200"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ToastProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
+      </div>
+
+      {/* Top Navigation Bar */}
+      <div className="bg-white/80 backdrop-blur-xl border-b border-green-500/20 sticky top-0 z-50 shadow-lg shadow-green-500/10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-green-500/25">
+                <span className="text-white text-xl font-bold">SA</span>
+              </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 drop-shadow-sm" 
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
+                সুপার অ্যাডমিন ড্যাশবোর্ড
+              </h1>
+            </div>
+            
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <div className="hidden sm:flex items-center space-x-3 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-green-500/20 shadow-lg">
+                <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-white text-sm font-bold">👤</span>
+                </div>
+                <span className="text-gray-700 font-bold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  স্বাগতম, সুপার অ্যাডমিন
+                </span>
+              </div>
+              <div className="sm:hidden flex items-center space-x-2 bg-white/60 backdrop-blur-sm px-3 py-2 rounded-full border border-green-500/20 shadow-lg">
+                <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
+                  <span className="text-white text-xs font-bold">👤</span>
+                </div>
+                <span className="text-gray-700 font-bold text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  সুপার অ্যাডমিন
+                </span>
+              </div>
+              <button 
+                onClick={handleLogout}
+                className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-2 px-3 sm:px-6 rounded-lg hover:from-red-600 hover:to-red-700 transition-all transform hover:scale-105 shadow-lg shadow-red-500/25 border border-red-400 text-sm sm:text-base"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+              >
+                <span className="hidden sm:inline">লগআউট</span>
+                <span className="sm:hidden">🚪</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation Tabs */}
+      <div className="bg-white/70 backdrop-blur-md border-b border-green-500/20 sticky top-20 z-40 shadow-lg">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
+          <nav className="flex space-x-2 sm:space-x-8 overflow-x-auto scrollbar-hide">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm font-bold transition-all duration-300 border-b-2 whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'border-green-500 text-green-700 bg-green-50/50 shadow-lg shadow-green-500/10'
+                    : 'border-transparent text-gray-600 hover:text-green-600 hover:border-green-400 hover:bg-green-50/30'
+                }`}
+                style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}
+              >
+                <span className="mr-1 sm:mr-2 text-sm sm:text-base">{tab.icon}</span>
+                <span className="hidden xs:inline">{tab.name}</span>
+                <span className="xs:hidden">{tab.name.split(' ')[0]}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
+        {renderContent()}
+      </div>
+
+      {/* Modals */}
+      <CreateExamModal
+        isOpen={showCreateExamModal}
+        onClose={() => setShowCreateExamModal(false)}
+        onSuccess={handleModalSuccess}
+      />
+
+      <EditExamModal
+        isOpen={showEditExamModal}
+        onClose={() => setShowEditExamModal(false)}
+        onSuccess={handleModalSuccess}
+        exam={selectedExam}
+      />
+
+      <SetManagementModal
+        isOpen={showSetManagementModal}
+        onClose={() => {
+          setShowSetManagementModal(false);
+          setEditingSet(null);
+        }}
+        onSuccess={handleModalSuccess}
+        exam={selectedExam}
+        editingSet={editingSet}
+      />
+      </div>
+    </ToastProvider>
+  );
+};
+
+export default SuperAdminDashboard;
