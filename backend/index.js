@@ -7,6 +7,7 @@ const studentRoutes = require("./routes/student");
 const adminRoutes = require("./routes/admin");
 const resultRoutes = require("./routes/result");
 const examRoutes = require("./routes/exam");
+const financeRoutes = require("./routes/finance");
 
 const app = express();
 app.use(cors());
@@ -21,7 +22,7 @@ app.use("/api/students", studentRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/results", resultRoutes);
 app.use("/api/exams", examRoutes);
-
+app.use("/api/finance", financeRoutes);
 
 //print all api hit points
 app.use((req, res, next) => {

@@ -141,15 +141,6 @@ export const deleteExamSet = async (examId, setId) => {
 };
 
 // ----- Student APIs -----
-export const getAllStudents = async () => {
-  try {
-    const res = await api.get("/students");
-    return res.data;
-  } catch (err) {
-    throw err.response?.data || { message: "Failed to fetch students" };
-  }
-};
-
 export const getRegistrationCountOverTime = async () => {
   try {
     const res = await api.get("/students/registration-count-over-time");
@@ -166,6 +157,180 @@ export const getResults = async (examId) => {
     return res.data;
   } catch (err) {
     throw err.response?.data || { message: "Failed to fetch results" };
+  }
+};
+
+export const getFullResults = async () => {
+  try {
+    const res = await api.get("/results/full");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch all results" };
+  }
+};
+
+export const getResultByStudentRoll = async (roll) => {
+  try {
+    const res = await api.get(`/results/roll/${roll}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch result by roll" };
+  }
+};
+
+export const getResultByClass = async (className) => {
+  try {
+    const res = await api.get(`/results/class/${className}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch results by class" };
+  }
+};
+
+export const getResultBySchool = async (school) => {
+  try {
+    const res = await api.post("/results/school", { school });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch results by school" };
+  }
+};
+
+// ----- Student Management APIs -----
+export const getAllStudents = async () => {
+  try {
+    const res = await api.get("/students");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch all students" };
+  }
+};
+
+export const getStudentByRoll = async (roll) => {
+  try {
+    const res = await api.get(`/students/roll/${roll}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch student by roll" };
+  }
+};
+
+export const getStudentsByClass = async (className) => {
+  try {
+    const res = await api.get(`/students/class/${className}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch students by class" };
+  }
+};
+
+export const getStudentsBySchool = async (school) => {
+  try {
+    const res = await api.get(`/students/school/${school}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch students by school" };
+  }
+};
+
+export const getStudentsBySchoolAndClass = async (school, className) => {
+  try {
+    const res = await api.get(`/students/school/${school}/class/${className}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch students by school and class" };
+  }
+};
+
+// ----- Admin Management APIs -----
+export const getAllAdmins = async () => {
+  try {
+    const res = await api.get("/admin/admins");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch all admins" };
+  }
+};
+
+export const createAdmin = async (adminData) => {
+  try {
+    const res = await api.post("/admin/register", adminData);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to create admin" };
+  }
+};
+
+export const updateAdmin = async (id, adminData) => {
+  try {
+    const res = await api.put(`/admin/admins/${id}`, adminData);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to update admin" };
+  }
+};
+
+export const deleteAdmin = async (id) => {
+  try {
+    const res = await api.delete(`/admin/admins/${id}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to delete admin" };
+  }
+};
+
+// ----- Finance APIs -----
+export const getTotalIncome = async () => {
+  try {
+    const res = await api.get("/finance/total");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch total income" };
+  }
+};
+
+export const getSchoolWiseIncome = async () => {
+  try {
+    const res = await api.get("/finance/school");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch school-wise income" };
+  }
+};
+
+export const getClassWiseIncome = async () => {
+  try {
+    const res = await api.get("/finance/class");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch class-wise income" };
+  }
+};
+
+export const getSchoolClassWiseIncome = async () => {
+  try {
+    const res = await api.get("/finance/school-class");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch school-class-wise income" };
+  }
+};
+
+export const getCollectionByAdminId = async (adminId) => {
+  try {
+    const res = await api.get(`/finance/collection/${adminId}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch collection by admin" };
+  }
+};
+
+export const getAllAdminCollections = async () => {
+  try {
+    const res = await api.get("/finance/admin-collections");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch all admin collections" };
   }
 };
 

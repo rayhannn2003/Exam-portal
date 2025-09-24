@@ -8,6 +8,7 @@ const {
   getResultByStudentRoll,
   getResultByClass,
   getResultBySchool,
+  getFullResults,
 } = require("../controllers/resultController");
 
 // Submit answers
@@ -18,10 +19,11 @@ router.put("/submit", editSubmittedResult);
 
 // Delete submitted result by student and exam
 router.delete("/submit/:student_id/:exam_id", deleteSubmittedResult);
-
+router.get("/full", getFullResults);
 // Queries
 router.get("/roll/:roll", getResultByStudentRoll);
 router.get("/class/:class", getResultByClass);
-router.get("/school/:school", getResultBySchool);
+router.post("/school", getResultBySchool);
+
 
 module.exports = router;

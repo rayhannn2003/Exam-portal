@@ -4,6 +4,10 @@ import CreateExamModal from '../components/CreateExamModal';
 import EditExamModal from '../components/EditExamModal';
 import SetManagementModal from '../components/SetManagementModal';
 import ExamManagement from '../components/ExamManagement';
+import Results from './Results';
+import Students from './Students';
+import Admins from './Admins';
+import Finance from './Finance';
 import { ToastProvider } from '../contexts/ToastContext';
 
 // Logout function
@@ -46,6 +50,7 @@ const SuperAdminDashboard = () => {
       
       // Fetch registration count over time
       const registrationCountData = await getRegistrationCountOverTime();
+      console.log('Registration data:', registrationCountData); // Debug log
       setRegistrationData(registrationCountData);
       
     } catch (error) {
@@ -384,7 +389,7 @@ const SuperAdminDashboard = () => {
             </div>
           </div>
           
-          {registrationData.length > 0 ? (
+          {registrationData && registrationData.length > 0 ? (
             <div className="space-y-4">
               {/* Chart Container with Grid */}
               <div className="relative h-80 bg-white/60 backdrop-blur-xl rounded-lg border border-red-500/30 overflow-hidden">
@@ -399,7 +404,7 @@ const SuperAdminDashboard = () => {
                     />
                   ))}
                   {/* Vertical Grid Lines */}
-                  {registrationData.map((_, i) => (
+                  {registrationData.length > 1 && registrationData.map((_, i) => (
                     <div
                       key={`v-${i}`}
                       className="absolute h-full w-px bg-gray-300/50"
@@ -411,14 +416,15 @@ const SuperAdminDashboard = () => {
                 {/* Y-axis Labels */}
                 <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between">
                   {(() => {
-                    const maxCount = Math.max(...registrationData.map(d => d.registration_count), 1);
+                    const maxCount = Math.max(...registrationData.map(d => Number(d.registration_count)), 1);
+                    const chartMax = Math.ceil(maxCount * 1.5); // 1.5x the max value for better proportions
                     return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
                       <div
                         key={i}
                         className="text-right text-xs text-gray-600 font-medium"
                         style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                       >
-                        {Math.round((maxCount * (9 - i)) / 9)}
+                        {Math.round((chartMax * (9 - i)) / 9)}
                       </div>
                     ));
                   })()}
@@ -431,50 +437,112 @@ const SuperAdminDashboard = () => {
 
                 {/* Chart Content */}
                 <div className="ml-10 h-full relative">
-                  {/* Filled Area and Line */}
+                  {/* Smooth Curved Line Chart */}
                   <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
                     {(() => {
-                      const maxCount = Math.max(...registrationData.map(d => d.registration_count), 1);
-                      const points = registrationData.map((data, index) => {
-                        const x = (index / (registrationData.length - 1)) * 100;
-                        const y = 100 - (data.registration_count / maxCount) * 100;
-                        return `${x},${y}`;
-                      }).join(' ');
-
+                      const maxCount = Math.max(...registrationData.map(d => Number(d.registration_count)), 1);
+                      const chartMax = Math.ceil(maxCount * 1.5); // 1.5x the max value for better proportions
+                      
+                      // Create smooth curve using cubic bezier
+                      const createSmoothPath = (data) => {
+                        if (data.length < 2) return '';
+                        
+                        const points = data.map((item, index) => {
+                          const x = data.length > 1 ? (index / (data.length - 1)) * 100 : 50;
+                          const y = 100 - (Number(item.registration_count) / chartMax) * 100;
+                          return { x, y };
+                        });
+                        
+                        let path = `M ${points[0].x} ${points[0].y}`;
+                        
+                        for (let i = 1; i < points.length; i++) {
+                          const prevPoint = points[i - 1];
+                          const currentPoint = points[i];
+                          const nextPoint = points[i + 1];
+                          
+                          // Calculate control points for smooth curve
+                          const cp1x = prevPoint.x + (currentPoint.x - prevPoint.x) / 3;
+                          const cp1y = prevPoint.y;
+                          const cp2x = currentPoint.x - (nextPoint ? (nextPoint.x - prevPoint.x) / 3 : (currentPoint.x - prevPoint.x) / 3);
+                          const cp2y = currentPoint.y;
+                          
+                          path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${currentPoint.x} ${currentPoint.y}`;
+                        }
+                        
+                        return path;
+                      };
+                      
+                      const smoothPath = createSmoothPath(registrationData);
+                      const areaPath = smoothPath + ` L 100 100 L 0 100 Z`;
+                      
                       return (
                         <>
-                          {/* Filled Area */}
-                          <polygon
-                            points={`0,100 ${points} 100,100`}
-                            fill="url(#gradient)"
-                            opacity="0.3"
+                          {/* Gradient Definitions */}
+                          <defs>
+                            {/* Area fill gradient */}
+                            <linearGradient id="areaGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.2" />
+                              <stop offset="25%" stopColor="#f97316" stopOpacity="0.2" />
+                              <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.2" />
+                              <stop offset="75%" stopColor="#3b82f6" stopOpacity="0.2" />
+                              <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.2" />
+                            </linearGradient>
+                            
+                            {/* Line gradient */}
+                            <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                              <stop offset="0%" stopColor="#ef4444" />
+                              <stop offset="25%" stopColor="#f97316" />
+                              <stop offset="50%" stopColor="#8b5cf6" />
+                              <stop offset="75%" stopColor="#3b82f6" />
+                              <stop offset="100%" stopColor="#06b6d4" />
+                            </linearGradient>
+                            
+                            {/* Drop shadow filter */}
+                            <filter id="dropshadow" x="-50%" y="-50%" width="200%" height="200%">
+                              <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.1"/>
+                            </filter>
+                          </defs>
+                          
+                          {/* Area fill */}
+                          <path
+                            d={areaPath}
+                            fill="url(#areaGradient)"
+                            stroke="none"
                           />
-                          {/* Line */}
-                          <polyline
-                            points={points}
+                          
+                          {/* Smooth curved line */}
+                          <path
+                            d={smoothPath}
                             fill="none"
-                            stroke="#ef4444"
+                            stroke="url(#lineGradient)"
                             strokeWidth="3"
                             strokeLinecap="round"
                             strokeLinejoin="round"
+                            filter="url(#dropshadow)"
                           />
-                          {/* Gradient Definition */}
-                          <defs>
-                            <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                              <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
-                              <stop offset="100%" stopColor="#ef4444" stopOpacity="0.1" />
-                            </linearGradient>
-                          </defs>
                         </>
                       );
                     })()}
                   </svg>
 
-                  {/* Data Points */}
+                  {/* Enhanced Data Points */}
                   {registrationData.map((data, index) => {
-                    const maxCount = Math.max(...registrationData.map(d => d.registration_count), 1);
-                    const x = (index / (registrationData.length - 1)) * 100;
-                    const y = 100 - (data.registration_count / maxCount) * 100;
+                    const maxCount = Math.max(...registrationData.map(d => Number(d.registration_count)), 1);
+                    const chartMax = Math.ceil(maxCount * 1.5); // 1.5x the max value for better proportions
+                    const x = registrationData.length > 1 ? (index / (registrationData.length - 1)) * 100 : 50;
+                    const y = 100 - (Number(data.registration_count) / chartMax) * 100;
+                    
+                    // Determine if this is a peak or valley for special highlighting
+                    const isPeak = Number(data.registration_count) === maxCount;
+                    const isValley = Number(data.registration_count) === Math.min(...registrationData.map(d => Number(d.registration_count)));
+                    
+                    // Color based on position in gradient
+                    const gradientPosition = index / (registrationData.length - 1);
+                    let pointColor = '#ef4444'; // Default red
+                    if (gradientPosition < 0.25) pointColor = '#ef4444'; // Red
+                    else if (gradientPosition < 0.5) pointColor = '#f97316'; // Orange
+                    else if (gradientPosition < 0.75) pointColor = '#8b5cf6'; // Purple
+                    else pointColor = '#3b82f6'; // Blue
                     
                     return (
                       <div
@@ -486,17 +554,59 @@ const SuperAdminDashboard = () => {
                           transform: 'translate(-50%, -50%)'
                         }}
                       >
-                        {/* Tooltip */}
-                        <div className="absolute -top-12 bg-white/95 backdrop-blur-xl text-gray-800 px-3 py-2 rounded-lg text-xs font-bold shadow-2xl shadow-red-500/25 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10 whitespace-nowrap border border-red-500/30" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        {/* Enhanced Tooltip */}
+                        <div className={`absolute ${isPeak ? '-top-16' : isValley ? '-bottom-16' : '-top-12'} bg-white/95 backdrop-blur-xl text-gray-800 px-3 py-2 rounded-full text-xs font-bold shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 whitespace-nowrap border-2 ${
+                          isPeak ? 'border-pink-300 bg-pink-50' : 
+                          isValley ? 'border-purple-300 bg-purple-50' : 
+                          'border-gray-300'
+                        }`} style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                           <div className="text-center">
-                            <div className="font-bold text-red-600">{data.registration_count} জন</div>
-                            <div className="text-gray-600">{new Date(data.registration_date).toLocaleDateString('bn-BD', { month: 'short', day: 'numeric' })}</div>
+                            <div className={`font-bold ${isPeak ? 'text-pink-600' : isValley ? 'text-purple-600' : 'text-gray-700'}`}>
+                              {data.registration_count} জন
+                            </div>
+                            <div className="text-gray-600 text-xs">
+                              {new Date(data.registration_date).toLocaleDateString('bn-BD', { month: 'short', day: 'numeric' })}
+                            </div>
                           </div>
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/95"></div>
+                          {/* Tooltip arrow */}
+                          <div className={`absolute ${isPeak ? 'top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent' : 
+                            isValley ? 'bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent' : 
+                            'top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent'} ${
+                            isPeak ? 'border-t-pink-50' : 
+                            isValley ? 'border-b-purple-50' : 
+                            'border-t-white/95'
+                          }`}></div>
                         </div>
                         
-                        {/* Data Point Circle */}
-                        <div className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-lg group-hover:scale-125 transition-transform duration-300"></div>
+                        {/* Enhanced Data Point Circle */}
+                        <div 
+                          className={`w-5 h-5 rounded-full border-3 border-white shadow-lg group-hover:scale-125 transition-all duration-300 ${
+                            isPeak ? 'bg-gradient-to-r from-pink-400 to-pink-600' :
+                            isValley ? 'bg-gradient-to-r from-purple-400 to-purple-600' :
+                            'bg-gradient-to-r from-gray-400 to-gray-600'
+                          }`}
+                          style={{
+                            background: isPeak || isValley ? undefined : `linear-gradient(45deg, ${pointColor}, ${pointColor}dd)`
+                          }}
+                        >
+                          {/* Inner glow effect */}
+                          <div className="w-full h-full rounded-full bg-white/20"></div>
+                        </div>
+                        
+                        {/* Connecting line to tooltip */}
+                        {(isPeak || isValley) && (
+                          <div 
+                            className={`absolute w-px bg-gradient-to-b ${
+                              isPeak ? 'from-pink-300 to-pink-500' : 'from-purple-300 to-purple-500'
+                            } opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
+                            style={{
+                              height: isPeak ? '12px' : '12px',
+                              top: isPeak ? '-12px' : '12px',
+                              left: '50%',
+                              transform: 'translateX(-50%)'
+                            }}
+                          ></div>
+                        )}
                       </div>
                     );
                   })}
@@ -542,7 +652,7 @@ const SuperAdminDashboard = () => {
                   </div>
                   <div>
                     <div className="text-xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                      {registrationData.reduce((sum, data) => sum + data.registration_count, 0)}
+                      {registrationData.reduce((sum, data) => sum + Number(data.registration_count), 0)}
                     </div>
                     <div className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                       মোট নিবন্ধন
@@ -743,69 +853,13 @@ const SuperAdminDashboard = () => {
       case 'exams':
         return <ExamManagement />;
       case 'results':
-        return (
-          <div className="bg-white/80 backdrop-blur-xl border border-red-500/30 rounded-2xl p-12 shadow-2xl hover:shadow-red-500/25 transition-all duration-500">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-red-500/20 to-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-red-500/25 border border-red-500/30">
-                <span className="text-red-600 text-2xl">📈</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                ফলাফল বিভাগ
-              </h3>
-              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                শীঘ্রই আসছে...
-              </p>
-            </div>
-          </div>
-        );
+        return <Results />;
       case 'students':
-        return (
-          <div className="bg-white/80 backdrop-blur-xl border border-yellow-500/30 rounded-2xl p-12 shadow-2xl hover:shadow-yellow-500/25 transition-all duration-500">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-yellow-500/20 to-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-yellow-500/25 border border-yellow-500/30">
-                <span className="text-yellow-600 text-2xl">👥</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                ছাত্র বিভাগ
-              </h3>
-              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                শীঘ্রই আসছে...
-              </p>
-            </div>
-          </div>
-        );
+        return <Students />;
       case 'admins':
-        return (
-          <div className="bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-12 shadow-2xl hover:shadow-green-500/25 transition-all duration-500">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-green-500/25 border border-green-500/30">
-                <span className="text-green-600 text-2xl">👨‍💼</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                অ্যাডমিন বিভাগ
-              </h3>
-              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                শীঘ্রই আসছে...
-              </p>
-            </div>
-          </div>
-        );
+        return <Admins />;
       case 'finance':
-        return (
-          <div className="bg-white/80 backdrop-blur-xl border border-red-500/30 rounded-2xl p-12 shadow-2xl hover:shadow-red-500/25 transition-all duration-500">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-red-500/20 to-rose-500/20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-red-500/25 border border-red-500/30">
-                <span className="text-red-600 text-2xl">💰</span>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                আর্থিক বিভাগ
-              </h3>
-              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                শীঘ্রই আসছে...
-              </p>
-            </div>
-          </div>
-        );
+        return <Finance />;
       default:
         return renderOverview();
     }

@@ -39,16 +39,16 @@ exports.getAllStudents = async (req, res) => {
 // Register admin (by super admin)
 exports.registerAdmin = async (req, res) => {
   try {
-    const { username, password, role = "admin" } = req.body;
-    if (!username || !password) return res.status(400).json({ error: "Username and password are required" });
+    const { username, name, password, role = "admin" } = req.body;
+    if (!username || !name || !password) return res.status(400).json({ error: "Username, name and password are required" });
 
     const exists = await pool.query("SELECT 1 FROM admins WHERE username = $1", [username]);
     if (exists.rowCount > 0) return res.status(400).json({ error: "Username already exists" });
 
     const passwordHash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      "INSERT INTO admins (username, password, role) VALUES ($1, $2, $3) RETURNING id, username, role, created_at",
-      [username, passwordHash, role]
+      "INSERT INTO admins (username, name, password, role) VALUES ($1, $2, $3, $4) RETURNING id, username, name, role, created_at",
+      [username, name, passwordHash, role]
     );
     res.status(201).json({ message: "Admin created", admin: result.rows[0] });
   } catch (err) {
@@ -61,7 +61,7 @@ exports.registerAdmin = async (req, res) => {
 exports.updateAdmin = async (req, res) => {
   try {
     const { id } = req.params;
-    const { username, password, role } = req.body;
+    const { username, name, password, role } = req.body;
 
     const fields = [];
     const values = [id];
@@ -70,6 +70,10 @@ exports.updateAdmin = async (req, res) => {
     if (username) {
       fields.push(`username = $${idx++}`);
       values.push(username);
+    }
+    if (name) {
+      fields.push(`name = $${idx++}`);
+      values.push(name);
     }
     if (typeof role === "string") {
       fields.push(`role = $${idx++}`);
@@ -84,7 +88,7 @@ exports.updateAdmin = async (req, res) => {
     if (fields.length === 0) return res.status(400).json({ error: "No fields to update" });
 
     const result = await pool.query(
-      `UPDATE admins SET ${fields.join(", ")} WHERE id = $1 RETURNING id, username, role, created_at`,
+      `UPDATE admins SET ${fields.join(", ")} WHERE id = $1 RETURNING id, username, name, role, created_at`,
       values
     );
     if (result.rowCount === 0) return res.status(404).json({ error: "Admin not found" });
@@ -111,7 +115,7 @@ exports.deleteAdmin = async (req, res) => {
 // Get all admins
 exports.getAllAdmins = async (_req, res) => {
   try {
-    const result = await pool.query("SELECT id, username, role, created_at FROM admins ORDER BY created_at DESC");
+    const result = await pool.query("SELECT id,name, username, role, created_at FROM admins ORDER BY created_at DESC");
     res.json(result.rows);
   } catch (err) {
     console.error("❌ Error fetching admins:", err);

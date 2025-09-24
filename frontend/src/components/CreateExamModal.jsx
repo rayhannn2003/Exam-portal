@@ -73,11 +73,11 @@ const CreateExamModal = ({ isOpen, onClose, onSuccess }) => {
               style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
             >
               <option value="">শ্রেণী নির্বাচন করুন</option>
-              <option value="SIX">৬ষ্ঠ শ্রেণী</option>
-              <option value="SEVEN">৭ম শ্রেণী</option>
-              <option value="EIGHT">৮ম শ্রেণী</option>
-              <option value="NINE">৯ম শ্রেণী</option>
-              <option value="TEN">১০ম শ্রেণী</option>
+              <option value="6">৬ষ্ঠ শ্রেণী</option>
+              <option value="7">৭ম শ্রেণী</option>
+              <option value="8">৮ম শ্রেণী</option>
+              <option value="9">৯ম শ্রেণী</option>
+              <option value="10">১০ম শ্রেণী</option>
             </select>
           </div>
 

@@ -2,11 +2,12 @@ const pool = require("../models/db");
 const generateRoll = require("../utils/rollNumberGenerator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const moment = require("moment-timezone");
 
 // Register a student
 exports.registerStudent = async (req, res) => {
   try {
-    const { name, father_name, mother_name, school, email_id, student_class,class_roll, gender, phone, entry_fee } = req.body;
+    const { name, father_name, mother_name, school, email_id, student_class,class_roll, gender, phone, entry_fee ,registered_by} = req.body;
     if (!name || !school || !student_class || !phone || !entry_fee) {
       return res.status(400).json({ error: "All required fields are needed" });
     }
@@ -15,11 +16,12 @@ exports.registerStudent = async (req, res) => {
     //generate a random 6 digit password and hash it
     const rawPassword = Math.random().toString(36).slice(-6);
     const passwordHash = await bcrypt.hash(rawPassword, 10);
+     const payment_status = entry_fee > 0 ? true : false;
 
     const result = await pool.query(
-      `INSERT INTO students (name, father_name, mother_name, school, class, class_roll, email_id, gender, phone, roll_number, payment_status, entry_fee, password)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, false, $11, $12) RETURNING id, name, father_name, mother_name, school, class, email_id, gender, phone, roll_number, payment_status, entry_fee, created_at `,
-      [name, father_name, mother_name, school, student_class, class_roll, email_id, gender, phone, roll_number, entry_fee, passwordHash]
+      `INSERT INTO students (name, father_name, mother_name, school, class, class_roll, email_id, gender, phone, roll_number, payment_status, entry_fee, password, registered_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, name, father_name, mother_name, school, class, email_id, gender, phone, roll_number, payment_status, entry_fee, created_at `,
+      [name, father_name, mother_name, school, student_class, class_roll, email_id, gender, phone, roll_number, payment_status, entry_fee, passwordHash, registered_by]
     );
 
     res.status(201).json({ message: "Student registered", student: result.rows[0], temp_password: rawPassword });
@@ -162,21 +164,27 @@ exports.getStudentsBySchoolAndClass = async (req, res) => {
   }
 };
 
-//registration count over time (day wise) 
+
 exports.getRegistrationCountOverTime = async (req, res) => {
   try {
+    const result = await pool.query(`
+      SELECT DATE(created_at) AS registration_date, COUNT(*) AS registration_count
+      FROM students
+      GROUP BY registration_date
+      ORDER BY registration_date
+    `);
 
-   const result = await pool.query(`SELECT 
-    DATE(created_at) AS registration_date,
-    COUNT(*) AS registration_count
-FROM students
-GROUP BY DATE(created_at)
-ORDER BY registration_date;
-`);
- 
-    res.json(result.rows);
+    // Convert UTC → Dhaka
+    const formatted = result.rows.map(r => ({
+      registration_date: moment(r.registration_date)
+        .tz("Asia/Dhaka")
+        .format("YYYY-MM-DD"),
+      registration_count: r.registration_count
+    }));
+
+    res.json(formatted);
   } catch (err) {
-    console.error("❌ Error fetching registration count over time:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error fetching registrations over time:", err.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
