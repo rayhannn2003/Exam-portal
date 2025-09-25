@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test PDF Download</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Bengali PDF Download Test</h1>
+        <p>This page tests the PDF download functionality for the Bengali question paper with proper font support and compact two-page layout.</p>
+        
+        <button class="btn" onclick="testDownload()">Test Download PDF</button>
+        
+        <div class="status" id="status">
+            Click the button to test the PDF download functionality.
+        </div>
+    </div>
+
+    <script>
+        async function testDownload() {
+            const status = document.getElementById('status');
+            status.innerHTML = 'Testing PDF download...';
+            
+            try {
+                const examData = {
+                    exam: {
+                        title: "মেধাবৃত্তী পরীক্ষা -২০২৫",
+                        organization: "উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন",
+                        class_name: "নবম শ্রেণী",
+                        year: 2025,
+                        question_count: 60
+                    },
+                    exam_set: {
+                        set_name: "সেট - A",
+                        questions: [
+                            {
+                                qno: 1,
+                                question: "বাংলাদেশের রাজধানীর নাম কি?",
+                                question_type: "mcq",
+                                marks: 1,
+                                options: {
+                                    "A": "ঢাকা",
+                                    "B": "কুমিল্লা",
+                                    "C": "রংপুর",
+                                    "D": "রাজশাহী"
+                                }
+                            }
+                        ],
+                        answer_key: {},
+                        total_marks: 60,
+                        duration_minutes: 60
+                    },
+                    template_type: "bengali"
+                };
+                
+                // Call the PDF service
+                const response = await fetch('http://localhost:8000/generate-question-paper', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(examData)
+                });
+
+                if (!response.ok) {
+                    throw new Error('PDF generation failed');
+                }
+
+                const result = await response.json();
+                
+                if (result.success && result.pdf_data) {
+                    // Decode base64 PDF content
+                    const pdfData = result.pdf_data;
+                    const binaryString = atob(pdfData);
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    
+                    // Create PDF blob and download
+                    const blob = new Blob([bytes], { type: 'application/pdf' });
+                    const url = window.URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Bengali_Exam_Set_A_${new Date().toISOString().split('T')[0]}.pdf`;
+                    
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    window.URL.revokeObjectURL(url);
+                    
+                    status.innerHTML = '✅ PDF file downloaded successfully!';
+                    status.style.background = '#d4edda';
+                    status.style.color = '#155724';
+                } else {
+                    throw new Error('Invalid response from PDF service');
+                }
+            } catch (err) {
+                console.error('Download error:', err);
+                status.innerHTML = '❌ Error: ' + err.message;
+                status.style.background = '#f8d7da';
+                status.style.color = '#721c24';
+            }
+        }
+    </script>
+</body>
+</html>

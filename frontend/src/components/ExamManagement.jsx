@@ -5,6 +5,7 @@ import CreateExamModal from './CreateExamModal';
 import EditExamModal from './EditExamModal';
 import SetManagementModal from './SetManagementModal';
 import QuestionPreviewModal from './QuestionPreviewModal';
+import MockPDFGenerator from './MockPDFGenerator';
 
 const ExamManagement = () => {
   const [exams, setExams] = useState([]);
@@ -17,6 +18,8 @@ const ExamManagement = () => {
   const [editingSet, setEditingSet] = useState(null);
   const [showQuestionPreview, setShowQuestionPreview] = useState(false);
   const [previewSet, setPreviewSet] = useState(null);
+  const [showPDFGenerator, setShowPDFGenerator] = useState(false);
+  const [selectedSetForPDF, setSelectedSetForPDF] = useState(null);
   const { success, error } = useToast();
 
   useEffect(() => {
@@ -104,6 +107,11 @@ const ExamManagement = () => {
   const handlePreviewSet = (set) => {
     setPreviewSet(set);
     setShowQuestionPreview(true);
+  };
+
+  const handleGeneratePDF = (set) => {
+    setSelectedSetForPDF(set);
+    setShowPDFGenerator(true);
   };
 
   const handleModalSuccess = () => {
@@ -260,6 +268,15 @@ const ExamManagement = () => {
                         </h4>
                         <div className="flex space-x-1 sm:space-x-2 ml-2">
                           <button
+                            onClick={() => handleGeneratePDF(set)}
+                            className="text-purple-600 hover:text-purple-800 p-1"
+                            title="Generate Mock PDF"
+                          >
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </button>
+                          <button
                             onClick={() => handlePreviewSet(set)}
                             className="text-green-600 hover:text-green-800 p-1"
                             title="Preview Questions"
@@ -350,6 +367,17 @@ const ExamManagement = () => {
           setPreviewSet(null);
         }}
         examSet={previewSet}
+      />
+
+      <MockPDFGenerator
+        examId={selectedExam?.id}
+        setId={selectedSetForPDF?.id}
+        examTitle={selectedExam?.title}
+        setName={selectedSetForPDF?.set_name}
+        onClose={() => {
+          setShowPDFGenerator(false);
+          setSelectedSetForPDF(null);
+        }}
       />
     </div>
   );

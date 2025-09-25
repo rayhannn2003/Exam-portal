@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock PDF Generator Test</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap');
+        
+        @media print {
+            body {
+                font-family: 'Noto Sans Bengali', 'Times New Roman', serif;
+                font-size: 12pt;
+                line-height: 1.4;
+                color: #000;
+                background: white;
+                margin: 0;
+                padding: 20px;
+            }
+            
+            .question {
+                page-break-inside: avoid;
+                margin-bottom: 15px;
+                padding: 8px;
+                border: 1px solid #ddd;
+            }
+            
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+                border-bottom: 2px solid #000;
+                padding-bottom: 20px;
+            }
+            
+            .instructions {
+                background: #f9f9f9;
+                border: 1px solid #ccc;
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .options {
+                margin: 8px 0;
+                padding-left: 20px;
+            }
+            
+            .option {
+                margin: 4px 0;
+                padding: 2px;
+            }
+            
+            .answer-space {
+                border-bottom: 1px solid #000;
+                min-width: 80px;
+                display: inline-block;
+                margin: 0 5px;
+            }
+        }
+        
+        @page {
+            size: A4;
+            margin: 1in;
+        }
+        
+        body {
+            font-family: 'Noto Sans Bengali', Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 20px;
+        }
+        
+        .exam-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+            color: #2c3e50;
+        }
+        
+        .exam-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            font-size: 14px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .instructions {
+            background: #e8f4f8;
+            border: 2px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        
+        .question {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            background: #f8f9fa;
+            border-radius: 0 5px 5px 0;
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .question-number {
+            font-weight: bold;
+            font-size: 16px;
+            color: #2c3e50;
+            background: #3498db;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 3px;
+        }
+        
+        .question-marks {
+            background: #27ae60;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .question-text {
+            margin: 10px 0;
+            font-size: 15px;
+        }
+        
+        .options {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+        
+        .option {
+            margin: 6px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .option-key {
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 20px;
+            color: #3498db;
+        }
+        
+        .answer-spaces {
+            margin: 15px 0;
+            padding: 10px;
+            background: #e8f5e8;
+            border: 1px solid #27ae60;
+            border-radius: 3px;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        
+        .questions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .questions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .test-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-info">
+        <h3>🧪 বাংলা প্রশ্নপত্র জেনারেটর টেস্ট</h3>
+        <p>এটি একটি টেস্ট পেজ যা দেখায় যে মক PDF জেনারেটর কী উৎপাদন করবে। এতে ৬০টি বহুনির্বাচনি প্রশ্ন রয়েছে যার প্রতিটিতে ৪টি বিকল্প।</p>
+        <p><strong>বিশেষ বৈশিষ্ট্য:</strong></p>
+        <ul>
+            <li>৬০টি বাংলা বহুনির্বাচনি প্রশ্ন</li>
+            <li>প্রতিটি প্রশ্নে ৪টি বিকল্প (ক, খ, গ, ঘ)</li>
+            <li>পেশাদার লেআউট ও নির্দেশনা</li>
+            <li>প্রিন্ট-রেডি CSS স্টাইলিং</li>
+            <li>ছাত্রদের জন্য উত্তর দেওয়ার জায়গা</li>
+            <li>বাংলা ফন্ট সমর্থন</li>
+        </ul>
+    </div>
+
+    <div class="header">
+        <h1 class="exam-title">মেধাবৃত্তী পরীক্ষা -২০২৫</h1>
+        <div class="exam-info">
+            <div>
+                <p><strong>সংগঠন:</strong> উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন</p>
+                <p><strong>সেট:</strong> সেট - A</p>
+            </div>
+            <div>
+                <p><strong>প্রশ্নসংখ্যা:</strong> ৬০</p>
+                <p><strong>পূর্ণমান:</strong> ৬০</p>
+                <p><strong>সময়:</strong> ১ ঘণ্টা</p>
+                <p><strong>তারিখ:</strong> <span id="current-date"></span></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>সাধারণ নির্দেশনা</h3>
+        <ol>
+            <li>সকল প্রশ্নের উত্তর দিতে হবে</li>
+            <li>প্রতিটি প্রশ্নের মান ১ নম্বর</li>
+            <li>সঠিক উত্তরটি বেছে নিন</li>
+            <li>শুধুমাত্র নীল বা কালো কালি ব্যবহার করুন</li>
+            <li>উত্তরের জায়গায় অন্য কিছু লিখবেন না</li>
+            <li>সময়ের সদ্ব্যবহার করুন - আপনার সময় ১ ঘণ্টা</li>
+            <li>জমা দেওয়ার আগে উত্তরগুলি পরীক্ষা করুন</li>
+        </ol>
+    </div>
+    
+    <div class="questions-grid" id="questions-container">
+        <!-- Questions will be generated here by JavaScript -->
+    </div>
+    
+    <div class="footer">
+        <p><strong>Best of luck!</strong></p>
+        <p>Generated on: <span id="current-time"></span></p>
+        <p><em>This is a sample question paper with mock data for testing purposes.</em></p>
+    </div>
+
+    <script>
+        // Set current date and time
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString();
+        document.getElementById('current-time').textContent = new Date().toLocaleString();
+
+        // Generate 60 Bengali MCQ questions
+        const bengaliQuestions = [
+            { qno: 1, question: "বাংলাদেশের রাজধানীর নাম কি?", options: { "A": "ঢাকা", "B": "কুমিল্লা", "C": "রংপুর", "D": "রাজশাহী" } },
+            { qno: 2, question: "বাংলাদেশের জাতীয় ফুল কোনটি?", options: { "A": "গোলাপ", "B": "শাপলা", "C": "জবা", "D": "বেলি" } },
+            { qno: 3, question: "রবীন্দ্রনাথ ঠাকুর কোন সালে নোবেল পুরস্কার পেয়েছিলেন?", options: { "A": "১৯১২", "B": "১৯১৩", "C": "১৯১৪", "D": "১৯১৫" } },
+            { qno: 4, question: "বাংলাদেশের মুক্তিযুদ্ধ কত সালে হয়েছিল?", options: { "A": "১৯৭০", "B": "১৯৭১", "C": "১৯৭২", "D": "১৯৭৩" } },
+            { qno: 5, question: "বাংলাদেশের সবচেয়ে বড় নদী কোনটি?", options: { "A": "পদ্মা", "B": "মেঘনা", "C": "যমুনা", "D": "কর্ণফুলী" } }
+        ];
+
+        const questionsContainer = document.getElementById('questions-container');
+
+        for (let i = 1; i <= 60; i++) {
+            const questionData = bengaliQuestions[(i - 1) % bengaliQuestions.length];
+            
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'question';
+            
+            questionDiv.innerHTML = `
+                <div class="question-text">
+                    ${i}. ${questionData.question}
+                </div>
+                
+                <div class="options">
+                    <div class="option">
+                        <span class="option-key">(ক)</span>
+                        <span class="option-text">${questionData.options.A}</span>
+                    </div>
+                    <div class="option">
+                        <span class="option-key">(খ)</span>
+                        <span class="option-text">${questionData.options.B}</span>
+                    </div>
+                    <div class="option">
+                        <span class="option-key">(গ)</span>
+                        <span class="option-text">${questionData.options.C}</span>
+                    </div>
+                    <div class="option">
+                        <span class="option-key">(ঘ)</span>
+                        <span class="option-text">${questionData.options.D}</span>
+                    </div>
+                </div>
+                
+                <div class="answer-spaces">
+                    <strong>উত্তর:</strong> 
+                    <span class="answer-space"></span>
+                </div>
+            `;
+            
+            questionsContainer.appendChild(questionDiv);
+        }
+
+        // Add print functionality
+        function printPDF() {
+            window.print();
+        }
+
+        // Add print button
+        const printButton = document.createElement('button');
+        printButton.textContent = '🖨️ Print to PDF';
+        printButton.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1000;
+        `;
+        printButton.onclick = printPDF;
+        document.body.appendChild(printButton);
+    </script>
+</body>
+</html>

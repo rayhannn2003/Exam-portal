@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { addExamSet, editExamSet, deleteExamSet } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
+import MockPDFGenerator from './MockPDFGenerator';
 
 const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = null }) => {
   const [formData, setFormData] = useState({
@@ -17,6 +18,8 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showJsonPreview, setShowJsonPreview] = useState(false);
+  const [showPDFGenerator, setShowPDFGenerator] = useState(false);
+  const [selectedSetForPDF, setSelectedSetForPDF] = useState(null);
   const { success, error: showError } = useToast();
 
   useEffect(() => {
@@ -149,6 +152,11 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
     });
   };
 
+  const handleGeneratePDF = (set) => {
+    setSelectedSetForPDF(set);
+    setShowPDFGenerator(true);
+  };
+
   const updateAnswerKey = (questionNo, answer) => {
     setFormData({
       ...formData,
@@ -227,6 +235,15 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
                           {set.set_name}
                         </h4>
                         <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleGeneratePDF(set)}
+                            className="text-green-600 hover:text-green-800 text-sm"
+                            title="Generate Mock PDF"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </button>
                           <button
                             onClick={() => {
                               setEditingSet(set);
@@ -417,6 +434,20 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
           </div>
         )}
       </div>
+      
+      {/* Mock PDF Generator Modal */}
+      {showPDFGenerator && selectedSetForPDF && (
+        <MockPDFGenerator
+          examId={exam.id}
+          setId={selectedSetForPDF.id}
+          examTitle={exam.title}
+          setName={selectedSetForPDF.set_name}
+          onClose={() => {
+            setShowPDFGenerator(false);
+            setSelectedSetForPDF(null);
+          }}
+        />
+      )}
     </div>
   );
 };

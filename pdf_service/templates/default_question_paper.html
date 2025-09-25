@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ exam.title }} - {{ exam_set.set_name }}</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', serif;
+            font-size: {{ customization.font_size }};
+            line-height: 1.4;
+            color: #333;
+            background: white;
+        }
+        
+        /* Page setup */
+        @page {
+            size: {{ customization.paper_size }};
+            margin: {% if customization.margin_type == 'narrow' %}0.5in{% elif customization.margin_type == 'wide' %}1.5in{% else %}1in{% endif %};
+            {% if customization.watermark %}
+            @top-center {
+                content: "{{ customization.watermark }}";
+                font-size: 0.8em;
+                color: rgba(0,0,0,0.1);
+                transform: rotate(-45deg);
+            }
+            {% endif %}
+        }
+        
+        /* Header styles */
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            {{ page_break }}
+        }
+        
+        .organization-logo {
+            max-width: 100px;
+            max-height: 80px;
+            margin-bottom: 10px;
+        }
+        
+        .exam-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin: 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .exam-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        
+        .exam-info div {
+            margin: 5px 0;
+        }
+        
+        .instructions-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .instructions-box h3 {
+            margin-bottom: 10px;
+            color: #495057;
+            font-size: 1.1em;
+        }
+        
+        .instructions-list {
+            list-style-type: decimal;
+            margin-left: 20px;
+        }
+        
+        .instructions-list li {
+            margin: 5px 0;
+        }
+        
+        /* Question styles */
+        .question {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background-color: #f8f9fa;
+        }
+        
+        .question-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .question-number {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #007bff;
+        }
+        
+        .question-marks {
+            background-color: #007bff;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        
+        .question-text {
+            margin: 15px 0;
+            font-size: 1em;
+            line-height: 1.5;
+        }
+        
+        /* MCQ Options */
+        .options {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        
+        .option {
+            margin: 8px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .option-key {
+            font-weight: bold;
+            margin-right: 10px;
+            min-width: 20px;
+            color: #495057;
+        }
+        
+        .option-text {
+            flex: 1;
+        }
+        
+        /* Answer spaces */
+        .answer-space {
+            border-bottom: 1px solid #333;
+            min-width: 100px;
+            display: inline-block;
+            margin: 0 5px;
+            padding-bottom: 2px;
+        }
+        
+        .answer-spaces {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+        }
+        
+        /* Section breaks */
+        .section-break {
+            {{ section_break }}
+            border-top: 2px solid #dee2e6;
+            padding-top: 20px;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            border-top: 1px solid #dee2e6;
+            padding-top: 10px;
+        }
+        
+        .page-number {
+            float: right;
+        }
+        
+        /* Print styles */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            
+            .question {
+                break-inside: avoid;
+            }
+            
+            .header {
+                break-after: avoid;
+            }
+        }
+        
+        /* Custom CSS */
+        {% if customization.custom_css %}
+        {{ customization.custom_css }}
+        {% endif %}
+        
+        /* Utility classes */
+        .clear-both {
+            {{ clear_both }}
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-right {
+            text-align: right;
+        }
+        
+        .bold {
+            font-weight: bold;
+        }
+        
+        .italic {
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <div class="header">
+        {% if customization.header_options.show_logo and customization.header_options.logo_url %}
+        <img src="{{ customization.header_options.logo_url }}" alt="Logo" class="organization-logo">
+        {% endif %}
+        
+        {% if customization.header_options.organization_name %}
+        <div class="organization-name bold">{{ customization.header_options.organization_name }}</div>
+        {% endif %}
+        
+        {% if customization.header_options.show_title %}
+        <div class="exam-title">{{ exam.title }}</div>
+        {% endif %}
+        
+        <div class="exam-info">
+            <div>
+                {% if customization.header_options.show_class %}
+                <div><strong>Class:</strong> {{ exam.class_name }}</div>
+                {% endif %}
+                {% if customization.header_options.show_date %}
+                <div><strong>Date:</strong> {{ generation_time | format_date }}</div>
+                {% endif %}
+            </div>
+            <div>
+                {% if customization.header_options.show_duration and exam_set.duration_minutes %}
+                <div><strong>Duration:</strong> {{ exam_set.duration_minutes | format_duration }}</div>
+                {% endif %}
+                {% if customization.header_options.show_marks %}
+                <div><strong>Total Marks:</strong> {{ exam_set.total_marks }}</div>
+                {% endif %}
+                <div><strong>Set:</strong> {{ exam_set.set_name }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Instructions Section -->
+    {% if customization.header_options.show_instructions %}
+    <div class="instructions-box">
+        <h3>General Instructions:</h3>
+        <ol class="instructions-list">
+            <li>Read all questions carefully before answering.</li>
+            <li>All questions are compulsory.</li>
+            <li>Write your answers clearly and legibly.</li>
+            <li>For multiple choice questions, choose the best answer and fill the corresponding bubble.</li>
+            <li>Use only blue or black ink pen.</li>
+            <li>Do not write anything outside the answer spaces provided.</li>
+            {% if exam_set.instructions %}
+            <li>{{ exam_set.instructions }}</li>
+            {% endif %}
+        </ol>
+    </div>
+    {% endif %}
+    
+    <!-- Questions Section -->
+    <div class="questions-section">
+        <h2 class="section-title">Questions</h2>
+        
+        {% for question in exam_set.questions %}
+        <div class="question">
+            <div class="question-header">
+                <span class="question-number">Q{{ question.qno }}.</span>
+                <span class="question-marks">{{ question.marks | format_marks }}</span>
+            </div>
+            
+            <div class="question-text">
+                {{ question.question }}
+            </div>
+            
+            {% if question.question_type == 'mcq' and question.options %}
+            <div class="options">
+                {% for key, text in question.options.items() %}
+                <div class="option">
+                    <span class="option-key">{{ key }}.</span>
+                    <span class="option-text">{{ text }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% if customization.show_answer_spaces %}
+            <div class="answer-spaces">
+                <strong>Answer:</strong> 
+                {% if question.question_type == 'mcq' %}
+                <span class="answer-space"></span>
+                {% else %}
+                <div style="margin-top: 10px; min-height: 50px; border: 1px dashed #ccc; padding: 10px;">
+                    <!-- Answer space for written questions -->
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Footer Section -->
+    <div class="footer">
+        {% if customization.footer_options.show_instructions %}
+        <div class="footer-instructions">
+            <strong>Note:</strong> Check your answers before submitting. No extra time will be given for copying answers.
+        </div>
+        {% endif %}
+        
+        {% if customization.footer_options.custom_text %}
+        <div class="custom-footer-text">
+            {{ customization.footer_options.custom_text }}
+        </div>
+        {% endif %}
+        
+        {% if customization.footer_options.show_page_numbers %}
+        <div class="page-number">
+            Page <span class="page-number-text"></span>
+        </div>
+        {% endif %}
+        
+        <div class="clear-both"></div>
+    </div>
+    
+    <script>
+        // Add page numbers (for browsers that support it)
+        document.addEventListener('DOMContentLoaded', function() {
+            const pageNumbers = document.querySelectorAll('.page-number-text');
+            pageNumbers.forEach((element, index) => {
+                element.textContent = index + 1;
+            });
+        });
+    </script>
+</body>
+</html>
