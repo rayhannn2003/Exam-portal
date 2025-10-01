@@ -140,6 +140,35 @@ export const deleteExamSet = async (examId, setId) => {
   }
 };
 
+// ----- PDF APIs -----
+export const previewExamSetPDF = async (examId, setId, { templateType = 'compact_bengali', customization = {} } = {}) => {
+  try {
+    // Backend preview endpoint returns HTML (text)
+    const res = await api.get(`/pdf/preview/${examId}/${setId}`, {
+      params: { templateType, ...customization },
+      responseType: 'text'
+    });
+    return res.data; // HTML string
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to preview PDF' };
+  }
+};
+
+export const downloadExamSetPDF = async (examId, setId, { templateType = 'compact_bengali', customization = {} } = {}) => {
+  try {
+    // Backend generate endpoint returns PDF bytes
+    const res = await api.post(`/pdf/generate/${examId}/${setId}`, {
+      templateType,
+      customization
+    }, {
+      responseType: 'blob'
+    });
+    return res.data; // Blob
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to download PDF' };
+  }
+};
+
 // ----- Student APIs -----
 export const getRegistrationCountOverTime = async () => {
   try {

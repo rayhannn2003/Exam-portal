@@ -18,8 +18,10 @@ from models.question_models import (
     ExamSet,
     Exam
 )
-from services.reportlab_pdf_generator import ReportLabPDFGenerator
 from services.template_engine import TemplateEngine
+from services.pdf_generator import PDFGenerator
+import urllib.request
+import os
 
 # Configure logging
 logging.basicConfig(
@@ -46,8 +48,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize services
-pdf_generator = ReportLabPDFGenerator()
+# Function to download SolaimanLipi font
+def download_solaiman_font():
+    """Download SolaimanLipi font if not available locally"""
+    try:
+        font_path = "/tmp/SolaimanLipi.ttf"
+        if not os.path.exists(font_path):
+            logger.info("Downloading SolaimanLipi font...")
+            font_url = "https://github.com/ekushey/SolaimanLipi/raw/master/SolaimanLipi.ttf"
+            urllib.request.urlretrieve(font_url, font_path)
+            logger.info("SolaimanLipi font downloaded successfully")
+        return font_path
+    except Exception as e:
+        logger.warning(f"Could not download SolaimanLipi font: {e}")
+        return None
+
+# Download font on startup
+download_solaiman_font()
+
+# Initialize services (use WeasyPrint-based generator so templates are applied)
+pdf_generator = PDFGenerator()
 template_engine = TemplateEngine()
 
 @app.get("/")
@@ -88,8 +108,8 @@ async def generate_question_paper(request: QuestionPaperRequest):
         if not request.exam or not request.exam_set:
             raise HTTPException(status_code=400, detail="Exam and exam set data are required")
         
-        # Generate PDF
-        pdf_data = await pdf_generator.generate_question_paper(
+        # Generate PDF (bytes) using WeasyPrint-based generator
+        pdf_bytes = await pdf_generator.generate_question_paper(
             exam=request.exam,
             exam_set=request.exam_set,
             template_type=request.template_type,
@@ -97,10 +117,14 @@ async def generate_question_paper(request: QuestionPaperRequest):
         )
         
         # Create response
+        # Base64 encode for JSON response compatibility
+        import base64
+        pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+
         response = QuestionPaperResponse(
             success=True,
             message="Question paper generated successfully",
-            pdf_data=pdf_data,
+            pdf_data=pdf_b64,
             exam_title=request.exam.title,
             set_name=request.exam_set.set_name,
             total_questions=len(request.exam_set.questions),
@@ -129,24 +153,24 @@ async def download_question_paper(request: QuestionPaperRequest):
     try:
         logger.info(f"Generating and downloading question paper for exam: {request.exam.title}")
         
-        # Generate PDF
-        pdf_data = await pdf_generator.generate_question_paper(
+        # Generate PDF (bytes)
+        pdf_bytes = await pdf_generator.generate_question_paper(
             exam=request.exam,
             exam_set=request.exam_set,
             template_type=request.template_type,
             customization=request.customization
         )
         
-        # Create filename
-        filename = f"{request.exam.title}_{request.exam_set.set_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        filename = "".join(c for c in filename if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        # Create safe ASCII filename (no Bengali characters for HTTP header)
+        safe_filename = f"Bengali_Exam_{request.exam_set.set_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        safe_filename = "".join(c for c in safe_filename if c.isascii() and (c.isalnum() or c in (' ', '-', '_'))).rstrip()
         
         # Return PDF as download
         return Response(
-            content=pdf_data,
+            content=pdf_bytes,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": f"attachment; filename={filename}",
+                "Content-Disposition": f"attachment; filename={safe_filename}",
                 "Content-Type": "application/pdf"
             }
         )
@@ -219,9 +243,10 @@ async def get_customization_options():
         "success": True,
         "customization_options": {
             "paper_sizes": ["A4", "A3", "Legal", "Letter"],
-            "font_sizes": ["10pt", "11pt", "12pt", "14pt", "16pt"],
+            "font_sizes": ["9pt", "10pt", "11pt", "12pt", "14pt", "16pt"],
             "margins": ["narrow", "normal", "wide"],
             "orientation": ["portrait", "landscape"],
+            "templates": ["default", "bengali", "compact_bengali"],
             "header_options": {
                 "show_logo": True,
                 "show_title": True,
@@ -235,6 +260,84 @@ async def get_customization_options():
             }
         }
     }
+
+@app.get("/templates/compact_bengali/preview")
+async def preview_compact_bengali_template():
+    """Preview the compact Bengali template with sample data"""
+    try:
+        from models.question_models import Exam, ExamSet, Question, PaperCustomization, HeaderOptions, FooterOptions
+        
+        # Create sample exam data
+        exam = Exam(
+            title="মেধাবৃত্তী পরীক্ষা - ২০২৫",
+            class_name="সেট - A",
+            year=2025,
+            question_count=10
+        )
+        
+        # Create sample questions
+        questions = []
+        for i in range(1, 11):
+            question = Question(
+                qno=i,
+                question=f"নমুনা প্রশ্ন {i}: এটি একটি পরীক্ষার প্রশ্ন।",
+                question_type="mcq",
+                marks=1,
+                options={
+                    "A": f"উত্তর A - {i}",
+                    "B": f"উত্তর B - {i}",
+                    "C": f"উত্তর C - {i}",
+                    "D": f"উত্তর D - {i}"
+                }
+            )
+            questions.append(question)
+        
+        exam_set = ExamSet(
+            set_name="সেট - A",
+            questions=questions,
+            answer_key={str(i): chr(65 + (i % 4)) for i in range(1, 11)},
+            total_marks=10,
+            duration_minutes=30,
+            instructions="সকল প্রশ্নের উত্তর দিতে হবে।"
+        )
+        
+        customization = PaperCustomization(
+            paper_size="A4",
+            orientation="portrait",
+            font_size="9pt",
+            margin_type="narrow",
+            show_answer_spaces=True,
+            header_options=HeaderOptions(
+                show_title=True,
+                show_class=True,
+                show_date=True,
+                show_duration=True,
+                show_marks=True,
+                show_instructions=True,
+                organization_name="শিক্ষা বোর্ড"
+            ),
+            footer_options=FooterOptions(
+                show_page_numbers=True,
+                show_instructions=True
+            )
+        )
+        
+        # Generate HTML preview
+        html_content = await template_engine.render_question_paper_template(
+            exam=exam,
+            exam_set=exam_set,
+            template_type="compact_bengali",
+            customization=customization
+        )
+        
+        return Response(
+            content=html_content,
+            media_type="text/html"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error generating preview: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate preview: {str(e)}")
 
 if __name__ == "__main__":
     port = int(os.getenv("PDF_SERVICE_PORT", 8000))

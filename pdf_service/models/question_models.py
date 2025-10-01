@@ -39,6 +39,7 @@ class MarginType(str, Enum):
 
 class FontSize(str, Enum):
     """Font size options"""
+    XSMALL = "9pt"
     SMALL = "10pt"
     MEDIUM = "11pt"
     LARGE = "12pt"

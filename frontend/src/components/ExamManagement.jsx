@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getAllExams, getExamWithSets, deleteExam, addExamSet, editExamSet, deleteExamSet } from '../assets/services/api';
+import { getAllExams, getExamWithSets, deleteExam, addExamSet, editExamSet, deleteExamSet, previewExamSetPDF, downloadExamSetPDF } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
 import CreateExamModal from './CreateExamModal';
 import EditExamModal from './EditExamModal';
@@ -20,6 +20,7 @@ const ExamManagement = () => {
   const [previewSet, setPreviewSet] = useState(null);
   const [showPDFGenerator, setShowPDFGenerator] = useState(false);
   const [selectedSetForPDF, setSelectedSetForPDF] = useState(null);
+  const [openMenuSetId, setOpenMenuSetId] = useState(null);
   const { success, error } = useToast();
 
   useEffect(() => {
@@ -112,6 +113,41 @@ const ExamManagement = () => {
   const handleGeneratePDF = (set) => {
     setSelectedSetForPDF(set);
     setShowPDFGenerator(true);
+  };
+
+  const handlePreviewPDF = async (set) => {
+    if (!selectedExam) return;
+    try {
+      const html = await previewExamSetPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
+      const previewWindow = window.open('', '_blank');
+      previewWindow.document.open();
+      previewWindow.document.write(html);
+      previewWindow.document.close();
+    } catch (err) {
+      error(err.message || 'Failed to preview PDF');
+    }
+  };
+
+  const handleDownloadPDF = async (set) => {
+    if (!selectedExam) return;
+    try {
+      const blob = await downloadExamSetPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedExam.title}_Set_${set.set_name}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      success('PDF downloaded');
+    } catch (err) {
+      error(err.message || 'Failed to download PDF');
+    }
+  };
+
+  const toggleSetMenu = (setId) => {
+    setOpenMenuSetId(prev => (prev === setId ? null : setId));
   };
 
   const handleModalSuccess = () => {
@@ -266,16 +302,7 @@ const ExamManagement = () => {
                         <h4 className="text-base sm:text-lg font-semibold text-gray-800 flex-1 min-w-0" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                           সেট {set.set_name}
                         </h4>
-                        <div className="flex space-x-1 sm:space-x-2 ml-2">
-                          <button
-                            onClick={() => handleGeneratePDF(set)}
-                            className="text-purple-600 hover:text-purple-800 p-1"
-                            title="Generate Mock PDF"
-                          >
-                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          </button>
+                        <div className="flex items-center space-x-1 sm:space-x-2 ml-2 relative">
                           <button
                             onClick={() => handlePreviewSet(set)}
                             className="text-green-600 hover:text-green-800 p-1"
@@ -304,6 +331,38 @@ const ExamManagement = () => {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
+                          <button
+                            onClick={() => toggleSetMenu(set.id)}
+                            className="text-gray-600 hover:text-gray-800 p-1"
+                            title="More"
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0zm6 0a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                          </button>
+                          {openMenuSetId === set.id && (
+                            <div className="absolute right-0 top-6 z-10 bg-white border border-gray-200 rounded-md shadow-lg w-44">
+                              <button
+                                onClick={() => { setOpenMenuSetId(null); handlePreviewPDF(set); }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                              >
+                                Preview PDF
+                              </button>
+                              <button
+                                onClick={() => { setOpenMenuSetId(null); handleDownloadPDF(set); }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                              >
+                                Download PDF
+                              </button>
+                              <div className="border-t border-gray-200" />
+                              <button
+                                onClick={() => { setOpenMenuSetId(null); handleGeneratePDF(set); }}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                              >
+                                Open PDF Builder
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                       <p className="text-gray-600 text-xs sm:text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
@@ -369,16 +428,18 @@ const ExamManagement = () => {
         examSet={previewSet}
       />
 
-      <MockPDFGenerator
-        examId={selectedExam?.id}
-        setId={selectedSetForPDF?.id}
-        examTitle={selectedExam?.title}
-        setName={selectedSetForPDF?.set_name}
-        onClose={() => {
-          setShowPDFGenerator(false);
-          setSelectedSetForPDF(null);
-        }}
-      />
+      {showPDFGenerator && (
+        <MockPDFGenerator
+          examId={selectedExam?.id}
+          setId={selectedSetForPDF?.id}
+          examTitle={selectedExam?.title}
+          setName={selectedSetForPDF?.set_name}
+          onClose={() => {
+            setShowPDFGenerator(false);
+            setSelectedSetForPDF(null);
+          }}
+        />
+      )}
     </div>
   );
 };

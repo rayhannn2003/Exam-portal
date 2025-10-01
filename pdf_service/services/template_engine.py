@@ -29,6 +29,7 @@ class TemplateEngine:
         self.jinja_env.filters['format_marks'] = self._format_marks
         self.jinja_env.filters['format_duration'] = self._format_duration
         self.jinja_env.filters['format_date'] = self._format_date
+        self.jinja_env.filters['bengali_number'] = self._bengali_number
         
         logger.info(f"Template engine initialized with template directory: {template_dir}")
     
@@ -56,8 +57,14 @@ class TemplateEngine:
             if customization is None:
                 customization = PaperCustomization()
             
-            # Load template
-            template_name = f"{template_type}_question_paper.html"
+            # Load template - use Bengali template by default
+            if template_type == "bengali" or template_type == "default":
+                template_name = "bengali_question_paper.html"
+            elif template_type == "compact_bengali":
+                template_name = "compact_bengali_question_paper.html"
+            else:
+                template_name = f"{template_type}_question_paper.html"
+            
             template = self.jinja_env.get_template(template_name)
             
             # Prepare template context
@@ -140,6 +147,11 @@ class TemplateEngine:
     def _format_date(self, date_obj: datetime) -> str:
         """Format date for display"""
         return date_obj.strftime("%d %B %Y")
+    
+    def _bengali_number(self, number: int) -> str:
+        """Convert number to Bengali digits"""
+        bengali_digits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯']
+        return ''.join(bengali_digits[int(digit)] for digit in str(number))
 
 
 class TemplateValidator:

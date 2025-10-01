@@ -21,23 +21,84 @@ class ReportLabPDFGenerator:
     """PDF generator using ReportLab for creating actual PDF files"""
     
     def __init__(self):
-        # Register Bengali font
+        # Register Bengali fonts
+        self.bengali_font = "Helvetica"  # Default fallback
+        
         try:
-            # Download and register Noto Sans Bengali font
-            font_url = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSansBengali/NotoSansBengali-Regular.ttf"
-            font_path = "/tmp/NotoSansBengali-Regular.ttf"
+            # Try to register Noto Sans Bengali font first (more reliable)
+            noto_font_paths = [
+                "/home/rayhan/.fonts/NotoSansBengali-Regular.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansBengali-Regular.ttf",
+                "/usr/share/fonts/TTF/NotoSansBengali-Regular.ttf",
+                "/tmp/NotoSansBengali-Regular.ttf"
+            ]
             
-            if not os.path.exists(font_path):
-                urllib.request.urlretrieve(font_url, font_path)
+            noto_font_registered = False
+            for font_path in noto_font_paths:
+                if os.path.exists(font_path):
+                    try:
+                        pdfmetrics.registerFont(TTFont('NotoSansBengali', font_path))
+                        self.bengali_font = "NotoSansBengali"
+                        noto_font_registered = True
+                        logger.info(f"Noto Sans Bengali font registered from {font_path}")
+                        break
+                    except Exception as e:
+                        logger.warning(f"Could not register Noto Sans Bengali from {font_path}: {e}")
+                        continue
             
-            pdfmetrics.registerFont(TTFont('NotoSansBengali', font_path))
-            self.bengali_font = "NotoSansBengali"
-            logger.info("Bengali font registered successfully")
+            # Try to register SolaimanLipi font as fallback
+            solaiman_font_paths = [
+                "/usr/share/fonts/truetype/solaimanlipi/SolaimanLipi.ttf",
+                "/usr/share/fonts/TTF/SolaimanLipi.ttf",
+                "/System/Library/Fonts/SolaimanLipi.ttf",
+                "/tmp/SolaimanLipi.ttf"
+            ]
+            
+            solaiman_font_registered = False
+            if not noto_font_registered:
+                for font_path in solaiman_font_paths:
+                    if os.path.exists(font_path):
+                        try:
+                            pdfmetrics.registerFont(TTFont('SolaimanLipi', font_path))
+                            self.bengali_font = "SolaimanLipi"
+                            solaiman_font_registered = True
+                            logger.info(f"SolaimanLipi font registered from {font_path}")
+                            break
+                        except Exception as e:
+                            logger.warning(f"Could not register SolaimanLipi from {font_path}: {e}")
+                            continue
+            
+            # If SolaimanLipi not found, try to download and register Noto Sans Bengali
+            if not solaiman_font_registered:
+                try:
+                    font_url = "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSansBengali/NotoSansBengali-Regular.ttf"
+                    font_path = "/tmp/NotoSansBengali-Regular.ttf"
+                    
+                    if not os.path.exists(font_path):
+                        urllib.request.urlretrieve(font_url, font_path)
+                    
+                    pdfmetrics.registerFont(TTFont('NotoSansBengali', font_path))
+                    self.bengali_font = "NotoSansBengali"
+                    logger.info("Noto Sans Bengali font registered successfully")
+                except Exception as e:
+                    logger.warning(f"Could not register Noto Sans Bengali font: {e}")
+                    # Try to register SolaimanLipi from Google Fonts
+                    try:
+                        solaiman_url = "https://github.com/ekushey/SolaimanLipi/raw/master/SolaimanLipi.ttf"
+                        solaiman_path = "/tmp/SolaimanLipi.ttf"
+                        urllib.request.urlretrieve(solaiman_url, solaiman_path)
+                        pdfmetrics.registerFont(TTFont('SolaimanLipi', solaiman_path))
+                        self.bengali_font = "SolaimanLipi"
+                        logger.info("SolaimanLipi font downloaded and registered successfully")
+                    except Exception as e2:
+                        logger.warning(f"Could not download and register SolaimanLipi: {e2}")
+                        self.bengali_font = "Helvetica"
+            
         except Exception as e:
-            logger.warning(f"Could not register Bengali font: {e}")
+            logger.warning(f"Could not register any Bengali font: {e}")
             self.bengali_font = "Helvetica"
         
-        logger.info("ReportLab PDF generator initialized")
+        logger.info(f"ReportLab PDF generator initialized with font: {self.bengali_font}")
     
     async def generate_question_paper(self, exam=None, exam_set=None, template_type: str = "default", customization: Optional[dict] = None) -> str:
         """
@@ -147,10 +208,7 @@ class ReportLabPDFGenerator:
                 story.append(Paragraph(meta_text, meta_style))
                 story.append(Spacer(1, 6))
             
-            # Add compact guidelines
-            guidelines_text = "সাধারণ নির্দেশনা: ১) সকল প্রশ্নের উত্তর দিতে হবে ২) প্রতিটি প্রশ্নের মান ১ নম্বর ৩) সঠিক উত্তরটি বেছে নিন ৪) শুধুমাত্র নীল বা কালো কালি ব্যবহার করুন ৫) সময়ের সদ্ব্যবহার করুন ৬) জমা দেওয়ার আগে উত্তরগুলি পরীক্ষা করুন"
-            story.append(Paragraph(guidelines_text, guideline_style))
-            story.append(Spacer(1, 8))
+            # Guidelines removed as per user request
             
             # Add questions in two columns using Table
             if exam_set and hasattr(exam_set, 'questions'):
@@ -171,7 +229,7 @@ class ReportLabPDFGenerator:
                         left_options = ""
                         if hasattr(q, 'options') and q.options:
                             for opt_key, opt_text in q.options.items():
-                                left_options += f"({opt_key}) {opt_text}<br/>"
+                                left_options += f"<b>({opt_key})</b> {opt_text}<br/>"
                         row.append(Paragraph(left_q + "<br/>" + left_options, question_style))
                     else:
                         row.append(Paragraph("", question_style))
@@ -183,7 +241,7 @@ class ReportLabPDFGenerator:
                         right_options = ""
                         if hasattr(q, 'options') and q.options:
                             for opt_key, opt_text in q.options.items():
-                                right_options += f"({opt_key}) {opt_text}<br/>"
+                                right_options += f"<b>({opt_key})</b> {opt_text}<br/>"
                         row.append(Paragraph(right_q + "<br/>" + right_options, question_style))
                     else:
                         row.append(Paragraph("", question_style))
@@ -217,7 +275,7 @@ class ReportLabPDFGenerator:
                             left_options = ""
                             if hasattr(q, 'options') and q.options:
                                 for opt_key, opt_text in q.options.items():
-                                    left_options += f"({opt_key}) {opt_text}<br/>"
+                                    left_options += f"<b>({opt_key})</b> {opt_text}<br/>"
                             row.append(Paragraph(left_q + "<br/>" + left_options, question_style))
                         else:
                             row.append(Paragraph("", question_style))
@@ -229,7 +287,7 @@ class ReportLabPDFGenerator:
                             right_options = ""
                             if hasattr(q, 'options') and q.options:
                                 for opt_key, opt_text in q.options.items():
-                                    right_options += f"({opt_key}) {opt_text}<br/>"
+                                    right_options += f"<b>({opt_key})</b> {opt_text}<br/>"
                             row.append(Paragraph(right_q + "<br/>" + right_options, question_style))
                         else:
                             row.append(Paragraph("", question_style))

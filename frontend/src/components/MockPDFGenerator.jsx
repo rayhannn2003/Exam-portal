@@ -259,61 +259,7 @@ const MockPDFGenerator = ({ examId, setId, examTitle, setName, onClose }) => {
             line-height: 1.3;
         }
         
-        .guidelines {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 20px;
-            margin: 25px auto 25px 30px;
-            border-radius: 8px;
-            max-width: 80%;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .guidelines h3 {
-            margin-bottom: 15px;
-            color: #495057;
-            font-size: 18px;
-            font-weight: 600;
-        }
-        
-        .guidelines ol {
-            margin: 0;
-            padding-left: 0;
-            list-style: none;
-            text-align: left;
-            display: inline-block;
-        }
-        
-        .guidelines li {
-            margin: 8px 0;
-            font-size: 14px;
-            line-height: 1.5;
-            position: relative;
-            padding-left: 25px;
-        }
-        
-        .guidelines li:before {
-            content: counter(guideline-counter);
-            counter-increment: guideline-counter;
-            position: absolute;
-            left: 0;
-            top: 0;
-            background: #007bff;
-            color: white;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        .guidelines ol {
-            counter-reset: guideline-counter;
-        }
+        /* Guidelines CSS removed as per user request */
         
         .page-break {
             page-break-before: always;
@@ -343,18 +289,7 @@ const MockPDFGenerator = ({ examId, setId, examTitle, setName, onClose }) => {
             <span>সময়: ${exam_set.duration_minutes} মিনিট</span>
         </div>
         
-        <!-- Guidelines Section -->
-        <div class="guidelines">
-            <h3>সাধারণ নির্দেশনা</h3>
-            <ol>
-                <li>সকল প্রশ্নের উত্তর দিতে হবে</li>
-                <li>প্রতিটি প্রশ্নের মান ১ নম্বর</li>
-                <li>সঠিক উত্তরটি বেছে নিন</li>
-                <li>শুধুমাত্র নীল বা কালো কালি ব্যবহার করুন</li>
-                <li>সময়ের সদ্ব্যবহার করুন - আপনার সময় ${exam_set.duration_minutes} মিনিট</li>
-                <li>জমা দেওয়ার আগে উত্তরগুলি পরীক্ষা করুন</li>
-            </ol>
-        </div>
+        <!-- Guidelines Section removed as per user request -->
         
         <div class="questions-container">
             <div class="question-column">
@@ -482,8 +417,8 @@ const MockPDFGenerator = ({ examId, setId, examTitle, setName, onClose }) => {
     try {
       const examData = generateMockExamData();
       
-      // Call the PDF service
-      const response = await fetch('http://localhost:8000/generate-question-paper', {
+      // Call the PDF service download endpoint directly
+      const response = await fetch('http://localhost:8000/generate-question-paper/download', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -491,7 +426,7 @@ const MockPDFGenerator = ({ examId, setId, examTitle, setName, onClose }) => {
         body: JSON.stringify({
           exam: examData.exam,
           exam_set: examData.exam_set,
-          template_type: 'bengali'
+          template_type: 'compact_bengali'  // Use the clean template without guidelines
         })
       });
 
@@ -499,36 +434,22 @@ const MockPDFGenerator = ({ examId, setId, examTitle, setName, onClose }) => {
         throw new Error('PDF generation failed');
       }
 
-      const result = await response.json();
+      // Get PDF blob directly from download endpoint
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
       
-      if (result.success && result.pdf_data) {
-        // Decode base64 PDF content
-        const pdfData = result.pdf_data;
-        const binaryString = atob(pdfData);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        
-        // Create PDF blob and download
-        const blob = new Blob([bytes], { type: 'application/pdf' });
-        const url = window.URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${examTitle || 'Bengali_Exam'}_${setName || 'Set_A'}_${new Date().toISOString().split('T')[0]}.pdf`;
-        
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        
-        window.URL.revokeObjectURL(url);
-        
-        success('PDF প্রশ্নপত্র সফলভাবে ডাউনলোড হয়েছে!');
-        onClose();
-      } else {
-        throw new Error('Invalid response from PDF service');
-      }
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${examTitle || 'Bengali_Exam'}_${setName || 'Set_A'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      window.URL.revokeObjectURL(url);
+      
+      success('PDF প্রশ্নপত্র সফলভাবে ডাউনলোড হয়েছে!');
+      onClose();
     } catch (err) {
       console.error('PDF generation error:', err);
       showError('PDF তৈরি করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
@@ -596,11 +517,11 @@ const MockPDFGenerator = ({ examId, setId, examTitle, setName, onClose }) => {
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">✓</span>
-              <span>প্রথম পৃষ্ঠা: ৩০ প্রশ্ন + নির্দেশনা, দ্বিতীয় পৃষ্ঠা: ৩০ প্রশ্ন</span>
+              <span>প্রথম পৃষ্ঠা: ২৬ প্রশ্ন, দ্বিতীয় পৃষ্ঠা: ৩৪ প্রশ্ন</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">✓</span>
-              <span>পেশাদার লেআউট ও নির্দেশনা</span>
+              <span>পেশাদার ও পরিষ্কার লেআউট (নির্দেশনা ছাড়া)</span>
             </div>
             <div className="flex items-center">
               <span className="text-green-500 mr-2">✓</span>

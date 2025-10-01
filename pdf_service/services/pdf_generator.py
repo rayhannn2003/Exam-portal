@@ -163,7 +163,7 @@ class PDFGenerator:
     
     def _generate_css(self, customization: PaperCustomization) -> str:
         """
-        Generate additional CSS for PDF styling
+        Generate additional CSS for PDF styling with Bengali font support
         
         Args:
             customization: Customization options
@@ -172,14 +172,53 @@ class PDFGenerator:
             CSS content as string
         """
         css_content = f"""
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+        
         @page {{
             size: {customization.paper_size.value};
             margin: {self._get_margin_value(customization.margin_type)};
         }}
         
+        * {{
+            font-feature-settings: "kern" 1, "liga" 1;
+            -webkit-font-feature-settings: "kern" 1, "liga" 1;
+        }}
+        
         body {{
+            font-family: 'Noto Sans Bengali', 'Hind Siliguri', 'SolaimanLipi', Arial, sans-serif;
             font-size: {customization.font_size.value};
             color: #333;
+            direction: ltr;
+            text-rendering: optimizeLegibility;
+        }}
+        
+        /* Bengali text styling */
+        .bengali-text {{
+            font-family: 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif;
+            direction: ltr;
+            unicode-bidi: bidi-override;
+        }}
+        
+        .bengali-char {{
+            font-family: 'Noto Sans Bengali', 'Hind Siliguri', Arial, sans-serif;
+            font-size: 1.1em;
+        }}
+        
+        /* Option key styling - Use Arial for English letters ONLY */
+        .option-key {{
+            font-family: Arial, sans-serif !important;
+            font-weight: bold;
+            display: inline-block;
+            width: 25px;
+            height: 25px;
+            border: 2px solid #333;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 21px;
+            background-color: white;
+            margin-right: 10px;
+            color: #495057;
         }}
         
         /* Print-specific styles */
@@ -195,6 +234,11 @@ class PDFGenerator:
             
             .instructions-box {{
                 break-after: avoid;
+            }}
+            
+            .option-key {{
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
             }}
         }}
         """

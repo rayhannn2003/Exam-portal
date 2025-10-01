@@ -436,7 +436,7 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
       </div>
       
       {/* Mock PDF Generator Modal */}
-      {showPDFGenerator && selectedSetForPDF && (
+      {/* {showPDFGenerator && selectedSetForPDF && (
         <MockPDFGenerator
           examId={exam.id}
           setId={selectedSetForPDF.id}
@@ -447,7 +447,7 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
             setSelectedSetForPDF(null);
           }}
         />
-      )}
+      )} */}
     </div>
   );
 };
