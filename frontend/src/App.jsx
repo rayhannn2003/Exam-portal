@@ -220,13 +220,7 @@ export default function App() {
                   >
                     প্রবেশ
                   </button>
-                  <button
-                    onClick={() => setIsRegistrationModalOpen(true)}
-                    className="bg-green-500 text-white font-bold py-2 px-6 rounded-full transition-all hover:bg-green-600 hover:scale-105"
-                    style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}
-                  >
-                    নিবন্ধন
-                  </button>
+                
                 </div>
               )}
             </div>
