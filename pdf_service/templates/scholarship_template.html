@@ -75,7 +75,7 @@
             height: 180px;
             object-fit: contain;
             border: none; /* Removed border */
-            margin-left: -50px; /* Shift logo to the left */
+            margin-left: -30px; /* Shift logo to the left */
             margin-bottom: -80px; /* shift logo down */
         }
 
@@ -228,6 +228,46 @@
         .footer {
             display: none; 
         }
+        /* --- A. STYLES FOR THE WATERMARK OVERLAY --- */
+        .watermark-overlay {
+    /* Set the overlay to cover the entire page/viewport */
+    position: fixed; /* Keeps it in place even when the user scrolls */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    
+    /* Puts the watermark *behind* the content layer */
+    z-index: -1; 
+    
+    /* 1. Insert the Base64 Image Code */
+    /* IMPORTANT: Replace "code here " with your actual, long Base64 string */
+    background-image: url("data:image/png;base64,code here ");
+    
+    /* 2. Positioning and Sizing */
+    background-repeat: no-repeat;
+    background-position: center center; /* Centers the image */
+    background-size: contain; /* Ensures the whole logo fits on screen */
+    
+    /* 3. Implement the Semi-Transparency */
+    opacity: 0.1; /* Adjust this value (0.0 for invisible, 1.0 for fully visible) */
+}
+
+/* --- B. OPTIONAL: STYLES FOR THE CONTENT --- */
+/* Basic styling to ensure the body and content work together */
+body {
+    margin: 0;
+    padding: 0;
+    /* Optional: Sets a background color behind the watermark */
+    background-color: #f0f0f0; 
+
+}
+
+#content {
+    /* Ensure the content is visible above the watermark */
+    position: relative; 
+    padding: 20px;
+}
         
         /* Print styles */
         @media print {
@@ -245,10 +285,18 @@
             .header, .class-title {
                 page-break-after: avoid;
             }
+                 #watermark-overlay {
+                /* For printing, you might need to adjust opacity or even use
+                   an `::before` pseudo-element on the body or container
+                   if `position: fixed` causes issues in some print drivers.
+                   However, for most modern browsers, this should work. */
+                opacity: 0; /* Slightly more opaque for print if desired */
+            }
         }
     </style>
 </head>
 <body>
+    <div id="watermark-overlay"></div>
     <div class="container">
         
         <!-- Bismillah and Motto Line (Top Text in Image) -->

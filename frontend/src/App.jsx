@@ -159,7 +159,7 @@ export default function App() {
         <img
           src="/new.svg"
           alt="Organization Logo"
-          className="h-24 w-24 rounded-full border-4 border-white shadow-lg"
+          className="h-32 w-32 md:h-40 md:w-40 lg:h-32 lg:w-48 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
         />
       </div>
 
