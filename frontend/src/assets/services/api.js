@@ -104,7 +104,7 @@ export const deleteExam = async (examId) => {
   }
 };
 
-export const getExamWithSets = async (examId) => {
+export const getExamWithClasses = async (examId) => {
   try {
     const res = await api.get(`/exams/${examId}`);
     return res.data;
@@ -113,51 +113,65 @@ export const getExamWithSets = async (examId) => {
   }
 };
 
-export const addExamSet = async (examId, setData) => {
+export const addExamClass = async (examId, classData) => {
   try {
-    const res = await api.post(`/exams/${examId}/sets`, setData);
+    const res = await api.post(`/exams/${examId}/classes`, classData);
     return res.data;
   } catch (err) {
-    throw err.response?.data || { message: "Failed to add exam set" };
+    throw err.response?.data || { message: "Failed to add exam class" };
   }
 };
 
-export const editExamSet = async (examId, setId, setData) => {
+export const editExamClass = async (examId, classId, classData) => {
   try {
-    const res = await api.put(`/exams/${examId}/sets/${setId}`, setData);
+    const res = await api.put(`/exams/${examId}/classes/${classId}`, classData);
     return res.data;
   } catch (err) {
-    throw err.response?.data || { message: "Failed to edit exam set" };
+    throw err.response?.data || { message: "Failed to edit exam class" };
   }
 };
 
-export const deleteExamSet = async (examId, setId) => {
+export const deleteExamClass = async (examId, classId) => {
   try {
-    const res = await api.delete(`/exams/${examId}/sets/${setId}`);
+    const res = await api.delete(`/exams/${examId}/classes/${classId}`);
     return res.data;
   } catch (err) {
-    throw err.response?.data || { message: "Failed to delete exam set" };
+    throw err.response?.data || { message: "Failed to delete exam class" };
   }
 };
 
 // ----- PDF APIs -----
-export const previewExamSetPDF = async (examId, setId, { templateType = 'compact_bengali', customization = {} } = {}) => {
+export const previewExamClassPDF = async (examId, classId, { templateType = 'compact_bengali', customization = {} } = {}) => {
   try {
-    // Backend preview endpoint returns HTML (text)
-    const res = await api.get(`/pdf/preview/${examId}/${setId}`, {
-      params: { templateType, ...customization },
-      responseType: 'text'
-    });
-    return res.data; // HTML string
+    // Check if customization contains Bengali characters
+    const hasBengaliChars = JSON.stringify(customization).match(/[\u0980-\u09FF]/);
+    
+    if (hasBengaliChars) {
+      // Use POST request for Bengali characters to avoid URL encoding issues
+      const res = await api.post(`/pdf/preview/${examId}/${classId}`, {
+        templateType,
+        customization
+      }, {
+        responseType: 'text'
+      });
+      return res.data; // HTML string
+    } else {
+      // Use GET request for ASCII characters
+      const res = await api.get(`/pdf/preview/${examId}/${classId}`, {
+        params: { templateType, ...customization },
+        responseType: 'text'
+      });
+      return res.data; // HTML string
+    }
   } catch (err) {
     throw err.response?.data || { message: 'Failed to preview PDF' };
   }
 };
 
-export const downloadExamSetPDF = async (examId, setId, { templateType = 'compact_bengali', customization = {} } = {}) => {
+export const downloadExamClassPDF = async (examId, classId, { templateType = 'compact_bengali', customization = {} } = {}) => {
   try {
     // Backend generate endpoint returns PDF bytes
-    const res = await api.post(`/pdf/generate/${examId}/${setId}`, {
+    const res = await api.post(`/pdf/generate/${examId}/${classId}`, {
       templateType,
       customization
     }, {
@@ -222,6 +236,34 @@ export const getResultBySchool = async (school) => {
     return res.data;
   } catch (err) {
     throw err.response?.data || { message: "Failed to fetch results by school" };
+  }
+};
+
+// ----- Scholarship APIs -----
+export const markForScholarship = async (studentId) => {
+  try {
+    const res = await api.post(`/results/mark-for-scholarship/${studentId}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to mark for scholarship" };
+  }
+};
+
+export const unmarkForScholarship = async (studentId) => {
+  try {
+    const res = await api.post(`/results/unmark-for-scholarship/${studentId}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to unmark for scholarship" };
+  }
+};
+
+export const getScholarshipResults = async () => {
+  try {
+    const res = await api.get("/results/scholarship-results");
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch scholarship results" };
   }
 };
 

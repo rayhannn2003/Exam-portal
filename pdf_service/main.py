@@ -18,10 +18,36 @@ from models.question_models import (
     ExamSet,
     Exam
 )
+from pydantic import BaseModel
+from typing import List, Optional
 from services.template_engine import TemplateEngine
 from services.pdf_generator import PDFGenerator
 import urllib.request
 import os
+
+# Scholarship models
+class ScholarshipStudent(BaseModel):
+    serial_no: int
+    name: str
+    school: str
+    roll_number: str
+
+class ScholarshipRequest(BaseModel):
+    class_name: str
+    students: List[ScholarshipStudent]
+    exam_name: str = "উপবৃত্তি পরীক্ষা - ২০২৫"
+    organization_name: str = "উত্তর তারাবুনিয়া ছাত্র-কল্যাণ সংগঠন"
+    motto: str = "দৃষ্টিভঙ্গি বদলান, জীবন বদলে যাবে"
+    established_year: str = "2004 ইং"
+    location: str = "Uttar Tarabunia, Sadar Upazila, Shariatpur, Bangladesh."
+
+class ScholarshipResponse(BaseModel):
+    success: bool
+    message: str
+    pdf_data: str
+    class_name: str
+    total_students: int
+    generated_at: str
 
 # Configure logging
 logging.basicConfig(
@@ -338,6 +364,83 @@ async def preview_compact_bengali_template():
     except Exception as e:
         logger.error(f"Error generating preview: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to generate preview: {str(e)}")
+
+@app.post("/generate-scholarship-pdf", response_model=ScholarshipResponse)
+async def generate_scholarship_pdf(request: ScholarshipRequest):
+    """
+    Generate a PDF scholarship result list
+    
+    Args:
+        request: ScholarshipRequest containing scholarship data
+        
+    Returns:
+        ScholarshipResponse with PDF data and metadata
+    """
+    try:
+        logger.info(f"Generating scholarship PDF for class: {request.class_name}")
+        
+        # Validate request data
+        if not request.students:
+            raise HTTPException(status_code=400, detail="Student data is required")
+        
+        # Generate PDF (bytes) using WeasyPrint-based generator
+        pdf_bytes = await pdf_generator.generate_scholarship_pdf(request)
+        
+        # Create response
+        # Base64 encode for JSON response compatibility
+        import base64
+        pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+
+        response = ScholarshipResponse(
+            success=True,
+            message="Scholarship PDF generated successfully",
+            pdf_data=pdf_b64,
+            class_name=request.class_name,
+            total_students=len(request.students),
+            generated_at=datetime.now().isoformat()
+        )
+        
+        logger.info(f"Successfully generated scholarship PDF: {request.class_name}")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generating scholarship PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate scholarship PDF: {str(e)}")
+
+@app.post("/generate-scholarship-pdf/download")
+async def download_scholarship_pdf(request: ScholarshipRequest):
+    """
+    Generate and directly download a PDF scholarship result list
+    
+    Args:
+        request: ScholarshipRequest containing scholarship data
+        
+    Returns:
+        PDF file as Response
+    """
+    try:
+        logger.info(f"Generating and downloading scholarship PDF for class: {request.class_name}")
+        
+        # Generate PDF (bytes)
+        pdf_bytes = await pdf_generator.generate_scholarship_pdf(request)
+        
+        # Create safe ASCII filename (no Bengali characters for HTTP header)
+        safe_filename = f"Scholarship_Class_{request.class_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        safe_filename = "".join(c for c in safe_filename if c.isascii() and (c.isalnum() or c in (' ', '-', '_'))).rstrip()
+        
+        # Return PDF as download
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={safe_filename}",
+                "Content-Type": "application/pdf"
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Error downloading scholarship PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate scholarship PDF: {str(e)}")
 
 if __name__ == "__main__":
     port = int(os.getenv("PDF_SERVICE_PORT", 8000))

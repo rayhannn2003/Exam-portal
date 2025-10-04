@@ -4,6 +4,8 @@ import Login from './components/Login';
 import Registration from './components/Registration';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import ToastContainer from './components/ToastContainer';
+import OMRTest from './OMRTest';
+import SimpleOMRTest from './SimpleOMRTest';
 
 export default function App() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -25,19 +27,19 @@ export default function App() {
 
   const slides = [
     {
-      image: 'https://scontent.fdac181-1.fna.fbcdn.net/v/t39.30808-6/484247249_1049049640370320_1931830327377763720_n.jpg?_nc_cat=110&ccb=1-7&_nc_sid=833d8c&_nc_ohc=lZjFY1e2g9oQ7kNvwHHqSsO&_nc_oc=AdnXNc5EY5yFrWgufQ0SQ0_Vzfl3rwISVETqc-YaCs-BxTTaKtJecfH-NR7dDx2kDLE&_nc_zt=23&_nc_ht=scontent.fdac181-1.fna&_nc_gid=uQmarz0IfTq4CaFLn-0UyQ&oh=00_AfZVQNemxqn0BvTwrWgcLyqcaR-PDgo0b2b4tGVN3HtoDw&oe=68D61779',
+      image: '/background1.jpg',
       title: 'উপবৃত্তি পরীক্ষা -২০২৫',
       subtitle: 'শিক্ষার নতুন দিগন্ত',
       description: 'মেধাবী শিক্ষার্থীদের স্বপ্ন পূরণের পথে এগিয়ে নিয়ে যাচ্ছি আমরা। যোগ দিন আমাদের সাথে শিক্ষার এই মহান যজ্ঞে।'
     },
     {
-      image: 'https://scontent.fdac181-1.fna.fbcdn.net/v/t39.30808-6/481050486_1039641511311133_4883031842829511149_n.jpg?_nc_cat=108&ccb=1-7&_nc_sid=833d8c&_nc_ohc=bE0T6g-sypwQ7kNvwFLCJ6a&_nc_oc=AdnOWR1vwB8xf26EtU1FOPt6Xc7hQPP4qd1yrz6bDAHfwTLW4Bm0OFfnKXv5qzHhQNY&_nc_zt=23&_nc_ht=scontent.fdac181-1.fna&_nc_gid=_PfKRHMxldiMHzUrUHCqNg&oh=00_AfYbrphdw_LSuUyyf4PiUmH2312mXRF1PM68HpGcviXh_Q&oe=68D61C90',
+      image: '/background2.jpg',
       title: 'সমান সুযোগের নিশ্চয়তা',
       subtitle: 'প্রতিটি শিশুর অধিকার',
       description: 'আর্থিক অবস্থা যাই হোক, মেধা ও প্রতিভা থাকলেই পাবেন উচ্চশিক্ষার সুযোগ। আমাদের বৃত্তি পরীক্ষায় অংশগ্রহণ করুন।'
     },
     {
-      image: 'https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+      image: '/background3.jpg',
       title: 'ভবিষ্যতের নেতা তৈরি',
       subtitle: 'আগামীর স্বপ্নদ্রষ্টা',
       description: 'আজকের শিক্ষার্থীরাই আগামীর নেতা। তাদের শিক্ষা ও দক্ষতা বৃদ্ধিতে আমরা সর্বদা প্রতিবদ্ধ।'
@@ -133,6 +135,15 @@ export default function App() {
     
     setTranslateX(0);
   };
+
+  // Test routes for OMR functionality
+  if (window.location.pathname === '/omr-test') {
+    return <OMRTest />;
+  }
+  
+  if (window.location.pathname === '/simple-omr-test') {
+    return <SimpleOMRTest />;
+  }
 
   // If user is superadmin, show dashboard
   console.log('Rendering check:', { user, isSuperadmin: user?.role === 'superadmin' });
@@ -482,7 +493,7 @@ export default function App() {
                 <span className="text-2xl">🏅</span>
               </div>
               <div className="text-4xl font-bold mb-2 text-yellow-400 drop-shadow-lg" 
-                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>২০,০০০+</div>
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>২,০০০+</div>
               <div className="text-lg text-gray-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>উপকৃত শিক্ষার্থী</div>
               <div className="mt-4 text-sm text-yellow-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                 বিভিন্ন অঞ্চল থেকে অংশগ্রহণ
@@ -494,7 +505,7 @@ export default function App() {
                 <span className="text-2xl">🏫</span>
               </div>
               <div className="text-4xl font-bold mb-2 text-orange-400 drop-shadow-lg" 
-                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>৩০০+</div>
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>৩০+</div>
               <div className="text-lg text-gray-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>অন্তর্ভুক্ত স্কুল</div>
               <div className="mt-4 text-sm text-yellow-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                 গ্রামীণ ও শহুরে উভয় এলাকায়
@@ -506,7 +517,7 @@ export default function App() {
                 <span className="text-2xl">👥</span>
               </div>
               <div className="text-4xl font-bold mb-2 text-red-400 drop-shadow-lg" 
-                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>৫০০+</div>
+                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>৫০+</div>
               <div className="text-lg text-gray-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>স্বেচ্ছাসেবক</div>
               <div className="mt-4 text-sm text-yellow-200" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                 নিবেদিত শিক্ষাবিদ ও কর্মী
@@ -525,7 +536,7 @@ export default function App() {
             </div>
             <cite className="text-yellow-300 text-lg font-semibold flex items-center drop-shadow-lg" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
               <div className="w-8 h-8 bg-yellow-500/20 rounded-full mr-3 flex items-center justify-center text-yellow-400 text-sm">👤</div>
-              পূর্ববর্তী অংশগ্রহণকারী
+              নূরে আলম সিদ্দিক 
             </cite>
           </div>
         </div>

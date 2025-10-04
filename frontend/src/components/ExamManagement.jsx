@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
-import { getAllExams, getExamWithSets, deleteExam, addExamSet, editExamSet, deleteExamSet, previewExamSetPDF, downloadExamSetPDF } from '../assets/services/api';
+import { getAllExams, getExamWithClasses, deleteExam, addExamClass, editExamClass, deleteExamClass, previewExamClassPDF, downloadExamClassPDF } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
 import CreateExamModal from './CreateExamModal';
 import EditExamModal from './EditExamModal';
 import SetManagementModal from './SetManagementModal';
 import QuestionPreviewModal from './QuestionPreviewModal';
-import MockPDFGenerator from './MockPDFGenerator';
+import PDFGenerator from './PDFGenerator';
 
 const ExamManagement = () => {
   const [exams, setExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
-  const [examSets, setExamSets] = useState([]);
+  const [examClasses, setExamClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingClasses, setLoadingClasses] = useState(false);
   const [showCreateExamModal, setShowCreateExamModal] = useState(false);
   const [showEditExamModal, setShowEditExamModal] = useState(false);
   const [showSetManagementModal, setShowSetManagementModal] = useState(false);
@@ -39,18 +40,30 @@ const ExamManagement = () => {
     }
   };
 
-  const fetchExamSets = async (examId) => {
+  const fetchExamClasses = async (examId) => {
     try {
-      const examData = await getExamWithSets(examId);
-      setExamSets(examData.sets || []);
+      setLoadingClasses(true);
+      console.log('Fetching exam classes for ID:', examId);
+      const examData = await getExamWithClasses(examId);
+      console.log('Exam data received:', examData);
+      setExamClasses(examData.classes || []);
     } catch (err) {
-      error('Failed to fetch exam sets');
+      console.error('Error fetching exam classes:', err);
+      error('Failed to fetch exam classes: ' + (err.message || 'Unknown error'));
+    } finally {
+      setLoadingClasses(false);
     }
   };
 
   const handleExamClick = async (exam) => {
-    setSelectedExam(exam);
-    await fetchExamSets(exam.id);
+    try {
+      console.log('Exam clicked:', exam);
+      setSelectedExam(exam);
+      await fetchExamClasses(exam.id);
+    } catch (err) {
+      console.error('Error handling exam click:', err);
+      error('Failed to load exam details');
+    }
   };
 
   const handleCreateExam = () => {
@@ -69,7 +82,7 @@ const ExamManagement = () => {
         await fetchExams();
         if (selectedExam && selectedExam.id === examId) {
           setSelectedExam(null);
-          setExamSets([]);
+          setExamClasses([]);
         }
         success('Exam deleted successfully');
       } catch (err) {
@@ -80,8 +93,8 @@ const ExamManagement = () => {
 
   const handleManageSets = async (exam) => {
     try {
-      const examWithSets = await getExamWithSets(exam.id);
-      setSelectedExam(examWithSets);
+      const examWithClasses = await getExamWithClasses(exam.id);
+      setSelectedExam(examWithClasses);
       setShowSetManagementModal(true);
     } catch (err) {
       error('Failed to fetch exam details');
@@ -94,13 +107,13 @@ const ExamManagement = () => {
   };
 
   const handleDeleteSet = async (setId) => {
-    if (window.confirm('Are you sure you want to delete this exam set?')) {
+    if (window.confirm('Are you sure you want to delete this exam class?')) {
       try {
-        await deleteExamSet(selectedExam.id, setId);
-        await fetchExamSets(selectedExam.id);
-        success('Exam set deleted successfully');
+        await deleteExamClass(selectedExam.id, setId);
+        await fetchExamClasses(selectedExam.id);
+        success('Exam class deleted successfully');
       } catch (err) {
-        error('Failed to delete exam set');
+        error('Failed to delete exam class');
       }
     }
   };
@@ -118,31 +131,33 @@ const ExamManagement = () => {
   const handlePreviewPDF = async (set) => {
     if (!selectedExam) return;
     try {
-      const html = await previewExamSetPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
+      const html = await previewExamClassPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
       const previewWindow = window.open('', '_blank');
       previewWindow.document.open();
       previewWindow.document.write(html);
       previewWindow.document.close();
     } catch (err) {
-      error(err.message || 'Failed to preview PDF');
+      console.error('Error previewing PDF:', err);
+      error('Failed to preview PDF');
     }
   };
 
   const handleDownloadPDF = async (set) => {
     if (!selectedExam) return;
     try {
-      const blob = await downloadExamSetPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
-      const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+      const blob = await downloadExamClassPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${selectedExam.title}_Set_${set.set_name}.pdf`;
+      a.download = `${selectedExam.exam_name}_${set.class_name}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(a);
       a.click();
-      a.remove();
+      document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      success('PDF downloaded');
+      success('PDF downloaded successfully');
     } catch (err) {
-      error(err.message || 'Failed to download PDF');
+      console.error('Error downloading PDF:', err);
+      error('Failed to download PDF');
     }
   };
 
@@ -153,7 +168,7 @@ const ExamManagement = () => {
   const handleModalSuccess = () => {
     fetchExams();
     if (selectedExam) {
-      fetchExamSets(selectedExam.id);
+      fetchExamClasses(selectedExam.id);
     }
     success('Operation completed successfully');
   };
@@ -215,10 +230,10 @@ const ExamManagement = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <h4 className="text-sm sm:text-lg font-semibold text-gray-800 truncate" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                          {index + 1}. {exam.title}
+                          {index + 1}. {exam.exam_name}
                         </h4>
                         <p className="text-xs sm:text-sm text-gray-600 mt-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                          শ্রেণী: {exam.class} | প্রশ্ন: {exam.question_count || 0} | সেট: {exam.set_count || 0}
+                          প্রশ্ন: {exam.question_count || 0} | ক্লাস: {exam.class_count || 0}
                         </p>
                         <p className="text-xs text-gray-500 mt-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                           বছর: {exam.year}
@@ -265,10 +280,10 @@ const ExamManagement = () => {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 space-y-3 sm:space-y-0">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-lg sm:text-xl font-bold text-gray-800 truncate" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    {selectedExam.title} - সেট ব্যবস্থাপনা
+                    {selectedExam.exam_name} - ক্লাস ব্যবস্থাপনা
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-600 mt-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    শ্রেণী: {selectedExam.class} | প্রশ্ন সংখ্যা: {selectedExam.question_count || 0}
+                    প্রশ্ন সংখ্যা: {selectedExam.question_count || 0} | বছর: {selectedExam.year}
                   </p>
                 </div>
                 <button
@@ -277,30 +292,37 @@ const ExamManagement = () => {
                   style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                 >
                   <span className="mr-1 sm:mr-2">➕</span>
-                  <span className="hidden sm:inline">সেট যোগ করুন</span>
-                  <span className="sm:hidden">সেট যোগ</span>
+                  <span className="hidden sm:inline">ক্লাস যোগ করুন</span>
+                  <span className="sm:hidden">ক্লাস যোগ</span>
                 </button>
               </div>
 
-              {examSets.length === 0 ? (
+              {loadingClasses ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    ক্লাস লোড হচ্ছে...
+                  </p>
+                </div>
+              ) : examClasses.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-blue-600 text-2xl">📚</span>
                   </div>
                   <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    এখনও কোন সেট নেই
+                    এখনও কোন ক্লাস নেই
                   </h4>
                   <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    সেট যোগ করুন
+                    ক্লাস যোগ করুন
                   </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                  {examSets.map((set) => (
+                  {examClasses.map((set) => (
                     <div key={set.id} className="bg-white/60 backdrop-blur-sm border border-green-500/20 rounded-xl p-3 sm:p-4 hover:shadow-lg hover:shadow-green-500/25 transition-all">
                       <div className="flex items-start justify-between mb-3">
                         <h4 className="text-base sm:text-lg font-semibold text-gray-800 flex-1 min-w-0" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                          সেট {set.set_name}
+                          ক্লাস {set.class_name}
                         </h4>
                         <div className="flex items-center space-x-1 sm:space-x-2 ml-2 relative">
                           <button
@@ -386,7 +408,7 @@ const ExamManagement = () => {
                   একটি পরীক্ষা নির্বাচন করুন
                 </h3>
                 <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  সেট ব্যবস্থাপনার জন্য বাম দিক থেকে একটি পরীক্ষা নির্বাচন করুন
+                  ক্লাস ব্যবস্থাপনার জন্য বাম দিক থেকে একটি পরীক্ষা নির্বাচন করুন
                 </p>
               </div>
             </div>
@@ -429,11 +451,11 @@ const ExamManagement = () => {
       />
 
       {showPDFGenerator && (
-        <MockPDFGenerator
+        <PDFGenerator
           examId={selectedExam?.id}
-          setId={selectedSetForPDF?.id}
-          examTitle={selectedExam?.title}
-          setName={selectedSetForPDF?.set_name}
+          classId={selectedSetForPDF?.id}
+          examTitle={selectedExam?.exam_name}
+          className={selectedSetForPDF?.class_name}
           onClose={() => {
             setShowPDFGenerator(false);
             setSelectedSetForPDF(null);

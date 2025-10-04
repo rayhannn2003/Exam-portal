@@ -3,17 +3,17 @@ const pool = require("../models/db");
 // ✅ Create exam
 exports.createExam = async (req, res) => {
   try {
-    const { class: examClass, title,question_count, year } = req.body;
+    const { exam_name, question_count, year } = req.body;
 
-    if (!examClass || !title || !year) {
+    if (!exam_name || !year) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
     const result = await pool.query(
-      `INSERT INTO exams (class, title, question_count, year)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO exams (exam_name, question_count, year)
+       VALUES ($1, $2, $3)
        RETURNING *`,
-      [examClass, title, question_count, year]
+      [exam_name, question_count || 60, year]
     );
 
     res.status(201).json({
@@ -26,44 +26,44 @@ exports.createExam = async (req, res) => {
   }
 };
 
-// ✅ Add exam set
-exports.addExamSet = async (req, res) => {
+// ✅ Add exam class
+exports.addExamClass = async (req, res) => {
   try {
     const { examId } = req.params;
-    const { set_name, answer_key, questions } = req.body;
+    const { class_name, answer_key, questions } = req.body;
 
-    if (!set_name || !answer_key || !questions) {
+    if (!class_name || !answer_key || !questions) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
     const result = await pool.query(
-      `INSERT INTO exam_sets (exam_id, set_name, questions, answer_key)
+      `INSERT INTO exam_class (exam_id, class_name, questions, answer_key)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (exam_id, set_name) 
+       ON CONFLICT (exam_id, class_name) 
        DO UPDATE SET 
          questions = EXCLUDED.questions,
          answer_key = EXCLUDED.answer_key,
          created_at = NOW()
        RETURNING *`,
-      [examId, set_name, JSON.stringify(questions), JSON.stringify(answer_key)]
+      [examId, class_name, JSON.stringify(questions), JSON.stringify(answer_key)]
     );
 
     res.status(201).json({
-      message: "Exam set added/updated successfully",
-      examSet: result.rows[0],
+      message: "Exam class added/updated successfully",
+      examClass: result.rows[0],
     });
   } catch (err) {
     if (err.code === "23505") {
-      return res.status(400).json({ message: "Set already exists for this exam" });
+      return res.status(400).json({ message: "Class already exists for this exam" });
     }
-    console.error("❌ Error adding exam set:", err.message);
+    console.error("❌ Error adding exam class:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 
-// ✅ Get exam with sets
-exports.getExamWithSets = async (req, res) => {
+// ✅ Get exam with classes
+exports.getExamWithClasses = async (req, res) => {
   try {
     const { examId } = req.params;
 
@@ -72,11 +72,11 @@ exports.getExamWithSets = async (req, res) => {
       return res.status(404).json({ message: "Exam not found" });
     }
 
-    const setsResult = await pool.query(`SELECT * FROM exam_sets WHERE exam_id = $1`, [examId]);
+    const classesResult = await pool.query(`SELECT * FROM exam_class WHERE exam_id = $1`, [examId]);
 
     res.status(200).json({
       ...examResult.rows[0],
-      sets: setsResult.rows,
+      classes: classesResult.rows,
     });
   } catch (err) {
     console.error("Error fetching exam:", err.message);
@@ -89,14 +89,14 @@ exports.getAllExams = async (_req, res) => {
   try {
     const result = await pool.query(`SELECT 
   e.id,
-  e.class,
-  e.title,
+  e.exam_name,
   e.year,
+  e.question_count,
   e.created_at,
-  COUNT(es.id) AS set_count,
-  COALESCE(JSON_AGG(es.set_name) FILTER (WHERE es.id IS NOT NULL), '[]') AS set_names
+  COUNT(ec.id) AS class_count,
+  COALESCE(JSON_AGG(ec.class_name) FILTER (WHERE ec.id IS NOT NULL), '[]') AS class_names
 FROM exams e
-LEFT JOIN exam_sets es ON e.id = es.exam_id
+LEFT JOIN exam_class ec ON e.id = ec.exam_id
 GROUP BY e.id
 ORDER BY e.year DESC, e.created_at DESC;`);
     
@@ -111,14 +111,13 @@ ORDER BY e.year DESC, e.created_at DESC;`);
 exports.editExam = async (req, res) => {
   try {
     const { examId } = req.params;
-    const { class: examClass, title, question_count, year } = req.body;
+    const { exam_name, question_count, year } = req.body;
 
     const fields = [];
     const values = [];
     let idx = 1;
 
-    if (examClass !== undefined) { fields.push(`class = $${idx++}`); values.push(examClass); }
-    if (title !== undefined) { fields.push(`title = $${idx++}`); values.push(title); }
+    if (exam_name !== undefined) { fields.push(`exam_name = $${idx++}`); values.push(exam_name); }
     if (question_count !== undefined) { fields.push(`question_count = $${idx++}`); values.push(question_count); }
     if (year !== undefined) { fields.push(`year = $${idx++}`); values.push(year); }
 
@@ -139,19 +138,19 @@ exports.editExam = async (req, res) => {
   }
 };
 
-// ✏️ Edit exam set
-exports.editExamSet = async (req, res) => {
+// ✏️ Edit exam class
+exports.editExamClass = async (req, res) => {
   try {
-    const { examId, setId } = req.params;
-    const { set_name, answer_key, questions } = req.body;
+    const { examId, classId } = req.params;
+    const { class_name, answer_key, questions } = req.body;
 
     const fields = [];
     const values = [];
     let idx = 1;
 
-    if (set_name !== undefined) { 
-      fields.push(`set_name = $${idx++}`); 
-      values.push(set_name); 
+    if (class_name !== undefined) { 
+      fields.push(`class_name = $${idx++}`); 
+      values.push(class_name); 
     }
     if (answer_key !== undefined) { 
       fields.push(`answer_key = $${idx++}`); 
@@ -164,20 +163,20 @@ exports.editExamSet = async (req, res) => {
 
     if (fields.length === 0) return res.status(400).json({ message: "No fields to update" });
 
-    values.push(setId, examId);
+    values.push(classId, examId);
 
     const result = await pool.query(
-      `UPDATE exam_sets SET ${fields.join(", ")} WHERE id = $${idx} AND exam_id = $${idx + 1} RETURNING *`,
+      `UPDATE exam_class SET ${fields.join(", ")} WHERE id = $${idx} AND exam_id = $${idx + 1} RETURNING *`,
       values
     );
 
-    if (result.rowCount === 0) return res.status(404).json({ message: "Exam set not found" });
-    res.json({ message: "Exam set updated successfully", examSet: result.rows[0] });
+    if (result.rowCount === 0) return res.status(404).json({ message: "Exam class not found" });
+    res.json({ message: "Exam class updated successfully", examClass: result.rows[0] });
   } catch (err) {
     if (err.code === "23505") {
-      return res.status(400).json({ message: "Duplicate set name for this exam" });
+      return res.status(400).json({ message: "Duplicate class name for this exam" });
     }
-    console.error("Error editing exam set:", err.message);
+    console.error("Error editing exam class:", err.message);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -205,8 +204,8 @@ exports.deleteExam = async (req, res) => {
       console.log("results table doesn't exist, skipping...");
     }
     
-    // Delete exam sets
-    await client.query("DELETE FROM exam_sets WHERE exam_id = $1", [examId]);
+    // Delete exam classes
+    await client.query("DELETE FROM exam_class WHERE exam_id = $1", [examId]);
 
     // Delete the exam
     const delExam = await client.query("DELETE FROM exams WHERE id = $1 RETURNING id", [examId]);
@@ -226,47 +225,83 @@ exports.deleteExam = async (req, res) => {
   }
 };
 
-// 🗑️ Delete exam set (and related data)
-exports.deleteExamSet = async (req, res) => {
+// 🗑️ Delete exam class (and related data)
+exports.deleteExamClass = async (req, res) => {
   const client = await pool.connect();
   try {
-    const { examId, setId } = req.params;
+    const { examId, classId } = req.params;
 
     await client.query("BEGIN");
 
     // Delete dependent rows (only from tables that exist)
     try {
-      await client.query("DELETE FROM student_answers WHERE exam_id = $1 AND set_id = $2", [examId, setId]);
+      await client.query("DELETE FROM student_answers WHERE exam_id = $1 AND class_id = $2", [examId, classId]);
     } catch (err) {
       // Table doesn't exist, continue
       console.log("student_answers table doesn't exist, skipping...");
     }
     
     try {
-      await client.query("DELETE FROM results WHERE exam_id = $1 AND set_id = $2", [examId, setId]);
+      await client.query("DELETE FROM results WHERE exam_id = $1 AND class_id = $2", [examId, classId]);
     } catch (err) {
       // Table doesn't exist, continue
       console.log("results table doesn't exist, skipping...");
     }
 
-    // Delete the exam set
-    const delSet = await client.query(
-      "DELETE FROM exam_sets WHERE id = $1 AND exam_id = $2 RETURNING id",
-      [setId, examId]
+    // Delete the exam class
+    const delClass = await client.query(
+      "DELETE FROM exam_class WHERE id = $1 AND exam_id = $2 RETURNING id",
+      [classId, examId]
     );
 
-    if (delSet.rowCount === 0) {
+    if (delClass.rowCount === 0) {
       await client.query("ROLLBACK");
-      return res.status(404).json({ message: "Exam set not found" });
+      return res.status(404).json({ message: "Exam class not found" });
     }
 
     await client.query("COMMIT");
-    res.json({ message: "Exam set deleted successfully" });
+    res.json({ message: "Exam class deleted successfully" });
   } catch (err) {
     await client.query("ROLLBACK");
-    console.error("Error deleting exam set:", err.message);
+    console.error("Error deleting exam class:", err.message);
     res.status(500).json({ message: "Server error" });
   } finally {
     client.release();
+  }
+};
+
+//get full question paper for a class and exam
+exports.getFullQuestionPaper = async (req, res) => {
+  try {
+    const { classId, examId } = req.params;
+    const result = await pool.query("SELECT * FROM exam_class WHERE id = $1 AND exam_id = $2", [classId, examId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching full question paper:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//get students details and answer key for a class and exam
+exports.getStudentsDetailsWithAnswerKey = async (req, res) => {
+  try {
+    const { roll_number } = req.params;
+    const result = await pool.query(`SELECT
+      s.roll_number AS roll,
+      s.name AS student_name,
+      COALESCE(s.school, 'N/A') AS school_name,
+      ec.class_name,
+      ec.answer_key
+  FROM students s
+  JOIN exam_class ec
+      ON ec.class_name = s.class
+  WHERE s.roll_number = $1
+    AND ec.exam_id = '8ae9128a-717f-4d71-b8e5-a150a3f14812';
+  `, [roll_number]);
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error("Error fetching students details and answer key:", err.message);
+    res.status(500).json({ message: "Server error" });
   }
 };

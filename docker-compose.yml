@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # Your existing backend
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://postgres:password@db:5432/exam_portal
+      - JWT_SECRET=your_jwt_secret_here
+      - PDF_SERVICE_URL=http://pdf-service:8000
+      - OMR_SERVICE_URL=http://omr-service:8001
+    depends_on:
+      - db
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Your existing frontend
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:4000/api
+      - REACT_APP_PDF_SERVICE_URL=http://localhost:8000
+      - REACT_APP_OMR_SERVICE_URL=http://localhost:8001
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # Your existing PDF service
+  pdf-service:
+    build: ./pdf_service
+    ports:
+      - "8000:8000"
+    environment:
+      - PDF_SERVICE_PORT=8000
+      - PDF_SERVICE_HOST=0.0.0.0
+    volumes:
+      - ./pdf_service:/app
+
+  # New OMR service
+  omr-service:
+    build: ./omr-service
+    ports:
+      - "8001:8001"
+    environment:
+      - OMR_SERVICE_PORT=8001
+      - OMR_SERVICE_HOST=0.0.0.0
+      - BACKEND_URL=http://backend:4000
+    volumes:
+      - ./omr-service:/app
+      - omr_uploads:/app/uploads
+      - omr_logs:/app/logs
+
+  # Your existing database
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=exam_portal
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+  omr_uploads:
+  omr_logs:

@@ -82,6 +82,290 @@ class PDFGenerator:
             logger.error(f"Error generating PDF: {str(e)}")
             raise Exception(f"Failed to generate PDF: {str(e)}")
     
+    async def generate_scholarship_pdf(self, scholarship_request) -> bytes:
+        """
+        Generate PDF scholarship result list
+        
+        Args:
+            scholarship_request: ScholarshipRequest containing scholarship data
+            
+        Returns:
+            PDF data as bytes
+        """
+        try:
+            logger.info(f"Starting scholarship PDF generation for class: {scholarship_request.class_name}")
+            
+            # Generate HTML content for scholarship
+            html_content = await self.template_engine.render_scholarship_template(scholarship_request)
+            
+            # Generate PDF from HTML
+            pdf_data = await self._html_to_pdf_scholarship(html_content)
+            
+            logger.info(f"Successfully generated scholarship PDF for class: {scholarship_request.class_name}")
+            return pdf_data
+            
+        except Exception as e:
+            logger.error(f"Error generating scholarship PDF: {str(e)}")
+            raise Exception(f"Failed to generate scholarship PDF: {str(e)}")
+    
+    async def _html_to_pdf_scholarship(self, html_content: str) -> bytes:
+        """
+        Convert HTML content to PDF for scholarship using WeasyPrint
+        
+        Args:
+            html_content: HTML content to convert
+            
+        Returns:
+            PDF data as bytes
+        """
+        try:
+            # Run PDF generation in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            pdf_data = await loop.run_in_executor(
+                self.executor,
+                self._generate_scholarship_pdf_sync,
+                html_content
+            )
+            
+            return pdf_data
+            
+        except Exception as e:
+            logger.error(f"Error converting scholarship HTML to PDF: {str(e)}")
+            raise Exception(f"Failed to convert scholarship HTML to PDF: {str(e)}")
+    
+    def _generate_scholarship_pdf_sync(self, html_content: str) -> bytes:
+        """
+        Synchronous scholarship PDF generation
+        
+        Args:
+            html_content: HTML content
+            
+        Returns:
+            PDF data as bytes
+        """
+        try:
+            if not WEASYPRINT_AVAILABLE:
+                # Fallback: return HTML content as a simple text file
+                logger.warning("WeasyPrint not available, returning HTML content")
+                return html_content.encode('utf-8')
+            
+            # Create HTML object with base URL for resolving relative paths
+            import os
+            base_url = f"file://{os.path.abspath('.')}/"
+            html_doc = HTML(string=html_content, base_url=base_url)
+            
+            # Create CSS for scholarship styling
+            css_content = self._generate_scholarship_css()
+            css_doc = CSS(string=css_content, font_config=self.font_config)
+            
+            # Generate PDF
+            pdf_buffer = io.BytesIO()
+            html_doc.write_pdf(
+                target=pdf_buffer,
+                stylesheets=[css_doc],
+                font_config=self.font_config,
+                optimize_size=['fonts']
+            )
+            
+            pdf_data = pdf_buffer.getvalue()
+            pdf_buffer.close()
+            
+            return pdf_data
+            
+        except Exception as e:
+            logger.error(f"Error in synchronous scholarship PDF generation: {str(e)}")
+            # Fallback: return HTML content
+            logger.warning("Scholarship PDF generation failed, returning HTML content as fallback")
+            return html_content.encode('utf-8')
+    
+    def _generate_scholarship_css(self) -> str:
+        """
+        Generate CSS for scholarship PDF styling with Bengali font support
+        
+        Returns:
+            CSS content as string
+        """
+        css_content = """
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+        
+        @page {
+            size: A4;
+            margin: 0.5in;
+        }
+        
+        * {
+            font-feature-settings: "kern" 1, "liga" 1;
+            -webkit-font-feature-settings: "kern" 1, "liga" 1;
+        }
+        
+        body {
+            font-family: 'Noto Sans Bengali', 'Hind Siliguri', 'SolaimanLipi', Arial, sans-serif;
+            font-size: 12pt;
+            color: #333;
+            direction: ltr;
+            text-rendering: optimizeLegibility;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Header styling */
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #2563eb;
+            padding-bottom: 20px;
+        }
+        
+        .bismillah {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        
+        .motto {
+            font-size: 14pt;
+            color: #374151;
+            margin-bottom: 15px;
+        }
+        
+        .org-name {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 5px;
+        }
+        
+        .org-details {
+            font-size: 11pt;
+            color: #6b7280;
+            margin-bottom: 10px;
+        }
+        
+        .exam-title {
+            font-size: 18pt;
+            font-weight: bold;
+            color: #dc2626;
+            margin-top: 15px;
+        }
+        
+        /* Logo styling */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            border: 3px solid #2563eb;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24pt;
+            color: #1e40af;
+            margin-right: 20px;
+        }
+        
+        /* Table styling */
+        .scholarship-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .scholarship-table th {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+            border: 1px solid #1e40af;
+        }
+        
+        .scholarship-table td {
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #d1d5db;
+            font-size: 11pt;
+        }
+        
+        .scholarship-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        
+        .scholarship-table tr:hover {
+            background-color: #e0f2fe;
+        }
+        
+        /* Class title */
+        .class-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #1e40af;
+            text-align: center;
+            margin: 25px 0 15px 0;
+            padding: 10px;
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-radius: 8px;
+            border: 2px solid #3b82f6;
+        }
+        
+        /* Serial number styling */
+        .serial-no {
+            font-weight: bold;
+            color: #1e40af;
+        }
+        
+        /* Name styling */
+        .student-name {
+            font-weight: 500;
+            color: #374151;
+            text-align: left;
+            padding-left: 15px;
+        }
+        
+        /* School styling */
+        .school-name {
+            color: #6b7280;
+            text-align: left;
+            padding-left: 15px;
+        }
+        
+        /* Roll number styling */
+        .roll-number {
+            font-weight: bold;
+            color: #dc2626;
+        }
+        
+        /* Print-specific styles */
+        @media print {
+            .scholarship-table {
+                break-inside: avoid;
+                page-break-inside: avoid;
+            }
+            
+            .header {
+                break-after: avoid;
+            }
+            
+            .class-title {
+                break-after: avoid;
+            }
+        }
+        """
+        
+        return css_content
+    
     async def _html_to_pdf(
         self, 
         html_content: str, 

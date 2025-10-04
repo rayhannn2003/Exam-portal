@@ -9,8 +9,9 @@ const pdfController = require('../controllers/pdfController');
 const { verifyAdmin } = require('../middleware/verifyAdmin');
 
 // PDF Generation Routes
-router.post('/generate/:examId/:setId', verifyAdmin, pdfController.generateQuestionPaperPDF);
-router.get('/preview/:examId/:setId', verifyAdmin, pdfController.generateQuestionPaperPreview);
+router.post('/generate/:examId/:classId', verifyAdmin, pdfController.generateQuestionPaperPDF);
+router.get('/preview/:examId/:classId', verifyAdmin, pdfController.generateQuestionPaperPreview);
+router.post('/preview/:examId/:classId', verifyAdmin, pdfController.generateQuestionPaperPreview);
 
 // PDF Service Management Routes
 router.get('/templates', verifyAdmin, pdfController.getAvailableTemplates);

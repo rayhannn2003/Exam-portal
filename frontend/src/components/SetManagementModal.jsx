@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { addExamSet, editExamSet, deleteExamSet } from '../assets/services/api';
+import { addExamClass, editExamClass, deleteExamClass } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
-import MockPDFGenerator from './MockPDFGenerator';
+import PDFGenerator from './PDFGenerator';
 
 const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = null }) => {
   const [formData, setFormData] = useState({
-    set_name: '',
+    class_name: '',
     questions: [
       {
         qno: 1,
@@ -25,7 +25,7 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
   useEffect(() => {
     if (editingSet) {
       setFormData({
-        set_name: editingSet.set_name || '',
+        class_name: editingSet.class_name || '',
         questions: editingSet.questions || [
           {
             qno: 1,
@@ -37,7 +37,7 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
       });
     } else {
       setFormData({
-        set_name: '',
+        class_name: '',
         questions: [
           {
             qno: 1,
@@ -57,16 +57,16 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
 
     try {
       if (editingSet) {
-        await editExamSet(exam.id, editingSet.id, formData);
-        success('Exam set updated successfully');
+        await editExamClass(exam.id, editingSet.id, formData);
+        success('Exam class updated successfully');
       } else {
-        await addExamSet(exam.id, formData);
-        success('Exam set added successfully');
+        await addExamClass(exam.id, formData);
+        success('Exam class added successfully');
       }
       onSuccess();
       onClose();
     } catch (err) {
-      const errorMessage = err.message || 'Failed to save exam set';
+      const errorMessage = err.message || 'Failed to save exam class';
       setError(errorMessage);
       showError(errorMessage);
     } finally {
@@ -77,15 +77,15 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
   const handleDelete = async () => {
     if (!editingSet) return;
     
-    if (window.confirm('Are you sure you want to delete this exam set?')) {
+    if (window.confirm('Are you sure you want to delete this exam class?')) {
       setLoading(true);
       try {
-        await deleteExamSet(exam.id, editingSet.id);
-        success('Exam set deleted successfully');
+        await deleteExamClass(exam.id, editingSet.id);
+        success('Exam class deleted successfully');
         onSuccess();
         onClose();
       } catch (err) {
-        const errorMessage = err.message || 'Failed to delete exam set';
+        const errorMessage = err.message || 'Failed to delete exam class';
         setError(errorMessage);
         showError(errorMessage);
       } finally {
@@ -107,28 +107,35 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
   };
 
   const removeQuestion = (index) => {
-    if (formData.questions.length <= 1) return;
+    if (formData.questions.length <= 1) {
+      showError('At least one question is required');
+      return;
+    }
     
-    const newQuestions = formData.questions.filter((_, i) => i !== index);
-    // Renumber questions
-    const renumberedQuestions = newQuestions.map((q, i) => ({
-      ...q,
-      qno: i + 1
-    }));
-    
-    // Update answer key
-    const newAnswerKey = {};
-    renumberedQuestions.forEach((q, i) => {
-      if (formData.answer_key[q.qno]) {
-        newAnswerKey[i + 1] = formData.answer_key[q.qno];
-      }
-    });
-    
-    setFormData({
-      ...formData,
-      questions: renumberedQuestions,
-      answer_key: newAnswerKey
-    });
+    if (window.confirm('Are you sure you want to delete this question?')) {
+      const newQuestions = formData.questions.filter((_, i) => i !== index);
+      // Renumber questions
+      const renumberedQuestions = newQuestions.map((q, i) => ({
+        ...q,
+        qno: i + 1
+      }));
+      
+      // Update answer key
+      const newAnswerKey = {};
+      renumberedQuestions.forEach((q, i) => {
+        if (formData.answer_key[q.qno]) {
+          newAnswerKey[i + 1] = formData.answer_key[q.qno];
+        }
+      });
+      
+      setFormData({
+        ...formData,
+        questions: renumberedQuestions,
+        answer_key: newAnswerKey
+      });
+      
+      success('Question deleted successfully');
+    }
   };
 
   const updateQuestion = (index, field, value) => {
@@ -174,7 +181,7 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
       <div className="bg-white/90 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 shadow-2xl shadow-green-500/25 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-            {editingSet ? 'সেট সম্পাদনা করুন' : 'নতুন সেট যোগ করুন'} - {exam.title}
+            {editingSet ? 'ক্লাস সম্পাদনা করুন' : 'নতুন ক্লাস যোগ করুন'} - {exam.exam_name}
           </h2>
           <div className="flex items-center space-x-2">
             <button
@@ -208,31 +215,36 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                সেটের নাম
+                ক্লাসের নাম
               </label>
-              <input
-                type="text"
-                value={formData.set_name}
-                onChange={(e) => setFormData({ ...formData, set_name: e.target.value })}
+              <select
+                value={formData.class_name}
+                onChange={(e) => setFormData({ ...formData, class_name: e.target.value })}
                 required
-                placeholder="সেট A, সেট B, ইত্যাদি"
                 className="w-full px-4 py-3 border border-green-500/30 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-              />
+              >
+                <option value="">ক্লাস নির্বাচন করুন</option>
+                <option value="6">৬ষ্ঠ শ্রেণী</option>
+                <option value="7">৭ম শ্রেণী</option>
+                <option value="8">৮ম শ্রেণী</option>
+                <option value="9">৯ম শ্রেণী</option>
+                <option value="10">১০ম শ্রেণী</option>
+              </select>
             </div>
 
-            {/* Existing Sets */}
-            {!editingSet && exam.sets && exam.sets.length > 0 && (
+            {/* Existing Classes */}
+            {!editingSet && exam.classes && exam.classes.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  বিদ্যমান সেটসমূহ
+                  বিদ্যমান ক্লাসসমূহ
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {exam.sets.map((set) => (
+                  {exam.classes.map((set) => (
                     <div key={set.id} className="bg-white/60 backdrop-blur-sm border border-green-500/20 rounded-xl p-4 hover:shadow-lg hover:shadow-green-500/25 transition-all">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                          {set.set_name}
+                          {set.class_name}
                         </h4>
                         <div className="flex space-x-2">
                           <button
@@ -248,7 +260,7 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
                             onClick={() => {
                               setEditingSet(set);
                               setFormData({
-                                set_name: set.set_name || '',
+                                class_name: set.class_name || '',
                                 questions: set.questions || [
                                   {
                                     qno: 1,
@@ -271,11 +283,11 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
                               if (window.confirm('Are you sure you want to delete this exam set?')) {
                                 setLoading(true);
                                 try {
-                                  await deleteExamSet(exam.id, set.id);
-                                  success('Exam set deleted successfully');
+                                  await deleteExamClass(exam.id, set.id);
+                                  success('Exam class deleted successfully');
                                   onSuccess();
                                 } catch (err) {
-                                  const errorMessage = err.message || 'Failed to delete exam set';
+                                  const errorMessage = err.message || 'Failed to delete exam class';
                                   setError(errorMessage);
                                   showError(errorMessage);
                                 } finally {
@@ -323,17 +335,21 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
                       <h4 className="text-md font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                         প্রশ্ন {question.qno}
                       </h4>
-                      {formData.questions.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeQuestion(index)}
-                          className="text-red-500 hover:text-red-700 transition-colors"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeQuestion(index)}
+                        className={`p-2 rounded-lg transition-all ${
+                          formData.questions.length > 1 
+                            ? 'text-red-500 hover:text-red-700 hover:bg-red-50 border border-red-200 hover:border-red-300' 
+                            : 'text-gray-300 cursor-not-allowed border border-gray-200'
+                        }`}
+                        title={formData.questions.length > 1 ? 'Delete Question' : 'At least one question is required'}
+                        disabled={formData.questions.length <= 1}
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </div>
 
                     <div className="space-y-4">
@@ -353,17 +369,22 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
-                        {['A', 'B', 'C', 'D'].map((option) => (
-                          <div key={option}>
+                        {[
+                          { key: 'A', bengali: 'ক' },
+                          { key: 'B', bengali: 'খ' },
+                          { key: 'C', bengali: 'গ' },
+                          { key: 'D', bengali: 'ঘ' }
+                        ].map((option) => (
+                          <div key={option.key}>
                             <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                              অপশন {option}
+                              অপশন {option.bengali}
                             </label>
                             <input
                               type="text"
-                              value={question.options[option]}
-                              onChange={(e) => updateOption(index, option, e.target.value)}
+                              value={question.options[option.key]}
+                              onChange={(e) => updateOption(index, option.key, e.target.value)}
                               required
-                              placeholder={`অপশন ${option}`}
+                              placeholder={`অপশন ${option.bengali}`}
                               className="w-full px-4 py-3 border border-green-500/30 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
                               style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                             />
@@ -383,10 +404,10 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
                           style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                         >
                           <option value="">সঠিক উত্তর নির্বাচন করুন</option>
-                          <option value="A">A</option>
-                          <option value="B">B</option>
-                          <option value="C">C</option>
-                          <option value="D">D</option>
+                          <option value="A">ক</option>
+                          <option value="B">খ</option>
+                          <option value="C">গ</option>
+                          <option value="D">ঘ</option>
                         </select>
                       </div>
                     </div>
@@ -401,53 +422,56 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
               </div>
             )}
 
-            <div className="flex space-x-4">
-              {editingSet && (
+            {/* Sticky Footer */}
+            <div className="sticky bottom-0 bg-white/95 backdrop-blur-xl border-t border-green-500/30 -mx-8 px-8 py-4 mt-6">
+              <div className="flex space-x-4">
+                {editingSet && (
+                  <button
+                    type="button"
+                    onClick={handleDelete}
+                    disabled={loading}
+                    className="px-6 py-3 bg-red-500/20 text-red-600 rounded-xl hover:bg-red-500/30 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-red-500/30"
+                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                  >
+                    ক্লাস মুছুন
+                  </button>
+                )}
                 <button
                   type="button"
-                  onClick={handleDelete}
-                  disabled={loading}
-                  className="px-6 py-3 bg-red-500/20 text-red-600 rounded-xl hover:bg-red-500/30 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed border border-red-500/30"
+                  onClick={onClose}
+                  className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
                   style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                 >
-                  মুছুন
+                  বাতিল
                 </button>
-              )}
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-all font-medium"
-                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-              >
-                বাতিল
-              </button>
-              <button
-                type="button"
-                onClick={handleSubmit}
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25"
-                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-              >
-                {loading ? 'সংরক্ষণ হচ্ছে...' : editingSet ? 'আপডেট করুন' : 'সেট যোগ করুন'}
-              </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-500/25"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                >
+                  {loading ? 'সংরক্ষণ হচ্ছে...' : editingSet ? 'ক্লাস আপডেট করুন' : 'ক্লাস যোগ করুন'}
+                </button>
+              </div>
             </div>
           </div>
         )}
       </div>
       
-      {/* Mock PDF Generator Modal */}
-      {/* {showPDFGenerator && selectedSetForPDF && (
-        <MockPDFGenerator
+      {/* PDF Generator Modal */}
+      {showPDFGenerator && selectedSetForPDF && (
+        <PDFGenerator
           examId={exam.id}
-          setId={selectedSetForPDF.id}
-          examTitle={exam.title}
-          setName={selectedSetForPDF.set_name}
+          classId={selectedSetForPDF.id}
+          examTitle={exam.exam_name}
+          className={selectedSetForPDF.class_name}
           onClose={() => {
             setShowPDFGenerator(false);
             setSelectedSetForPDF(null);
           }}
         />
-      )} */}
+      )}
     </div>
   );
 };

@@ -16,6 +16,16 @@ const QuestionPreviewModal = ({ isOpen, onClose, examSet }) => {
     return 'bg-white/60 border-gray-300 text-gray-700';
   };
 
+  const getBengaliOption = (optionKey) => {
+    const bengaliMap = {
+      'A': 'ক',
+      'B': 'খ',
+      'C': 'গ',
+      'D': 'ঘ'
+    };
+    return bengaliMap[optionKey] || optionKey;
+  };
+
   const getOptionIcon = (optionKey, questionNumber) => {
     const correctAnswer = answerKey[questionNumber?.toString()];
     if (correctAnswer === optionKey) {
@@ -29,7 +39,7 @@ const QuestionPreviewModal = ({ isOpen, onClose, examSet }) => {
     }
     return (
       <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-        <span className="text-gray-600 text-sm font-medium">{optionKey}</span>
+        <span className="text-gray-600 text-sm font-medium">{getBengaliOption(optionKey)}</span>
       </div>
     );
   };
@@ -42,7 +52,7 @@ const QuestionPreviewModal = ({ isOpen, onClose, examSet }) => {
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <h2 className="text-lg sm:text-2xl font-bold text-gray-800 truncate" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                {examSet.set_name} - প্রশ্ন পর্যালোচনা
+                {examSet.class_name} - প্রশ্ন পর্যালোচনা
               </h2>
               <p className="text-gray-600 text-xs sm:text-sm mt-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                 মোট {questions.length} টি প্রশ্ন - স্ক্রল করে সব প্রশ্ন দেখুন
@@ -96,7 +106,7 @@ const QuestionPreviewModal = ({ isOpen, onClose, examSet }) => {
                         {getOptionIcon(optionKey, question.qno)}
                         <div className="flex-1 min-w-0">
                           <span className="text-sm sm:text-lg font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                            ({optionKey}) {optionText}
+                            ({getBengaliOption(optionKey)}) {optionText}
                           </span>
                         </div>
                       </div>

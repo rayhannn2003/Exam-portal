@@ -17,8 +17,8 @@ const PDF_SERVICE_TIMEOUT = parseInt(process.env.PDF_SERVICE_TIMEOUT) || 30000;
  */
 exports.generateQuestionPaperPDF = async (req, res) => {
   try {
-    const { examId, setId } = req.params;
-    const { templateType = 'default', customization = {} } = req.body;
+    const { examId, classId } = req.params;
+    const { templateType = 'compact_bengali', customization = {} } = req.body;
 
     // Get exam data
     const examResult = await pool.query(
@@ -32,41 +32,51 @@ exports.generateQuestionPaperPDF = async (req, res) => {
 
     const exam = examResult.rows[0];
 
-    // Get exam set data
-    const setResult = await pool.query(
-      'SELECT * FROM exam_sets WHERE id = $1 AND exam_id = $2',
-      [setId, examId]
+    // Get exam class data using the getFullQuestionPaper function logic
+    const classResult = await pool.query(
+      'SELECT * FROM exam_class WHERE id = $1 AND exam_id = $2',
+      [classId, examId]
     );
 
-    if (setResult.rowCount === 0) {
-      return res.status(404).json({ message: 'Exam set not found' });
+    if (classResult.rowCount === 0) {
+      return res.status(404).json({ message: 'Exam class not found' });
     }
 
-    const examSet = setResult.rows[0];
+    const examClass = classResult.rows[0];
 
-    // Transform data for PDF service
+    // Transform data for PDF service (matching the expected Pydantic model)
+    const questions = Array.isArray(examClass.questions) ? examClass.questions : [];
+    
     const pdfRequest = {
       exam: {
-        id: exam.id,
-        title: exam.title,
-        class_name: exam.class,
+        id: parseInt(exam.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to integer
+        title: exam.exam_name,
+        class_name: examClass.class_name, // PDF service expects 'class_name'
+        class: examClass.class_name || 'Class 8', // Template expects 'class' with fallback
         year: exam.year,
         question_count: exam.question_count,
         created_at: exam.created_at
       },
       exam_set: {
-        set_name: examSet.set_name,
-        questions: examSet.questions,
-        answer_key: examSet.answer_key,
-        total_marks: calculateTotalMarks(examSet.questions),
-        duration_minutes: customization.duration_minutes || 180,
+        set_name: examClass.class_name, // PDF service expects 'set_name'
+        questions: questions.map(q => ({
+          qno: q.qno || questions.indexOf(q) + 1,
+          question: q.question || '',
+          question_type: 'mcq',
+          marks: q.marks || 1,
+          options: q.options || { A: '', B: '', C: '', D: '' },
+          correct_answer: q.correct_answer || null
+        })),
+        answer_key: examClass.answer_key || {},
+        total_marks: calculateTotalMarks(questions),
+        duration_minutes: customization.duration_minutes || 60,
         instructions: customization.instructions
       },
       template_type: templateType,
       customization: {
         paper_size: customization.paper_size || 'A4',
         orientation: customization.orientation || 'portrait',
-        font_size: customization.font_size || '12pt',
+        font_size: customization.font_size || '10pt',
         margin_type: customization.margin_type || 'normal',
         header_options: {
           show_logo: customization.show_logo !== false,
@@ -76,7 +86,7 @@ exports.generateQuestionPaperPDF = async (req, res) => {
           show_duration: customization.show_duration !== false,
           show_marks: customization.show_marks !== false,
           show_instructions: customization.show_instructions !== false,
-          organization_name: customization.organization_name,
+          organization_name: customization.organization_name || 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন',
           logo_url: customization.logo_url
         },
         footer_options: {
@@ -104,7 +114,9 @@ exports.generateQuestionPaperPDF = async (req, res) => {
     );
 
     // Set response headers for PDF download
-    const filename = `${exam.title}_${examSet.set_name}_${new Date().toISOString().split('T')[0]}.pdf`;
+    // Create safe filename without Bengali characters for HTTP header
+    const safeClassName = examClass.class_name.replace(/[^\x00-\x7F]/g, '').trim() || 'Class'; // Remove non-ASCII characters
+    const filename = `exam_${safeClassName}_${new Date().toISOString().split('T')[0]}.pdf`;
     
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -151,8 +163,51 @@ exports.generateQuestionPaperPDF = async (req, res) => {
  */
 exports.generateQuestionPaperPreview = async (req, res) => {
   try {
-    const { examId, setId } = req.params;
-    const { templateType = 'default', customization = {} } = req.query;
+    const { examId, classId } = req.params;
+    
+    // Handle both GET and POST requests
+    let templateType, customizationParams;
+    if (req.method === 'POST') {
+      // For POST requests, read from request body
+      templateType = req.body.templateType || 'compact_bengali';
+      customizationParams = req.body.customization || {};
+    } else {
+      // For GET requests, read from query parameters
+      const queryParams = req.query;
+      templateType = queryParams.templateType || 'compact_bengali';
+      customizationParams = { ...queryParams };
+      delete customizationParams.templateType; // Remove templateType from customization params
+    }
+    
+    // Log the parameters for debugging
+    console.log('Preview method:', req.method);
+    console.log('Template type:', templateType);
+    
+    // Build customization object from parameters
+    // Handle Bengali characters more robustly
+    let organizationName = 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন';
+    
+    // Try to get the organization name if it exists
+    if (customizationParams.organization_name) {
+      if (req.method === 'GET') {
+        // For GET requests, try to decode URL-encoded Bengali characters
+        try {
+          organizationName = decodeURIComponent(customizationParams.organization_name);
+        } catch (error) {
+          // If decoding fails, use the original value or fallback
+          organizationName = customizationParams.organization_name || 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন';
+        }
+      } else {
+        // For POST requests, use the value directly (no URL encoding)
+        organizationName = customizationParams.organization_name || 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন';
+      }
+    }
+    
+    const customization = {
+      organization_name: organizationName,
+      duration_minutes: parseInt(customizationParams.duration_minutes) || 60,
+      show_instructions: customizationParams.show_instructions !== 'false'
+    };
 
     // Get exam data
     const examResult = await pool.query(
@@ -166,44 +221,59 @@ exports.generateQuestionPaperPreview = async (req, res) => {
 
     const exam = examResult.rows[0];
 
-    // Get exam set data
-    const setResult = await pool.query(
-      'SELECT * FROM exam_sets WHERE id = $1 AND exam_id = $2',
-      [setId, examId]
+    // Get exam class data
+    const classResult = await pool.query(
+      'SELECT * FROM exam_class WHERE id = $1 AND exam_id = $2',
+      [classId, examId]
     );
 
-    if (setResult.rowCount === 0) {
-      return res.status(404).json({ message: 'Exam set not found' });
+    if (classResult.rowCount === 0) {
+      return res.status(404).json({ message: 'Exam class not found' });
     }
 
-    const examSet = setResult.rows[0];
+    const examClass = classResult.rows[0];
+    
 
-    // Transform data for PDF service
+    // Transform data for PDF service (matching the expected Pydantic model)
+    const questions = Array.isArray(examClass.questions) ? examClass.questions : [];
+    
     const pdfRequest = {
       exam: {
-        id: exam.id,
-        title: exam.title,
-        class_name: exam.class,
+        id: parseInt(exam.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to integer
+        title: exam.exam_name,
+        class_name: examClass.class_name, // PDF service expects 'class_name'
+        class: examClass.class_name || 'Class 8', // Template expects 'class' with fallback
         year: exam.year,
         question_count: exam.question_count,
         created_at: exam.created_at
       },
       exam_set: {
-        set_name: examSet.set_name,
-        questions: examSet.questions,
-        answer_key: examSet.answer_key,
-        total_marks: calculateTotalMarks(examSet.questions),
-        duration_minutes: 180
+        set_name: examClass.class_name, // Template expects 'set_name'
+        questions: questions.map(q => ({
+          qno: q.qno || questions.indexOf(q) + 1,
+          question: q.question || '',
+          question_type: 'mcq',
+          marks: q.marks || 1,
+          options: q.options || { A: '', B: '', C: '', D: '' },
+          correct_answer: q.correct_answer || null
+        })),
+        answer_key: examClass.answer_key || {},
+        total_marks: calculateTotalMarks(questions),
+        duration_minutes: customization.duration_minutes || 60
       },
       template_type: templateType,
       customization: {
         paper_size: 'A4',
         orientation: 'portrait',
-        font_size: '12pt',
+        font_size: '10pt',
         margin_type: 'normal',
+        header_options: {
+          organization_name: customization.organization_name || 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন'
+        },
         show_answer_spaces: true
       }
     };
+    
 
     // Call PDF service for preview
     const response = await axios.post(
@@ -223,6 +293,7 @@ exports.generateQuestionPaperPreview = async (req, res) => {
 
   } catch (error) {
     console.error('Error generating preview:', error.message);
+    console.error('Error stack:', error.stack);
     
     if (error.response) {
       return res.status(error.response.status).json({
@@ -340,8 +411,10 @@ function calculateTotalMarks(questions) {
     return 0;
   }
   
+  // For the new schema, each question typically counts as 1 mark
+  // unless specified otherwise
   return questions.reduce((total, question) => {
-    return total + (question.marks || 0);
+    return total + (question.marks || 1);
   }, 0);
 }
 

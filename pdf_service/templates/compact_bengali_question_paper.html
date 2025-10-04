@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ exam.title }} - সেট {{ exam_set.set_name }}</title>
+    <title>{{ exam.title }} </title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600&display=swap');
 
@@ -132,10 +132,9 @@
     <div class="header">
         <div class="org-name">{{ customization.header_options.organization_name or "উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন" }}</div>
         <div class="exam-title">{{ exam.title }}</div>
-        <div class="exam-subline">শ্রেণী - {{ exam.class }}</div>
-        <div class="exam-subline">সেট - {{ exam_set.set_name }}</div>
+        <div class="exam-subline">শ্রেণী - {{ exam.class_name }}</div>
         <div class="meta-row">
-            <span>পূর্ণমান - {{ exam_set.total_marks or exam.question_count }}</span>
+            <span>পূর্ণমান - {{ exam_set.total_marks or exam_set.questions|length }}</span>
             <span>সময়: {{ exam_set.duration_minutes or 60 }} মিনিট</span>
         </div>
     </div>

@@ -88,6 +88,39 @@ class TemplateEngine:
             logger.error(f"Error rendering template: {str(e)}")
             raise Exception(f"Failed to render template: {str(e)}")
     
+    async def render_scholarship_template(self, scholarship_request) -> str:
+        """
+        Render scholarship template to HTML
+        
+        Args:
+            scholarship_request: ScholarshipRequest containing scholarship data
+            
+        Returns:
+            HTML content as string
+        """
+        try:
+            logger.info(f"Rendering scholarship template for class: {scholarship_request.class_name}")
+            
+            # Create template context
+            context = {
+                'scholarship_request': scholarship_request,
+                'current_date': datetime.now().strftime('%d/%m/%Y'),
+                'current_time': datetime.now().strftime('%H:%M:%S')
+            }
+            
+            # Get the scholarship template
+            template = self.jinja_env.get_template('scholarship_template.html')
+            
+            # Render template
+            html_content = template.render(**context)
+            
+            logger.info(f"Successfully rendered scholarship template for class: {scholarship_request.class_name}")
+            return html_content
+            
+        except Exception as e:
+            logger.error(f"Error rendering scholarship template: {str(e)}")
+            raise Exception(f"Failed to render scholarship template: {str(e)}")
+    
     async def get_available_templates(self) -> list:
         """Get list of available templates"""
         try:

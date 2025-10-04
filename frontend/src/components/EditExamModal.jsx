@@ -4,8 +4,7 @@ import { useToast } from '../contexts/ToastContext';
 
 const EditExamModal = ({ isOpen, onClose, onSuccess, exam }) => {
   const [formData, setFormData] = useState({
-    class: '',
-    title: '',
+    exam_name: '',
     question_count: '',
     year: ''
   });
@@ -16,8 +15,7 @@ const EditExamModal = ({ isOpen, onClose, onSuccess, exam }) => {
   useEffect(() => {
     if (exam) {
       setFormData({
-        class: exam.class || '',
-        title: exam.title || '',
+        exam_name: exam.exam_name || '',
         question_count: exam.question_count || '',
         year: exam.year || ''
       });
@@ -72,33 +70,12 @@ const EditExamModal = ({ isOpen, onClose, onSuccess, exam }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-              শ্রেণী
-            </label>
-            <select
-              name="class"
-              value={formData.class}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-green-500/30 rounded-xl bg-white/80 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500 transition-all"
-              style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-            >
-              <option value="">শ্রেণী নির্বাচন করুন</option>
-              <option value="SIX">৬ষ্ঠ শ্রেণী</option>
-              <option value="SEVEN">৭ম শ্রেণী</option>
-              <option value="EIGHT">৮ম শ্রেণী</option>
-              <option value="NINE">৯ম শ্রেণী</option>
-              <option value="TEN">১০ম শ্রেণী</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
               পরীক্ষার নাম
             </label>
             <input
               type="text"
-              name="title"
-              value={formData.title}
+              name="exam_name"
+              value={formData.exam_name}
               onChange={handleChange}
               required
               placeholder="পরীক্ষার নাম লিখুন"

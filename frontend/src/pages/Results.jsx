@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { getFullResults, getResultByStudentRoll, getResultByClass, getResultBySchool } from '../assets/services/api';
+import { getFullResults, getResultByStudentRoll, getResultByClass, getResultBySchool, markForScholarship, unmarkForScholarship } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
 import IndividualResultModal from '../components/IndividualResultModal';
+import OMRUpload from '../components/OMRUpload';
 
 const Results = () => {
+  console.log('Results component rendered!');
   const [results, setResults] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +18,7 @@ const Results = () => {
   const [showRollSearch, setShowRollSearch] = useState(false);
   const [showIndividualResult, setShowIndividualResult] = useState(false);
   const [individualResultData, setIndividualResultData] = useState([]);
+  const [showOMRUpload, setShowOMRUpload] = useState(false);
   const { success, error } = useToast();
 
   // Unique classes and schools for filters
@@ -42,6 +45,7 @@ const Results = () => {
       setLoading(false);
     }
   };
+
 
   const filterResults = () => {
     let filtered = [...results];
@@ -73,6 +77,7 @@ const Results = () => {
 
     setFilteredResults(filtered);
   };
+
 
   const handleRollSearch = async () => {
     if (!rollSearch.trim()) {
@@ -107,23 +112,26 @@ const Results = () => {
     setFilteredResults(results);
   };
 
-  const getGradeColor = (percentage) => {
-    const percent = parseFloat(percentage);
-    if (percent >= 80) return 'text-green-600 bg-green-100';
-    if (percent >= 60) return 'text-blue-600 bg-blue-100';
-    if (percent >= 40) return 'text-yellow-600 bg-yellow-100';
-    return 'text-red-600 bg-red-100';
+  const handleMarkForScholarship = async (studentId, studentName) => {
+    try {
+      await markForScholarship(studentId);
+      success(`${studentName} কে বৃত্তির জন্য নির্বাচিত করা হয়েছে`);
+      fetchResults(); // Refresh results to show updated scholarship status
+    } catch (err) {
+      error('বৃত্তির জন্য নির্বাচন করতে ব্যর্থ');
+    }
   };
 
-  const getGradeText = (percentage) => {
-    const percent = parseFloat(percentage);
-    if (percent >= 80) return 'A+';
-    if (percent >= 70) return 'A';
-    if (percent >= 60) return 'A-';
-    if (percent >= 50) return 'B';
-    if (percent >= 40) return 'C';
-    return 'F';
+  const handleUnmarkForScholarship = async (studentId, studentName) => {
+    try {
+      await unmarkForScholarship(studentId);
+      success(`${studentName} কে বৃত্তির তালিকা থেকে সরানো হয়েছে`);
+      fetchResults(); // Refresh results to show updated scholarship status
+    } catch (err) {
+      error('বৃত্তির তালিকা থেকে সরাতে ব্যর্থ');
+    }
   };
+
 
   if (loading) {
     return (
@@ -140,8 +148,22 @@ const Results = () => {
         <h2 className="text-3xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
           ফলাফল ব্যবস্থাপনা
         </h2>
-        <div className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-          মোট ফলাফল: {filteredResults.length} টি
+        <div className="flex items-center space-x-4">
+          <div className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+            মোট ফলাফল: {filteredResults.length} টি
+          </div>
+          <button
+            onClick={() => {
+              console.log('OMR Upload button clicked!');
+              setShowOMRUpload(true);
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2 cursor-pointer"
+            style={{ fontFamily: "'Hind Siliguri', sans-serif", pointerEvents: 'auto', zIndex: 10 }}
+            disabled={false}
+          >
+            <span>📄</span>
+            <span>OMR আপলোড</span>
+          </button>
         </div>
       </div>
 
@@ -336,9 +358,9 @@ const Results = () => {
                   <th className="text-left py-3 px-2 font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                     শ্রেণী
                   </th>
-                  <th className="text-left py-3 px-2 font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  {/* <th className="text-left py-3 px-2 font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                     পরীক্ষা
-                  </th>
+                  </th> */}
                   <th className="text-center py-3 px-2 font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                     সঠিক
                   </th>
@@ -352,7 +374,7 @@ const Results = () => {
                     শতাংশ
                   </th>
                   <th className="text-center py-3 px-2 font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    গ্রেড
+                    বৃত্তি নির্বাচন
                   </th>
                 </tr>
               </thead>
@@ -371,9 +393,9 @@ const Results = () => {
                     <td className="py-3 px-2 text-gray-700">
                       শ্রেণী {result.class}
                     </td>
-                    <td className="py-3 px-2 text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {/* <td className="py-3 px-2 text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                       {result.title}
-                    </td>
+                    </td> */}
                     <td className="py-3 px-2 text-center">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                         {result.correct}
@@ -393,9 +415,28 @@ const Results = () => {
                       </span>
                     </td>
                     <td className="py-3 px-2 text-center">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-bold ${getGradeColor(result.percentage)}`}>
-                        {getGradeText(result.percentage)}
-                      </span>
+                      {result.scholarship ? (
+                        <div className="flex flex-col items-center space-y-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                            🎓 বৃত্তিপ্রাপ্ত
+                          </span>
+                          <button
+                            onClick={() => handleUnmarkForScholarship(result.student_id, result.name)}
+                            className="text-xs text-red-600 hover:text-red-800 hover:underline transition-colors"
+                            style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                          >
+                            বাতিল করুন
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleMarkForScholarship(result.student_id, result.name)}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors border border-blue-300"
+                          style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                        >
+                          🎓 বৃত্তির জন্য নির্বাচন
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -404,6 +445,7 @@ const Results = () => {
           </div>
         )}
       </div>
+
 
       {/* Individual Result Modal */}
       <IndividualResultModal
@@ -415,6 +457,22 @@ const Results = () => {
         }}
         resultData={individualResultData}
       />
+
+      {/* OMR Upload Modal */}
+      {showOMRUpload && (
+        <OMRUpload
+          onClose={() => {
+            console.log('OMR Upload modal closing');
+            setShowOMRUpload(false);
+          }}
+          onSuccess={(result) => {
+            console.log('OMR Upload successful:', result);
+            // Refresh results after successful OMR processing
+            fetchResults();
+            setShowOMRUpload(false);
+          }}
+        />
+      )}
     </div>
   );
 };

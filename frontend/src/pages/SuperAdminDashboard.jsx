@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { getAllExams, getAllStudents, getRegistrationCountOverTime, getExamWithSets, deleteExam } from '../assets/services/api';
+import { getAllExams, getAllStudents, getRegistrationCountOverTime, getExamWithClasses, deleteExam } from '../assets/services/api';
 import CreateExamModal from '../components/CreateExamModal';
 import EditExamModal from '../components/EditExamModal';
 import SetManagementModal from '../components/SetManagementModal';
 import ExamManagement from '../components/ExamManagement';
 import Results from './Results';
+import Scholarship from './Scholarship';
 import Students from './Students';
 import Admins from './Admins';
 import Finance from './Finance';
@@ -88,8 +89,8 @@ const SuperAdminDashboard = () => {
 
   const handleManageSets = async (exam) => {
     try {
-      const examWithSets = await getExamWithSets(exam.id);
-      setSelectedExam(examWithSets);
+      const examWithClasses = await getExamWithClasses(exam.id);
+      setSelectedExam(examWithClasses);
       setShowSetManagementModal(true);
     } catch (error) {
       console.error('Error fetching exam details:', error);
@@ -112,6 +113,7 @@ const SuperAdminDashboard = () => {
     { id: 'overview', name: 'Overview', icon: '📊' },
     { id: 'exams', name: 'Exams', icon: '📝' },
     { id: 'results', name: 'Results', icon: '📈' },
+    { id: 'scholarship',name: 'Scholarship', icon: '🎓' },
     { id: 'students', name: 'Students', icon: '👥' },
     { id: 'admins', name: 'Admins', icon: '👨‍💼' },
     { id: 'finance', name: 'Finance', icon: '💰' }
@@ -169,10 +171,10 @@ const SuperAdminDashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                প্রশ্ন সেট
+                প্রশ্ন ক্লাস
               </p>
               <p className="text-3xl font-bold text-gray-800 mb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                {exams.reduce((total, exam) => total + parseInt(exam.set_count || 0), 0)}
+                {exams.reduce((total, exam) => total + parseInt(exam.class_count || 0), 0)}
               </p>
               <div className="flex items-center text-yellow-600 text-xs">
                 <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -412,7 +414,6 @@ const SuperAdminDashboard = () => {
                     />
                   ))}
                 </div>
-
                 {/* Y-axis Labels */}
                 <div className="absolute left-0 top-0 bottom-0 w-8 flex flex-col justify-between">
                   {(() => {
@@ -698,15 +699,15 @@ const SuperAdminDashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    {exam.title}
+                    {exam.exam_name}
                   </h4>
                   <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    শ্রেণী: {exam.class} | বছর: {exam.year}
+                    প্রশ্ন সংখ্যা: {exam.question_count} | বছর: {exam.year}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-yellow-600 font-bold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    {exam.set_count} সেট
+                    {exam.class_count} ক্লাস
                   </p>
                   <p className="text-gray-500 text-xs" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                     {new Date(exam.created_at).toLocaleDateString('bn-BD')}
@@ -718,34 +719,79 @@ const SuperAdminDashboard = () => {
         </div>
       </div>
 
-      {/* Class-wise Exam Distribution */}
+      {/* All Exams List */}
       <div className="bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-green-500/25 transition-all duration-500">
-        <h3 className="text-2xl font-bold text-gray-800 mb-6" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-          শ্রেণীভিত্তিক পরীক্ষা
-        </h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+            সব পরীক্ষা
+          </h3>
+          <button 
+            onClick={() => setActiveTab('exams')}
+            className="text-gray-700 hover:text-green-600 text-sm font-medium transition-colors bg-green-500/20 px-4 py-2 rounded-lg hover:bg-green-500/30 border border-green-500/50 backdrop-blur-xl"
+            style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+          >
+            সব দেখুন →
+          </button>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {exams.map((exam) => (
-            <div key={exam.id} className="bg-white/60 backdrop-blur-xl border border-green-500/30 rounded-xl p-4 hover:shadow-lg hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-105 hover:border-green-400/50">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  {exam.class}
-                </h4>
-                <span className="bg-green-500/20 text-green-600 px-3 py-1 rounded-full text-xs font-medium border border-green-500/50 backdrop-blur-xl">
-                  {exam.set_count} সেট
-                </span>
+        <div className="space-y-4">
+          {exams.length > 0 ? (
+            exams.map((exam) => (
+              <div key={exam.id} className="bg-white/60 backdrop-blur-xl border border-green-500/30 rounded-xl p-4 hover:shadow-lg hover:shadow-green-500/25 transition-all duration-300 transform hover:scale-[1.02] hover:border-green-400/50">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      {exam.exam_name}
+                    </h4>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        প্রশ্ন সংখ্যা: {exam.question_count}
+                      </span>
+                      <span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        বছর: {exam.year}
+                      </span>
+                      <span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        {new Date(exam.created_at).toLocaleDateString('bn-BD')}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <span className="bg-green-500/20 text-green-600 px-3 py-1 rounded-full text-sm font-medium border border-green-500/50 backdrop-blur-xl">
+                      {exam.class_count} ক্লাস
+                    </span>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleEditExam(exam)}
+                        className="text-gray-700 hover:text-green-600 text-sm font-medium bg-green-500/20 px-3 py-1 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/50 backdrop-blur-xl"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                      >
+                        সম্পাদনা
+                      </button>
+                      <button 
+                        onClick={() => handleManageSets(exam)}
+                        className="text-gray-700 hover:text-blue-600 text-sm font-medium bg-blue-500/20 px-3 py-1 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                      >
+                        ক্লাস
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="text-gray-600 text-sm mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                {exam.title}
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-green-500/25 border border-green-500/30">
+                <span className="text-green-600 text-2xl">📝</span>
+              </div>
+              <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                এখনও কোন পরীক্ষা নেই
+              </h4>
+              <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                নতুন পরীক্ষা তৈরি করুন
               </p>
-              <div className="flex items-center justify-between text-xs text-gray-500">
-                <span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>বছর: {exam.year}</span>
-                <span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  {new Date(exam.created_at).toLocaleDateString('bn-BD')}
-                </span>
-              </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
@@ -776,13 +822,13 @@ const SuperAdminDashboard = () => {
                   পরীক্ষার নাম
                 </th>
                 <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  শ্রেণী
+                  প্রশ্ন সংখ্যা
                 </th>
                 <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                   বছর
                 </th>
                 <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  সেট সংখ্যা
+                  ক্লাস সংখ্যা
                 </th>
                 <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                   তৈরি হয়েছে
@@ -796,17 +842,17 @@ const SuperAdminDashboard = () => {
               {exams.map((exam) => (
                 <tr key={exam.id} className="border-b border-green-500/20 hover:bg-green-500/10 transition-colors">
                   <td className="py-4 px-2 text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    {exam.title}
+                    {exam.exam_name}
                   </td>
                   <td className="py-4 px-2 text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    {exam.class}
+                    {exam.question_count}
                   </td>
                   <td className="py-4 px-2 text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                     {exam.year}
                   </td>
                   <td className="py-4 px-2">
                     <span className="bg-green-500/20 text-green-600 px-3 py-1 rounded-full text-sm font-medium border border-green-500/50 backdrop-blur-xl">
-                      {exam.set_count}
+                      {exam.class_count}
                     </span>
                   </td>
                   <td className="py-4 px-2 text-gray-500 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
@@ -826,7 +872,7 @@ const SuperAdminDashboard = () => {
                         className="text-gray-700 hover:text-blue-600 text-sm font-medium bg-blue-500/20 px-3 py-1 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
                         style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                       >
-                        সেট
+                        ক্লাস
                       </button>
                       <button 
                         onClick={() => handleDeleteExam(exam.id)}
@@ -847,13 +893,18 @@ const SuperAdminDashboard = () => {
   );
 
   const renderContent = () => {
+    console.log('Active tab:', activeTab);
     switch (activeTab) {
       case 'overview':
         return renderOverview();
       case 'exams':
         return <ExamManagement />;
       case 'results':
+        console.log('Rendering Results component');
         return <Results />;
+      case 'scholarship':
+        console.log('Rendering Scholarship component');
+        return <Scholarship />;
       case 'students':
         return <Students />;
       case 'admins':
