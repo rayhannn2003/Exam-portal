@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  pdf-service-flask:
+    build: .
+    container_name: exam-portal-pdf-service-flask
+    ports:
+      - "8001:8000"  # Different port to avoid conflict with FastAPI version
+    environment:
+      - PDF_SERVICE_PORT=8000
+      - PDF_SERVICE_HOST=0.0.0.0
+      - TEMPLATE_DIR=/app/templates
+      - UPLOAD_DIR=/app/uploads
+      - MAX_PAPER_SIZE=50MB
+      - LOG_LEVEL=INFO
+      - DEBUG=false
+      - FLASK_APP=app.py
+      - FLASK_ENV=production
+    volumes:
+      - ./templates:/app/templates
+      - ./static:/app/static
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - exam-portal-network
+
+networks:
+  exam-portal-network:
+    driver: bridge
