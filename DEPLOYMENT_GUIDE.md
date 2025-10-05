@@ -1,14 +1,16 @@
-# 🚀 PDF Service Deployment Guide
+# 🚀 Exam Portal Deployment Guide
 
-This guide provides comprehensive instructions for deploying the PDF generation service in production environments.
+This guide provides comprehensive instructions for deploying the complete Exam Portal system in production environments, including PDF generation, OMR processing, and bulk upload features.
 
 ## 📋 Prerequisites
 
 - Docker and Docker Compose installed
-- Python 3.11+ (for local development)
-- Node.js 18+ (for backend integration)
+- Python 3.11+ (for PDF service)
+- Node.js 18+ (for backend)
 - PostgreSQL database (for main application)
 - SSL certificates (for HTTPS in production)
+- Internet connectivity (for OMR API integration)
+- Sufficient disk space for file uploads (bulk OMR processing)
 
 ## 🏗️ Architecture Overview
 
@@ -16,14 +18,33 @@ This guide provides comprehensive instructions for deploying the PDF generation 
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   Backend       │    │   PDF Service   │
 │   (React)       │───▶│   (Node.js)     │───▶│   (Python)      │
-│   Port: 3000    │    │   Port: 4000    │    │   Port: 8000    │
+│   Port: 5173    │    │   Port: 4000    │    │   Port: 8000    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │                        │
-                                ▼                        ▼
-                       ┌─────────────────┐    ┌─────────────────┐
-                       │   PostgreSQL    │    │   Templates &   │
-                       │   Database      │    │   Static Files  │
-                       └─────────────────┘    └─────────────────┘
+         │                       │                        │
+         │                       ▼                        │
+         │              ┌─────────────────┐               │
+         │              │   PostgreSQL    │               │
+         │              │   Database      │               │
+         │              └─────────────────┘               │
+         │                       │                        │
+         │                       ▼                        │
+         │              ┌─────────────────┐               │
+         │              │   OMR Proxy     │               │
+         │              │   (Node.js)     │               │
+         │              └─────────────────┘               │
+         │                       │                        │
+         │                       ▼                        │
+         │              ┌─────────────────┐               │
+         │              │ External OMR    │               │
+         │              │ API Service     │               │
+         │              │ (omr.daftar-e.com)              │
+         │              └─────────────────┘               │
+         │                                                │
+         ▼                                                ▼
+┌─────────────────┐                            ┌─────────────────┐
+│   File Uploads  │                            │   Templates &   │
+│   (ZIP/Images)  │                            │   Static Files  │
+└─────────────────┘                            └─────────────────┘
 ```
 
 ## 🚀 Quick Start (Development)
@@ -54,6 +75,15 @@ npm run dev
 ```bash
 cd backend
 node test_pdf_integration.js
+```
+
+### 5. Test OMR Processing
+```bash
+# Test OMR API connectivity
+curl -X POST http://localhost:4000/api/omr/health
+
+# Test with sample OMR image
+curl -X POST -F "image=@sample_omr.jpg" http://localhost:4000/api/omr/process-omr
 ```
 
 ## 🐳 Production Deployment
@@ -189,6 +219,15 @@ JWT_SECRET=your_jwt_secret
 # PDF Service Integration
 PDF_SERVICE_URL=http://localhost:8000
 PDF_SERVICE_TIMEOUT=30000
+
+# OMR Service Integration
+OMR_API_URL=https://omr.daftar-e.com/process-omr
+OMR_TIMEOUT=30000
+OMR_MAX_FILE_SIZE=10485760  # 10MB in bytes
+
+# File Upload Settings
+MAX_UPLOAD_SIZE=104857600   # 100MB for ZIP files
+UPLOAD_DIR=uploads
 ```
 
 ### Nginx Configuration
@@ -200,6 +239,9 @@ server {
     listen 80;
     server_name your-domain.com;
 
+    # Client max body size for file uploads
+    client_max_body_size 100M;
+
     # PDF Service
     location /api/pdf/ {
         proxy_pass http://localhost:8000/;
@@ -209,6 +251,20 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
         
         # Timeout settings for PDF generation
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # OMR Service (handled by backend proxy)
+    location /api/omr/ {
+        proxy_pass http://localhost:4000/api/omr/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        
+        # Timeout settings for OMR processing
         proxy_connect_timeout 30s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
@@ -229,6 +285,7 @@ server {
 
 ### 1. Authentication & Authorization
 - All PDF endpoints require admin authentication
+- All OMR endpoints require admin authentication
 - JWT tokens are validated for each request
 - Role-based access control (admin/superadmin only)
 
@@ -236,6 +293,8 @@ server {
 - Pydantic models validate all input data
 - SQL injection prevention
 - XSS protection in templates
+- File type validation for OMR uploads (JPG, PNG, ZIP)
+- File size limits enforced (10MB per image, 100MB per ZIP)
 
 ### 3. Rate Limiting
 ```bash
@@ -248,13 +307,22 @@ limit_req zone=api burst=20 nodelay;
 - Temporary files are cleaned up automatically
 - Upload directory has restricted permissions
 - No direct file system access from templates
+- OMR images are processed in memory (no disk storage)
+- ZIP files are extracted and processed securely
+- External OMR API calls are proxied through backend
 
 ## 📊 Monitoring & Logging
 
 ### Health Checks
 ```bash
-# Service health
+# PDF Service health
 curl http://localhost:8000/health
+
+# Backend health
+curl http://localhost:4000/api/health
+
+# OMR Service health
+curl http://localhost:4000/api/omr/health
 
 # Integration health
 curl http://localhost:4000/api/pdf/health
@@ -322,7 +390,38 @@ curl -H "Authorization: Bearer YOUR_TOKEN" \
 telnet localhost 8000
 ```
 
-#### 4. Performance Issues
+#### 4. OMR Processing Issues
+```bash
+# Test OMR API connectivity
+curl -X POST http://localhost:4000/api/omr/health
+
+# Test external OMR API
+curl -X POST https://omr.daftar-e.com/process-omr
+
+# Check OMR proxy logs
+tail -f /var/log/nginx/error.log | grep omr
+
+# Test with sample image
+curl -X POST -F "image=@test_omr.jpg" \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     http://localhost:4000/api/omr/process-omr
+```
+
+#### 5. Bulk Upload Issues
+```bash
+# Check file upload limits
+grep client_max_body_size /etc/nginx/nginx.conf
+
+# Test ZIP file processing
+curl -X POST -F "zipfile=@test_bulk.zip" \
+     -H "Authorization: Bearer YOUR_TOKEN" \
+     http://localhost:4000/api/omr/bulk-process
+
+# Check disk space
+df -h
+```
+
+#### 6. Performance Issues
 ```bash
 # Monitor resource usage
 htop
@@ -361,20 +460,45 @@ uvicorn main:app --reload --log-level debug
 
 ## 🚀 Deployment Checklist
 
+### Core System
 - [ ] System dependencies installed
 - [ ] Python virtual environment created
-- [ ] Dependencies installed successfully
+- [ ] Node.js dependencies installed successfully
 - [ ] Environment variables configured
 - [ ] Database connection tested
-- [ ] PDF service health check passed
-- [ ] Backend integration tested
-- [ ] Frontend PDF buttons working
 - [ ] SSL certificates configured (production)
+
+### Services Health
+- [ ] PDF service health check passed
+- [ ] Backend service health check passed
+- [ ] OMR service health check passed
+- [ ] External OMR API connectivity tested
+
+### Integration Testing
+- [ ] PDF generation working
+- [ ] OMR single upload working
+- [ ] OMR bulk upload working
+- [ ] ZIP file extraction working
+- [ ] Database result submission working
+- [ ] Frontend PDF buttons working
+- [ ] Frontend OMR upload working
+
+### Infrastructure
 - [ ] Nginx reverse proxy configured
+- [ ] File upload limits configured (100MB)
+- [ ] CORS settings configured
+- [ ] Rate limiting configured
 - [ ] Monitoring and logging setup
 - [ ] Backup procedures in place
 - [ ] Security measures implemented
 - [ ] Performance testing completed
+
+### OMR Specific
+- [ ] External OMR API accessible
+- [ ] OMR proxy endpoint working
+- [ ] File type validation working
+- [ ] Bulk processing tested
+- [ ] Unregistered student handling tested
 
 ## 📞 Support
 

@@ -60,11 +60,28 @@ router.get('/health', async (req, res) => {
 router.post('/process-omr', upload.single('image'), async (req, res) => {
   try {
     console.log('OMR processing request received');
+    console.log('Request details:', {
+      hasFile: !!req.file,
+      fileSize: req.file?.size,
+      fileName: req.file?.originalname,
+      fileMimetype: req.file?.mimetype,
+      bufferLength: req.file?.buffer?.length
+    });
     
     if (!req.file) {
+      console.log('No file provided in request');
       return res.status(400).json({
         success: false,
         error: 'No image file provided'
+      });
+    }
+
+    // Validate file
+    if (!req.file.buffer || req.file.buffer.length === 0) {
+      console.log('Empty file buffer received');
+      return res.status(400).json({
+        success: false,
+        error: 'Empty image file provided'
       });
     }
 
@@ -78,7 +95,12 @@ router.post('/process-omr', upload.single('image'), async (req, res) => {
       contentType: req.file.mimetype
     });
 
-    console.log('Sending request to external OMR API...');
+    console.log('Sending request to external OMR API...', {
+      url: OMR_API_URL,
+      filename: req.file.originalname,
+      contentType: req.file.mimetype,
+      bufferSize: req.file.buffer.length
+    });
 
     // Make request to external OMR API
     const response = await axios.post(OMR_API_URL, formData, {
@@ -88,20 +110,27 @@ router.post('/process-omr', upload.single('image'), async (req, res) => {
       timeout: 30000, // 30 second timeout
     });
 
-    console.log('OMR API response received:', response.status);
+    console.log('OMR API response received:', {
+      status: response.status,
+      dataKeys: Object.keys(response.data || {}),
+      success: response.data?.success
+    });
 
     // Return the response from the external API
     res.json(response.data);
 
   } catch (error) {
     console.error('OMR processing error:', error.message);
+    console.error('Error stack:', error.stack);
     
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
       console.log('External API error response:', {
         status: error.response.status,
-        data: error.response.data
+        statusText: error.response.statusText,
+        data: error.response.data,
+        headers: error.response.headers
       });
       
       res.status(error.response.status).json({
@@ -111,15 +140,25 @@ router.post('/process-omr', upload.single('image'), async (req, res) => {
       });
     } else if (error.request) {
       // The request was made but no response was received
+      console.log('No response received from external API:', {
+        code: error.code,
+        message: error.message
+      });
       res.status(503).json({
         success: false,
         error: 'OMR service is currently unavailable. Please try again later.'
       });
     } else {
       // Something happened in setting up the request that triggered an Error
+      console.log('Request setup error:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
       res.status(500).json({
         success: false,
-        error: 'Internal server error during OMR processing'
+        error: 'Internal server error during OMR processing',
+        details: error.message
       });
     }
   }
