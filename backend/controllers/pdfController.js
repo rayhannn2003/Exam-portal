@@ -442,3 +442,91 @@ exports.validatePDFServiceConfig = () => {
 
   return config;
 };
+
+/**
+ * Generate scholarship PDF for scholarship students
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+exports.generateScholarshipPDF = async (req, res) => {
+  try {
+    const { class_name } = req.params;
+    
+    // Get scholarship results from database
+    const scholarshipResult = await pool.query(
+      `SELECT s.name, s.roll_number, s.school, s.class, e.exam_name, e.year, r.* 
+       FROM results r 
+       JOIN students s ON s.id = r.student_id 
+       JOIN exams e ON e.id = r.exam_id 
+       WHERE r.scholarship = true AND s.class = $1
+       ORDER BY r.percentage DESC`,
+      [class_name]
+    );
+
+    if (scholarshipResult.rowCount === 0) {
+      return res.status(404).json({ message: 'No scholarship students found for this class' });
+    }
+
+    // Transform data for PDF service
+    const students = scholarshipResult.rows.map((row, index) => ({
+      serial_no: index + 1,
+      name: row.name,
+      school: row.school,
+      roll_number: row.roll_number
+    }));
+
+    const scholarshipRequest = {
+      class_name: class_name,
+      students: students,
+      exam_name: scholarshipResult.rows[0].exam_name,
+      organization_name: 'উত্তর তারাবুনিয়া ছাত্র-কল্যাণ সংগঠন',
+      motto: 'দৃষ্টিভঙ্গি বদলান, জীবন বদলে যাবে',
+      established_year: '2004 ইং',
+      location: 'Uttar Tarabunia, Sadar Upazila, Shariatpur, Bangladesh.'
+    };
+
+    // Call PDF service
+    const response = await axios.post(
+      `${PDF_SERVICE_URL}/generate-scholarship-pdf/download`,
+      scholarshipRequest,
+      {
+        timeout: PDF_SERVICE_TIMEOUT,
+        responseType: 'arraybuffer',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Set response headers for PDF download
+    const filename = `Scholarship_${class_name}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.pdf`;
+    
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': response.data.length
+    });
+
+    res.send(response.data);
+
+  } catch (error) {
+    console.error('Error generating scholarship PDF:', error.message);
+    
+    if (error.response) {
+      // PDF service returned an error
+      const errorMessage = error.response.data?.error || error.response.data?.message || 'PDF service error';
+      return res.status(error.response.status).json({ 
+        message: `PDF service error: ${errorMessage}` 
+      });
+    } else if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({ 
+        message: 'PDF service is not available. Please check if the service is running.' 
+      });
+    } else {
+      return res.status(500).json({ 
+        message: 'Failed to generate scholarship PDF',
+        error: error.message 
+      });
+    }
+  }
+};

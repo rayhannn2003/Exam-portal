@@ -13,6 +13,9 @@ router.post('/generate/:examId/:classId', verifyAdmin, pdfController.generateQue
 router.get('/preview/:examId/:classId', verifyAdmin, pdfController.generateQuestionPaperPreview);
 router.post('/preview/:examId/:classId', verifyAdmin, pdfController.generateQuestionPaperPreview);
 
+// Scholarship PDF Generation Routes
+router.post('/scholarship/:class_name', verifyAdmin, pdfController.generateScholarshipPDF);
+
 // PDF Service Management Routes
 router.get('/templates', verifyAdmin, pdfController.getAvailableTemplates);
 router.get('/customization-options', verifyAdmin, pdfController.getCustomizationOptions);
