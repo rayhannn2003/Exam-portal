@@ -90,8 +90,9 @@
         }
 
         .option-key {
-            font-family: Arial, sans-serif;
-            font-weight: bold;
+            font-family: 'Noto Sans Bengali', 'SolaimanLipi', Arial, sans-serif;
+            font-weight: 900;
+            font-size: 11pt;
             margin-right: 4px;
             width: 18px;
             height: 18px;
@@ -102,6 +103,8 @@
             background-color: white;
             flex-shrink: 0;
             display: inline-block;
+            color: #000;
+            text-shadow: 0.5px 0.5px 0px #333;
         }
 
         .option-text {
@@ -110,7 +113,7 @@
         }
 
         .page-break {
-            page-break-before: always;
+            page-break-before: auto;
         }
 
         @media print {
@@ -149,10 +152,10 @@
                     {{ loop.index | bengali_number }}. {{ question.question }}
                 </div>
                 <div class="options">
-                    <div class="option"><span class="option-key">A</span><span class="option-text">{{ question.options.A }}</span></div>
-                    <div class="option"><span class="option-key">C</span><span class="option-text">{{ question.options.C }}</span></div>
-                    <div class="option"><span class="option-key">B</span><span class="option-text">{{ question.options.B }}</span></div>
-                    <div class="option"><span class="option-key">D</span><span class="option-text">{{ question.options.D }}</span></div>
+                    <div class="option"><span class="option-key">ক</span><span class="option-text">{{ question.options.A }}</span></div>
+                    <div class="option"><span class="option-key">খ</span><span class="option-text">{{ question.options.C }}</span></div>
+                    <div class="option"><span class="option-key">গ</span><span class="option-text">{{ question.options.B }}</span></div>
+                    <div class="option"><span class="option-key">ঘ</span><span class="option-text">{{ question.options.D }}</span></div>
                 </div>
             </div>
             {% endfor %}
@@ -164,21 +167,18 @@
                     {{ (loop.index + 13) | bengali_number }}. {{ question.question }}
                 </div>
                 <div class="options">
-                    <div class="option"><span class="option-key">A</span><span class="option-text">{{ question.options.A }}</span></div>
-                    <div class="option"><span class="option-key">C</span><span class="option-text">{{ question.options.C }}</span></div>
-                    <div class="option"><span class="option-key">B</span><span class="option-text">{{ question.options.B }}</span></div>
-                    <div class="option"><span class="option-key">D</span><span class="option-text">{{ question.options.D }}</span></div>
+                    <div class="option"><span class="option-key">ক</span><span class="option-text">{{ question.options.A }}</span></div>
+                    <div class="option"><span class="option-key">খ</span><span class="option-text">{{ question.options.C }}</span></div>
+                    <div class="option"><span class="option-key">গ</span><span class="option-text">{{ question.options.B }}</span></div>
+                    <div class="option"><span class="option-key">ঘ</span><span class="option-text">{{ question.options.D }}</span></div>
                 </div>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Page Break for Second Page -->
-    {% if exam_set.questions|length > 26 %}
-    <div class="page-break"></div>
-
     <!-- Questions Section - Second Page (remaining 34 questions) -->
+    {% if exam_set.questions|length > 26 %}
     <div class="questions-container">
         <div class="column">
             {% for question in exam_set.questions[26:43] %}
@@ -187,10 +187,10 @@
                     {{ (loop.index + 26) | bengali_number }}. {{ question.question }}
                 </div>
                 <div class="options">
-                    <div class="option"><span class="option-key">A</span><span class="option-text">{{ question.options.A }}</span></div>
-                    <div class="option"><span class="option-key">C</span><span class="option-text">{{ question.options.C }}</span></div>
-                    <div class="option"><span class="option-key">B</span><span class="option-text">{{ question.options.B }}</span></div>
-                    <div class="option"><span class="option-key">D</span><span class="option-text">{{ question.options.D }}</span></div>
+                    <div class="option"><span class="option-key">ক</span><span class="option-text">{{ question.options.A }}</span></div>
+                    <div class="option"><span class="option-key">খ</span><span class="option-text">{{ question.options.C }}</span></div>
+                    <div class="option"><span class="option-key">গ</span><span class="option-text">{{ question.options.B }}</span></div>
+                    <div class="option"><span class="option-key">ঘ</span><span class="option-text">{{ question.options.D }}</span></div>
                 </div>
             </div>
             {% endfor %}
@@ -202,10 +202,10 @@
                     {{ (loop.index + 43) | bengali_number }}. {{ question.question }}
                 </div>
                 <div class="options">
-                    <div class="option"><span class="option-key">A</span><span class="option-text">{{ question.options.A }}</span></div>
-                    <div class="option"><span class="option-key">C</span><span class="option-text">{{ question.options.C }}</span></div>
-                    <div class="option"><span class="option-key">B</span><span class="option-text">{{ question.options.B }}</span></div>
-                    <div class="option"><span class="option-key">D</span><span class="option-text">{{ question.options.D }}</span></div>
+                    <div class="option"><span class="option-key">ক</span><span class="option-text">{{ question.options.A }}</span></div>
+                    <div class="option"><span class="option-key">খ</span><span class="option-text">{{ question.options.C }}</span></div>
+                    <div class="option"><span class="option-key">গ</span><span class="option-text">{{ question.options.B }}</span></div>
+                    <div class="option"><span class="option-key">ঘ</span><span class="option-text">{{ question.options.D }}</span></div>
                 </div>
             </div>
             {% endfor %}

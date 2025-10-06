@@ -134,7 +134,7 @@ const Scholarship = () => {
       };
 
       // Call PDF service
-      const response = await fetch('http://localhost:8000/generate-scholarship-pdf/download', {
+      const response = await fetch('https://ahmfuad.pythonanywhere.com/generate-scholarship-pdf/download', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
