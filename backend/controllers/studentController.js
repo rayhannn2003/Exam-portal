@@ -12,8 +12,8 @@ exports.registerStudent = async (req, res) => {
     if (!name || !school || !student_class || !phone || !entry_fee) {
       return res.status(400).json({ error: "All required fields are needed" });
     }
-    console.log("Generating roll number...");
-    const roll_number = await generateRoll();
+    console.log("Generating roll number for class:", student_class);
+    const roll_number = await generateRoll(student_class);
     //generate a random 6 digit password and hash it
     const rawPassword = Math.random().toString(36).slice(-6);
     const passwordHash = await bcrypt.hash(rawPassword, 10);
