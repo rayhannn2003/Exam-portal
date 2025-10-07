@@ -222,28 +222,30 @@ const Results = ({ userRole = 'superadmin' }) => {
             </div>
           </div>
           
-          {/* Roll Number Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-              রোল নম্বর দিয়ে বিস্তারিত ফলাফল খুঁজুন
-            </label>
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={rollSearch}
-                onChange={(e) => setRollSearch(e.target.value)}
-                placeholder="রোল নম্বর..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-              />
-              <button
-                onClick={handleRollSearch}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
-              >
-                খুঁজুন
-              </button>
+          {/* Roll Number Search - Only for SuperAdmin */}
+          {userRole === 'superadmin' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                রোল নম্বর দিয়ে বিস্তারিত ফলাফল খুঁজুন
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={rollSearch}
+                  onChange={(e) => setRollSearch(e.target.value)}
+                  placeholder="রোল নম্বর..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                />
+                <button
+                  onClick={handleRollSearch}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
+                >
+                  খুঁজুন
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Filter Options */}
