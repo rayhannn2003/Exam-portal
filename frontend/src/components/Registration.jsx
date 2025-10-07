@@ -36,22 +36,19 @@ const Registration = ({ onClose, onSuccess }) => {
   const validateForm = () => {
     const newErrors = {};
     
+    // Only 3 mandatory fields: name, school, and class
     if (!formData.name.trim()) newErrors.name = 'নাম প্রয়োজন';
     if (!formData.school.trim()) newErrors.school = 'স্কুল/কলেজ প্রয়োজন';
     if (!formData.student_class) newErrors.student_class = 'শ্রেণী নির্বাচন করুন';
-    if (!formData.phone.trim()) newErrors.phone = 'ফোন নম্বর প্রয়োজন';
-    if (!formData.gender) newErrors.gender = 'লিঙ্গ নির্বাচন করুন';
-    if (!formData.entry_fee || parseFloat(formData.entry_fee) <= 0) {
-      newErrors.entry_fee = 'ভর্তি ফি প্রয়োজন';
-    }
     
+    // Optional fields with validation
     // Email validation (optional field)
     if (formData.email_id && !/\S+@\S+\.\S+/.test(formData.email_id)) {
       newErrors.email_id = 'সঠিক ইমেইল ঠিকানা লিখুন';
     }
     
-    // Phone validation
-    if (formData.phone && !/^[0-9+\-\s()]+$/.test(formData.phone)) {
+    // Phone validation (optional field)
+    if (formData.phone && formData.phone.trim() && !/^[0-9+\-\s()]+$/.test(formData.phone)) {
       newErrors.phone = 'সঠিক ফোন নম্বর লিখুন';
     }
 

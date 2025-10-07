@@ -9,10 +9,18 @@ const smsService = require("../utils/smsService");
 exports.registerStudent = async (req, res) => {
   try {
     const { name, father_name, mother_name, school, email_id, student_class,class_roll, gender, phone, entry_fee ,registered_by} = req.body;
-    if (!name || !school || !student_class || !phone || !entry_fee) {
-      return res.status(400).json({ error: "All required fields are needed" });
+    
+    // Validate required fields (only name, school, and class are mandatory)
+    if (!name?.trim() || !school?.trim() || !student_class) {
+      return res.status(400).json({ error: "Name, School, and Class are required" });
     }
-    console.log("Generating roll number for class:", student_class);
+    
+    // Validate phone number format only if provided
+    if (phone && phone.trim() && (!/^[0-9+\-\s()]+$/.test(phone) || phone.trim().length < 11)) {
+      return res.status(400).json({ error: "Invalid phone number format" });
+    }
+    
+    // console.log("Generating roll number for class:", student_class);
     const roll_number = await generateRoll(student_class);
     //generate a random 6 digit password and hash it
     const rawPassword = Math.random().toString(36).slice(-6);
@@ -25,21 +33,23 @@ exports.registerStudent = async (req, res) => {
       [name, father_name, mother_name, school, student_class, class_roll, email_id, gender, phone, roll_number, payment_status, entry_fee, passwordHash, registered_by]
     );
 
-    // Fire-and-forget SMS (non-blocking)
-    (async () => {
-      try {
-        await smsService.sendStudentRegistrationSMS({
-          to: phone,
-          name,
-          schoolName: school,
-          rollNumber: roll_number,
-          password: rawPassword,
-          portalUrl: process.env.FRONTEND_URL || process.env.PORTAL_URL,
-        });
-      } catch (e) {
-        console.warn("SMS send failed:", e?.message || e);
-      }
-    })();
+    // Send SMS only if phone number is provided (fire-and-forget, non-blocking)
+    if (phone && phone.trim()) {
+      (async () => {
+        try {
+          await smsService.sendStudentRegistrationSMS({
+            to: phone,
+            name,
+            schoolName: school,
+            rollNumber: roll_number,
+            password: rawPassword,
+            portalUrl: process.env.FRONTEND_URL || process.env.PORTAL_URL,
+          });
+        } catch (e) {
+          console.warn("SMS send failed:", e?.message || e);
+        }
+      })();
+    }
 
     res.status(201).json({ message: "Student registered", student: result.rows[0], temp_password: rawPassword });
   } catch (err) {
