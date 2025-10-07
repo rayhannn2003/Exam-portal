@@ -24,6 +24,18 @@ const ExamManagement = () => {
   const [openMenuSetId, setOpenMenuSetId] = useState(null);
   const { success, error } = useToast();
 
+  // Map numeric class to Bengali display
+  const bengaliClassName = (cls) => {
+    switch (String(cls)) {
+      case '6': return 'ষষ্ঠ শ্রেণী';
+      case '7': return 'সপ্তম শ্রেণী';
+      case '8': return 'অষ্টম শ্রেণী';
+      case '9': return 'নবম শ্রেণী';
+      case '10': return 'দশম শ্রেণী';
+      default: return `শ্রেণী ${cls}`;
+    }
+  };
+
   useEffect(() => {
     fetchExams();
   }, []);
@@ -255,10 +267,10 @@ const ExamManagement = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteExam(exam.id);
+                            error('আপনার পরীক্ষা মুছে ফেলার অনুমতি নেই');
                           }}
-                          className="text-red-600 hover:text-red-800 p-1"
-                          title="Delete Exam"
+                          className="text-red-400 p-1 cursor-not-allowed"
+                          title="পরীক্ষা মুছে ফেলার অনুমতি নেই"
                         >
                           <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -322,7 +334,7 @@ const ExamManagement = () => {
                     <div key={set.id} className="bg-white/60 backdrop-blur-sm border border-green-500/20 rounded-xl p-3 sm:p-4 hover:shadow-lg hover:shadow-green-500/25 transition-all">
                       <div className="flex items-start justify-between mb-3">
                         <h4 className="text-base sm:text-lg font-semibold text-gray-800 flex-1 min-w-0" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                          ক্লাস {set.class_name}
+                          {bengaliClassName(set.class_name)}
                         </h4>
                         <div className="flex items-center space-x-1 sm:space-x-2 ml-2 relative">
                           <button
@@ -345,9 +357,18 @@ const ExamManagement = () => {
                             </svg>
                           </button>
                           <button
-                            onClick={() => handleDeleteSet(set.id)}
-                            className="text-red-600 hover:text-red-800 p-1"
-                            title="Delete Set"
+                            onClick={() => handleDownloadPDF(set)}
+                            className="text-indigo-600 hover:text-indigo-800 p-1"
+                            title="Download PDF"
+                          >
+                            <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => error('আপনার ক্লাস মুছে ফেলার অনুমতি নেই')}
+                            className="text-red-400 p-1 cursor-not-allowed"
+                            title="ক্লাস মুছে ফেলার অনুমতি নেই"
                           >
                             <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -455,7 +476,7 @@ const ExamManagement = () => {
           examId={selectedExam?.id}
           classId={selectedSetForPDF?.id}
           examTitle={selectedExam?.exam_name}
-          className={selectedSetForPDF?.class_name}
+          className={bengaliClassName(selectedSetForPDF?.class_name)}
           onClose={() => {
             setShowPDFGenerator(false);
             setSelectedSetForPDF(null);

@@ -107,6 +107,19 @@ class PDFGenerator:
         except Exception as e:
             logger.error(f"Error generating scholarship PDF: {str(e)}")
             raise Exception(f"Failed to generate scholarship PDF: {str(e)}")
+
+    async def generate_admit_card_pdf(self, admit_request) -> bytes:
+        """
+        Generate admit card PDF
+        """
+        try:
+            logger.info("Starting admit card PDF generation")
+            html_content = await self.template_engine.render_admit_card_template(admit_request)
+            pdf_data = await self._html_to_pdf_scholarship(html_content)
+            return pdf_data
+        except Exception as e:
+            logger.error(f"Error generating admit card PDF: {str(e)}")
+            raise Exception(f"Failed to generate admit card PDF: {str(e)}")
     
     async def _html_to_pdf_scholarship(self, html_content: str) -> bytes:
         """

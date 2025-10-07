@@ -17,9 +17,10 @@ class TemplateEngine:
     """Template engine for rendering question paper templates"""
     
     def __init__(self, template_dir: str = "templates"):
-        self.template_dir = template_dir
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.template_dir = os.path.join(base_path, template_dir)
         self.jinja_env = Environment(
-            loader=FileSystemLoader(template_dir),
+            loader=FileSystemLoader(self.template_dir),
             autoescape=True,
             trim_blocks=True,
             lstrip_blocks=True
@@ -30,6 +31,7 @@ class TemplateEngine:
         self.jinja_env.filters['format_duration'] = self._format_duration
         self.jinja_env.filters['format_date'] = self._format_date
         self.jinja_env.filters['bengali_number'] = self._bengali_number
+        self.jinja_env.filters['bengali_class'] = self._bengali_class
         
         logger.info(f"Template engine initialized with template directory: {template_dir}")
     
@@ -118,6 +120,45 @@ class TemplateEngine:
         except Exception as e:
             logger.error(f"Error rendering scholarship template: {str(e)}")
             raise Exception(f"Failed to render scholarship template: {str(e)}")
+
+    async def render_admit_card_template(self, admit_request) -> str:
+        """
+        Render admit card template to HTML
+        Args:
+            admit_request: object with student and exam fields
+        Returns:
+            HTML content as string
+        """
+        try:
+            logger.info("Rendering admit card template")
+            context = {
+                'admit': admit_request,
+                'current_date': datetime.now().strftime('%d/%m/%Y'),
+                'current_time': datetime.now().strftime('%H:%M:%S')
+            }
+            # Try multiple template filenames for compatibility
+            candidate_templates = [
+                'admit_card_template_v2.html',
+                'admit_card_template.html',
+                'admit_card.html',
+            ]
+            last_error = None
+            for name in candidate_templates:
+                try:
+                    template = self.jinja_env.get_template(name)
+                    html_content = template.render(**context)
+                    logger.info(f"Successfully rendered admit card with template: {name}")
+                    return html_content
+                except Exception as te:
+                    last_error = te
+                    logger.warning(f"Admit template not usable: {name} ({te})")
+                    continue
+            # If none worked, raise
+            raise Exception(f"No admit card template found. Last error: {last_error}")
+            
+        except Exception as e:
+            logger.error(f"Error rendering admit card template: {str(e)}")
+            raise Exception(f"Failed to render admit card template: {str(e)}")
     
     async def get_available_templates(self) -> list:
         """Get list of available templates"""
@@ -183,6 +224,20 @@ class TemplateEngine:
         """Convert number to Bengali digits"""
         bengali_digits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯']
         return ''.join(bengali_digits[int(digit)] for digit in str(number))
+        
+    def _bengali_class(self, value) -> str:
+        """Map class numeric values to Bengali class names with শ্রেণী suffix"""
+        mapping = {
+            '6': 'ষষ্ঠ শ্রেণী',
+            '7': 'সপ্তম শ্রেণী',
+            '8': 'অষ্টম শ্রেণী',
+            '9': 'নবম শ্রেণী',
+            '10': 'দশম শ্রেণী',
+        }
+        s = str(value).strip()
+        return mapping.get(s, f"শ্রেণী {s}")
+
+   
 
 
 class TemplateValidator:

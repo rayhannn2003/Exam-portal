@@ -2,6 +2,8 @@ import axios from "axios";
 
 // Base URL of your backend API
 const API_BASE_URL = "http://localhost:4000/api"; // Updated to match your backend PORT
+// Base URL of Flask PDF service (admit card)
+const FLASK_PDF_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLASK_PDF_URL) || "http://localhost:8000";
 
 // Create an Axios instance
 const api = axios.create({
@@ -39,6 +41,15 @@ export const loginAdmin = async (credentials) => {
     throw err.response?.data || { message: "Login failed" };
   }
 };
+
+export const getAdminNameByUsername = async (username) => {
+  try {
+    const res = await api.get(`/admin/name/${encodeURIComponent(username)}`);
+    return res.data; // { name }
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to fetch admin name" };
+  }
+};
 //admin register
 export const registerAdmin = async (data) => {
   try {
@@ -58,6 +69,28 @@ export const registerStudent = async (data) => {
   }
 };
 
+export const changeStudentPassword = async ({ roll_number, old_password, new_password }) => {
+  try {
+    const res = await api.post('/students/change-password', { roll_number, old_password, new_password });
+    return res.data;
+  } catch (err) {
+    const status = err?.response?.status;
+    const message = err?.response?.data?.error || err?.response?.data?.message || 'Failed to change password';
+    throw { status, message };
+  }
+};
+
+export const verifyStudentPassword = async ({ roll_number, old_password }) => {
+  try {
+    const res = await api.post('/students/verify-password', { roll_number, old_password });
+    return res.data;
+  } catch (err) {
+    const status = err?.response?.status;
+    const message = err?.response?.data?.error || err?.response?.data?.message || 'Password verification failed';
+    throw { status, message };
+  }
+};
+
 // ----- Exam APIs -----
 export const getExams = async () => {
   try {
@@ -74,6 +107,15 @@ export const getAllExams = async () => {
     return res.data;
   } catch (err) {
     throw err.response?.data || { message: "Failed to fetch exams" };
+  }
+};
+
+export const getLatestExamDetails = async () => {
+  try {
+    const res = await api.get('/exams/latest/details');
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch latest exam details' };
   }
 };
 
@@ -239,6 +281,16 @@ export const getResultBySchool = async (school) => {
   }
 };
 
+// ----- Manual Result Submit API -----
+export const manualSubmitResult = async ({ roll_number, correct_count, wrong_count = 0 }) => {
+  try {
+    const res = await api.post("/results/manual-submit", { roll_number, correct_count, wrong_count });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to submit manual result" };
+  }
+};
+
 // ----- Scholarship APIs -----
 export const markForScholarship = async (studentId) => {
   try {
@@ -310,6 +362,26 @@ export const getStudentsBySchoolAndClass = async (school, className) => {
     return res.data;
   } catch (err) {
     throw err.response?.data || { message: "Failed to fetch students by school and class" };
+  }
+};
+
+// ----- SMS Reminder API -----
+export const sendClassReminder = async (className, message) => {
+  try {
+    const res = await api.post(`/students/send-reminder`, { class: className, message });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to send reminder" };
+  }
+};
+
+// Delete Student API
+export const deleteStudent = async (studentId) => {
+  try {
+    const res = await api.delete(`/students/${studentId}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to delete student" };
   }
 };
 
@@ -410,3 +482,15 @@ export const getAllAdminCollections = async () => {
 // - submitAnswers
 
 export default api;
+
+// ----- Admit Card (Flask) APIs -----
+export const downloadAdmitCardFlask = async (payload) => {
+  try {
+    const res = await axios.post(`${FLASK_PDF_BASE_URL}/generate-admit-card/download`, payload, { responseType: 'blob' });
+    return res.data; // Blob
+  } catch (err) {
+    const status = err?.response?.status;
+    const message = err?.response?.data?.error || 'Failed to download admit card';
+    throw { status, message };
+  }
+};

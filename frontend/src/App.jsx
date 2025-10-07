@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { registerStudent, loginStudent, loginAdmin } from './assets/services/api';
+import { loginStudent, loginAdmin } from './assets/services/api';
 import Login from './components/Login';
-import Registration from './components/Registration';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import StudentDashboard from './pages/StudentDashboard';
 import ToastContainer from './components/ToastContainer';
 import OMRTest from './OMRTest';
 import SimpleOMRTest from './SimpleOMRTest';
@@ -17,11 +18,8 @@ export default function App() {
   
   // Authentication states
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
-  const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [loginUserType, setLoginUserType] = useState('student');
   const [user, setUser] = useState(null);
-  const [registrationSuccess, setRegistrationSuccess] = useState(null);
   const [showDashboard, setShowDashboard] = useState(false);
   
 
@@ -145,26 +143,25 @@ export default function App() {
     return <SimpleOMRTest />;
   }
 
-  // If user is superadmin, show dashboard
+  // If user is superadmin/admin/student, show respective dashboard
   console.log('Rendering check:', { user, isSuperadmin: user?.role === 'superadmin' });
   if (user && user.role === 'superadmin') {
     console.log('Rendering SuperAdminDashboard');
     return <SuperAdminDashboard />;
   }
+  if (user && user.role === 'admin') {
+    return <AdminDashboard />;
+  }
+  if (user && user.role === 'student') {
+    return <StudentDashboard />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 relative overflow-hidden">
-      {/* Logo Section */}
-      <div className={`fixed top-0 left-0 right-0 z-50 flex justify-center items-center py-4 transition-all duration-300 ${isScrolled ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
-        <img
-          src="/new.svg"
-          alt="Organization Logo"
-          className="h-32 w-32 md:h-40 md:w-40 lg:h-32 lg:w-48 rounded-full shadow-lg hover:scale-105 transition-transform duration-300"
-        />
-      </div>
+      {/* Logo Section removed as per request */}
 
       {/* Navigation Bar */}
-      <nav className={`fixed left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-gray-700/50 transition-all duration-300 ${isScrolled ? 'top-0' : 'top-32'}`}>
+      <nav className={`fixed left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-gray-700/50 transition-all duration-300 top-0`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
@@ -220,7 +217,6 @@ export default function App() {
                   >
                     প্রবেশ
                   </button>
-                
                 </div>
               )}
             </div>
@@ -289,16 +285,6 @@ export default function App() {
                     >
                       প্রবেশ
                     </button>
-                    <button
-                      onClick={() => {
-                        setIsRegistrationModalOpen(true);
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full bg-green-500 text-white font-bold py-2 px-4 rounded-md transition-all hover:bg-green-600"
-                      style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}
-                    >
-                      নিবন্ধন
-                    </button>
                   </div>
                 )}
               </div>
@@ -360,11 +346,6 @@ export default function App() {
                 {slides[currentSlide].description}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 items-start">
-                <button className="group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-4 px-8 rounded-full text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
-                        style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
-                  <span className="mr-2">🎓</span>
-                  এখনই নিবন্ধন করুন
-                </button>
                 <button className="group bg-transparent border-2 border-white hover:bg-white hover:text-black text-white font-bold py-4 px-8 rounded-full text-xl transition-all duration-300 transform hover:scale-105 backdrop-blur-sm"
                         style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
                   আরো জানুন
@@ -421,7 +402,7 @@ export default function App() {
               </p>
               <p className="text-xl text-yellow-200 leading-relaxed drop-shadow-lg"
                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                ২০১৫ সাল থেকে চালু, আমরা সফলভাবে বিভিন্ন অঞ্চলে ২০,০০০+ শিক্ষার্থীর কাছে পৌঁছেছি, 
+                ২০০৪ সাল থেকে চালু, আমরা সফলভাবে বিভিন্ন অঞ্চলে ২০,০০০+ শিক্ষার্থীর কাছে পৌঁছেছি, 
                 একাডেমিক উৎকর্ষতা এবং সমাজ উন্নয়নের পথ তৈরি করেছি।
               </p>
             </div>
@@ -674,11 +655,7 @@ export default function App() {
                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
               হাজার হাজার শিক্ষার্থীর সাথে উৎকর্ষতার যাত্রায় যোগ দিন
             </p>
-            <button className="group bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-black font-bold py-4 px-10 rounded-full text-xl transition-all duration-300 transform hover:scale-105 hover:shadow-2xl mb-6"
-                    style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
-              <span className="mr-2">🎓</span>
-              ছাত্র নিবন্ধন
-            </button>
+            
             <p className="text-yellow-200 text-lg drop-shadow-lg"
                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
               সাহায্য প্রয়োজন? <a href="#contact" className="text-yellow-300 hover:text-white hover:underline font-bold transition-colors">আমাদের হেল্পডেস্কে যোগাযোগ করুন</a>
@@ -735,21 +712,29 @@ export default function App() {
               </h4>
               <p className="text-gray-300 mb-3 text-lg"
                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                📧 support@scholarshipexam.org
+                Powered by <span className="font-bold text-white">Factorite</span>
               </p>
               <p className="text-gray-300 mb-3 text-lg"
                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                📞 +৮৮০-XXX-XXXXXX
+                Running by <span className="font-bold text-white">Daftar-E</span> (school management service) — <a href="https://www.daftar-e.com" target="_blank" rel="noreferrer" className="text-yellow-300 hover:underline">www.daftar-e.com</a>
+              </p>
+              <p className="text-gray-300 mb-3 text-lg"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                📞 01626671573
+              </p>
+              <p className="text-gray-300 mb-3 text-lg"
+                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                📧 daftare.office@gmail.com
               </p>
               <p className="text-gray-300 text-lg"
                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                📍 ঢাকা, বাংলাদেশ
+                📍 BUET, Dhaka, Bangladesh
               </p>
             </div>
           </div>
           <div className="border-t border-gray-700 mt-12 pt-8 text-center text-gray-400">
             <p className="text-lg" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-              &copy; ২০২৪ বৃত্তি পরীক্ষা ব্যবস্থাপনা সিস্টেম। সকল অধিকার সংরক্ষিত।
+              &copy; ২০২৫ বৃত্তি পরীক্ষা ব্যবস্থাপনা সিস্টেম। সকল অধিকার সংরক্ষিত।
             </p>
           </div>
           </div>
@@ -1182,66 +1167,7 @@ export default function App() {
         />
       )}
 
-      {/* Registration Modal */}
-      {isRegistrationModalOpen && (
-        <Registration
-          onClose={() => setIsRegistrationModalOpen(false)}
-          onSuccess={(response) => {
-            setRegistrationSuccess(response);
-            setIsRegistrationModalOpen(false);
-            setIsSuccessModalOpen(true);
-            if (window.showToast) {
-              window.showToast('নিবন্ধন সফল! আপনার রোল নম্বর এবং পাসওয়ার্ড সংরক্ষণ করুন।', 'success');
-            }
-          }}
-        />
-      )}
-
-      {/* Success Modal */}
-      {isSuccessModalOpen && registrationSuccess && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white rounded-2xl p-8 w-full max-w-md">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                </svg>
-              </div>
-              
-              <h3 className="text-2xl font-bold text-gray-900 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                নিবন্ধন সফল!
-              </h3>
-              
-              <div className="space-y-3 text-left bg-gray-50 p-4 rounded-lg mb-6">
-                <div>
-                  <span className="font-semibold text-gray-700">নাম:</span>
-                  <span className="ml-2 text-gray-600">{registrationSuccess.student?.name}</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-700">রোল নম্বর:</span>
-                  <span className="ml-2 text-blue-600 font-bold">{registrationSuccess.student?.roll_number}</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-gray-700">অস্থায়ী পাসওয়ার্ড:</span>
-                  <span className="ml-2 text-red-600 font-bold">{registrationSuccess.temp_password}</span>
-                </div>
-              </div>
-              
-              <p className="text-sm text-gray-600 mb-6" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                অনুগ্রহ করে আপনার রোল নম্বর এবং অস্থায়ী পাসওয়ার্ড সংরক্ষণ করুন। লগইনের জন্য এগুলো প্রয়োজন হবে।
-              </p>
-              
-              <button
-                onClick={() => setIsSuccessModalOpen(false)}
-                className="w-full bg-blue-500 text-white font-bold py-3 rounded-lg hover:bg-blue-600 transition-colors"
-                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-              >
-                বুঝেছি
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Registration removed; admin handles registration after login */}
 
       {/* Toast Container */}
       <ToastContainer />

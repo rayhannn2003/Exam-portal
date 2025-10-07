@@ -14,7 +14,7 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
     class_roll: '',
     gender: 'male',
     phone: '',
-    entry_fee: '',
+    entry_fee: '40',
     registered_by: null
   });
   const [schoolInputType, setSchoolInputType] = useState('select'); // 'select' or 'custom'
@@ -44,8 +44,11 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
 
   ];
 
-  // Pre-set classes
-  const presetClasses = ['3', '4', '5', '6', '7', '8', '9', '10'];
+  // Pre-set classes (restricted to 6–10)
+  const presetClasses = ['6', '7', '8', '9', '10'];
+
+  // Helper: Convert English digits to Bengali digits
+  const toBengaliDigits = (value) => String(value).replace(/[0-9]/g, (d) => '০১২৩৪৫৬৭৮৯'[d]);
 
   // Get admin ID from localStorage
   const getAdminId = () => {
@@ -73,16 +76,16 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation
-    if (!formData.name || !formData.school || !formData.student_class || !formData.phone || !formData.entry_fee) {
-      error('Please fill in all required fields');
+    // Validation (Only required: name, school, class)
+    if (!formData.name || !formData.school || !formData.student_class) {
+      error('প্রয়োজনীয় তথ্য পূরণ করুন: নাম, স্কুল, শ্রেণী');
       return;
     }
 
-    if (!/^\d+(\.\d{1,2})?$/.test(formData.entry_fee)) {
-      error('Entry fee must be a valid number');
-      return;
-    }
+    // Ensure entry fee is a valid number, default to 40 if empty
+    const entryFeeToSend = formData.entry_fee && /^\d+(\.\d{1,2})?$/.test(formData.entry_fee)
+      ? formData.entry_fee
+      : '40';
 
     try {
       setLoading(true);
@@ -93,12 +96,14 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
       // Prepare data with admin ID
       const registrationData = {
         ...formData,
+        phone: formData.phone && formData.phone.trim() !== '' ? formData.phone : 'N/A',
+        entry_fee: entryFeeToSend,
         registered_by: adminId
       };
       
       const response = await registerStudent(registrationData);
       
-      success('Student registered successfully!');
+      success('ছাত্র নিবন্ধন সফল হয়েছে!');
       onSuccess(response);
       onClose();
       
@@ -113,12 +118,12 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
         class_roll: '',
         gender: 'male',
         phone: '',
-        entry_fee: '',
+        entry_fee: '40',
         registered_by: null
       });
       setSchoolInputType('select');
     } catch (err) {
-      error(err.message || 'Failed to register student');
+      error(err.message || 'ছাত্র নিবন্ধন ব্যর্থ হয়েছে');
     } finally {
       setLoading(false);
     }
@@ -135,7 +140,7 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
       class_roll: '',
       gender: 'male',
       phone: '',
-      entry_fee: '',
+      entry_fee: '40',
       registered_by: null
     });
     setSchoolInputType('select');
@@ -322,7 +327,7 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
                     <option value="">শ্রেণী নির্বাচন করুন</option>
                     {presetClasses.map((cls) => (
                       <option key={cls} value={cls}>
-                        শ্রেণী {cls}
+                        {toBengaliDigits(cls)}ম শ্রেণী
                       </option>
                     ))}
                   </select>

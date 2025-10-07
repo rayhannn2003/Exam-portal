@@ -17,9 +17,10 @@ class TemplateEngine:
     """Template engine for rendering question paper templates"""
     
     def __init__(self, template_dir: str = "templates"):
-        self.template_dir = template_dir
+        base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.template_dir = os.path.join(base_path, template_dir)
         self.jinja_env = Environment(
-            loader=FileSystemLoader(template_dir),
+            loader=FileSystemLoader(self.template_dir),
             autoescape=True,
             trim_blocks=True,
             lstrip_blocks=True

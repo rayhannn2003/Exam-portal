@@ -9,7 +9,22 @@ const Scholarship = () => {
   const [scholarshipSelectedClass, setScholarshipSelectedClass] = useState('');
   const [scholarshipSelectedSchool, setScholarshipSelectedSchool] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showClassModal, setShowClassModal] = useState(false);
+  const [pdfClassSelection, setPdfClassSelection] = useState('');
+  const [availableClassesForModal, setAvailableClassesForModal] = useState([]);
   const { success, error } = useToast();
+
+  // Map numeric class to Bengali name
+  const bengaliClassName = (cls) => {
+    switch (String(cls)) {
+      case '6': return 'ষষ্ঠ শ্রেণী';
+      case '7': return 'সপ্তম শ্রেণী';
+      case '8': return 'অষ্টম শ্রেণী';
+      case '9': return 'নবম শ্রেণী';
+      case '10': return 'দশম শ্রেণী';
+      default: return `শ্রেণী ${cls}`;
+    }
+  };
 
   useEffect(() => {
     fetchScholarshipResults();
@@ -61,61 +76,29 @@ const Scholarship = () => {
 
   const downloadScholarshipPDF = async () => {
     const scholarshipData = filteredScholarshipResults;
-    
     if (scholarshipData.length === 0) {
       error('ডাউনলোড করার জন্য কোন বৃত্তিপ্রাপ্ত ছাত্র নেই');
       return;
     }
-
-    // Show class selection modal
-    const availableClasses = [...new Set(scholarshipData.map(r => r.class))].sort();
-    
-    if (availableClasses.length === 0) {
+    const available = [...new Set(scholarshipData.map(r => r.class))].sort();
+    if (available.length === 0) {
       error('কোন শ্রেণীর ডেটা পাওয়া যায়নি');
       return;
     }
+    setAvailableClassesForModal(available);
+    setPdfClassSelection('');
+    setShowClassModal(true);
+  };
 
-    // For now, let's use the first available class or show a simple prompt
-    const selectedClass = availableClasses.length === 1 ? availableClasses[0] : 
-      prompt(`শ্রেণী নির্বাচন করুন:\n${availableClasses.map((cls, index) => `${index + 1}. শ্রেণী ${cls}`).join('\n')}\n\nশ্রেণী নম্বর লিখুন (1-${availableClasses.length}):`);
-    
-    if (!selectedClass) {
-      return;
-    }
-
-    const classIndex = availableClasses.length === 1 ? 0 : parseInt(selectedClass) - 1;
-    
-    if (isNaN(classIndex) || classIndex < 0 || classIndex >= availableClasses.length) {
-      error('অবৈধ শ্রেণী নির্বাচন');
-      return;
-    }
-
-    const originalClassName = availableClasses[classIndex];
-    
-    // Convert numeric class name to Bengali
-    let bengaliClassName = originalClassName;
-    if (originalClassName === '6') {
-      bengaliClassName = 'ষষ্ঠ';
-    } else if (originalClassName === '7') {
-      bengaliClassName = 'সপ্তম';
-    } else if (originalClassName === '8') {
-      bengaliClassName = 'অষ্টম';
-    } else if (originalClassName === '9') {
-      bengaliClassName = 'নবম';
-    } else if (originalClassName === '10') {
-      bengaliClassName = 'দশম';
-    }
-
+  const handleGeneratePdf = async (originalClassName) => {
+    const scholarshipData = filteredScholarshipResults;
     // Filter students for selected class (use original numeric class name)
     const classStudents = scholarshipData.filter(student => student.class === originalClassName);
-    
     if (classStudents.length === 0) {
-      error(`${bengaliClassName} শ্রেণীর জন্য কোন বৃত্তিপ্রাপ্ত ছাত্র নেই`);
+      error(`${bengaliClassName(originalClassName)} এর জন্য কোন বৃত্তিপ্রাপ্ত ছাত্র নেই`);
       return;
     }
-
     try {
-      // Prepare scholarship data for PDF service
       const scholarshipStudents = classStudents.map((student, index) => ({
         serial_no: index + 1,
         name: student.name,
@@ -124,7 +107,7 @@ const Scholarship = () => {
       }));
 
       const scholarshipRequest = {
-        class_name: `${bengaliClassName}`,
+        class_name: `${bengaliClassName(originalClassName)}`,
         students: scholarshipStudents,
         exam_name: "উপবৃত্তি পরীক্ষা - ২০২৫",
         organization_name: "উত্তর তারাবুনিয়া ছাত্র-কল্যাণ সংগঠন",
@@ -133,7 +116,6 @@ const Scholarship = () => {
         location: "উত্তর তারাবুনিয়া, সখিপুর, শরিয়তপুর, বাংলাদেশ"
       };
 
-      // Call PDF service
       const response = await fetch('https://ahmfuad.pythonanywhere.com/generate-scholarship-pdf/download', {
         method: 'POST',
         headers: {
@@ -146,21 +128,17 @@ const Scholarship = () => {
         throw new Error(`PDF generation failed: ${response.statusText}`);
       }
 
-      // Get the PDF blob
       const pdfBlob = await response.blob();
-      
-      // Create download link
       const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `বৃত্তিপ্রাপ্ত_ছাত্রদের_তালিকা_শ্রেণী_${bengaliClassName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.download = `বৃত্তিপ্রাপ্ত_ছাত্রদের_তালিকা_${bengaliClassName(originalClassName)}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
-      success(`${bengaliClassName} শ্রেণীর বৃত্তিপ্রাপ্ত ছাত্রদের তালিকা PDF ডাউনলোড শুরু হয়েছে`);
-      
+      success(`${bengaliClassName(originalClassName)} এর তালিকা PDF ডাউনলোড শুরু হয়েছে`);
+      setShowClassModal(false);
     } catch (err) {
       console.error('Error generating PDF:', err);
       error('PDF ডাউনলোড করতে ব্যর্থ। দয়া করে আবার চেষ্টা করুন।');
@@ -233,7 +211,7 @@ const Scholarship = () => {
               >
                 <option value="">সব শ্রেণী</option>
                 {[...new Set(scholarshipResults.map(r => r.class))].sort().map(cls => (
-                  <option key={cls} value={cls}>শ্রেণী {cls}</option>
+                  <option key={cls} value={cls}>{bengaliClassName(cls)}</option>
                 ))}
               </select>
             </div>
@@ -289,7 +267,7 @@ const Scholarship = () => {
                 >
                   <option value="">শ্রেণী নির্বাচন করুন</option>
                   {scholarshipSelectedSchool && [...new Set(scholarshipResults.filter(r => r.school === scholarshipSelectedSchool).map(r => r.class))].sort().map(cls => (
-                    <option key={cls} value={cls}>শ্রেণী {cls}</option>
+                    <option key={cls} value={cls}>{bengaliClassName(cls)}</option>
                   ))}
                 </select>
               </div>
@@ -356,7 +334,7 @@ const Scholarship = () => {
                       {result.school}
                     </td>
                     <td className="py-3 px-2 text-gray-700">
-                      শ্রেণী {result.class}
+                      {bengaliClassName(result.class)}
                     </td>
                     <td className="py-3 px-2 text-center">
                       <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -392,6 +370,57 @@ const Scholarship = () => {
           </div>
         )}
       </div>
+
+      {/* Class Select Modal for PDF */}
+      {showClassModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-xl border border-purple-500/30 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="p-6 border-b border-purple-500/20">
+              <h3 className="text-xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                শ্রেণী নির্বাচন করুন
+              </h3>
+              <p className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                যেকোন একটি শ্রেণী নির্বাচন করে PDF ডাউনলোড করুন
+              </p>
+            </div>
+            <div className="p-6 grid grid-cols-2 gap-3">
+              {['6','7','8','9','10'].map((cls) => {
+                const available = availableClassesForModal.includes(cls);
+                return (
+                  <button
+                    key={cls}
+                    onClick={() => available && setPdfClassSelection(cls)}
+                    className={`px-4 py-3 rounded-lg border transition-all text-center ${
+                      pdfClassSelection === cls ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-800 border-gray-200 hover:border-purple-300 hover:bg-purple-50'
+                    } ${available ? '' : 'opacity-50 cursor-not-allowed'}`}
+                    disabled={!available}
+                    style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                  >
+                    {bengaliClassName(cls)}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={() => setShowClassModal(false)}
+                className="px-4 py-2 rounded-lg border"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+              >
+                বাতিল
+              </button>
+              <button
+                onClick={() => pdfClassSelection && handleGeneratePdf(pdfClassSelection)}
+                disabled={!pdfClassSelection}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+              >
+                PDF ডাউনলোড
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

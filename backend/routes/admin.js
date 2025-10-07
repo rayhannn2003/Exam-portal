@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { loginAdmin, getAllStudents, registerAdmin, updateAdmin, deleteAdmin, getAllAdmins } = require("../controllers/adminController");
+const { loginAdmin, getAllStudents, registerAdmin, updateAdmin, deleteAdmin, getAllAdmins, getAdminNameByUsername } = require("../controllers/adminController");
 const { verifySuperAdmin } = require("../middleware/verifyAdmin");
 
 router.post("/login", loginAdmin);
@@ -13,5 +13,8 @@ router.get("/admins", verifySuperAdmin, getAllAdmins);
 
 // Student listing from admin
 router.get("/students", getAllStudents);
+
+// Get admin name by username
+router.get("/name/:username", getAdminNameByUsername);
 
 module.exports = router;

@@ -11,6 +11,7 @@ const {
   deleteExamClass,
   getFullQuestionPaper,
   getStudentsDetailsWithAnswerKey,
+  getLatestExamDetails,
 } = require("../controllers/examController.js");
 
 const router = express.Router();
@@ -55,6 +56,9 @@ router.get("/:examId", getExamWithClasses);
 
 // Get all exams (list)
 router.get("/", getAllExams);
+
+// Latest exam details (public)
+router.get("/latest/details", getLatestExamDetails);
 
 // Get full question paper for a class and exam
 router.get("/:examId/classes/:classId/full-question-paper", getFullQuestionPaper);

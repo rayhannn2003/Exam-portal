@@ -122,3 +122,15 @@ exports.getAllAdmins = async (_req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+// get Admin name by username
+exports.getAdminNameByUsername = async (req, res) => {
+  try {
+    const { username } = req.params;
+    const result = await pool.query("SELECT name FROM admins WHERE username = $1", [username]);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("❌ Error fetching admin name:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};

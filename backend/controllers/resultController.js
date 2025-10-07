@@ -396,3 +396,101 @@ exports.getScholarshipResults = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+/*`
+      INSERT INTO results (
+        student_id, exam_id, class_id,
+        total_questions, correct, wrong,
+        score, percentage, evaluated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      ON CONFLICT (student_id, exam_id)
+      DO UPDATE SET
+        class_id = EXCLUDED.class_id,
+        total_questions = EXCLUDED.total_questions,
+        correct = EXCLUDED.correct,
+        wrong = EXCLUDED.wrong,
+        score = EXCLUDED.score,
+        percentage = EXCLUDED.percentage,
+        evaluated_at = NOW()
+      RETURNING *
+      `,*/
+
+//api for manual submit result to the results table with roll_number and correct_count, wrong_count, total_questions=60
+exports.manualSubmitResult = async (req, res) => {
+  try { 
+    const { roll_number, correct_count, wrong_count = 0 } = req.body;
+
+    if (!roll_number || correct_count === undefined || correct_count === null) {
+      return res.status(400).json({ message: "Missing required fields: roll_number, correct_count" });
+    }
+
+    // 1) Find the student, latest exam and class mapping
+    const queryRes = await pool.query(
+      `
+      SELECT 
+        s.id AS student_id,
+        e.id AS exam_id,
+        ec.id AS class_id,
+        e.question_count AS total_questions
+      FROM students s
+      JOIN exams e ON e.id = (
+        SELECT id FROM exams 
+        ORDER BY created_at DESC 
+        LIMIT 1
+      )
+      JOIN exam_class ec ON ec.exam_id = e.id AND ec.class_name = s.class
+      WHERE s.roll_number = $1
+      LIMIT 1
+      `,
+      [roll_number]
+    );
+
+    if (queryRes.rowCount === 0) {
+      return res.status(404).json({ message: "Student not found or exam/class not configured" });
+    }
+
+    const { student_id, exam_id, class_id, total_questions } = queryRes.rows[0];
+
+    // 2) Compute score and percentage (no negative marking for manual entry)
+    const tq = Number(total_questions) || 60;
+    const correct = Number(correct_count) || 0;
+    const wrong = Number(wrong_count) || 0;
+    const score = correct;
+    const percentage = tq > 0 ? Number(((correct / tq) * 100).toFixed(2)) : 0;
+
+    // 3) Insert/Update results table only
+    const resultRes = await pool.query(
+      `
+      INSERT INTO results (
+        student_id, exam_id, class_id,
+        total_questions, correct, wrong,
+        score, percentage, evaluated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      ON CONFLICT (student_id, exam_id)
+      DO UPDATE SET
+        class_id = EXCLUDED.class_id,
+        total_questions = EXCLUDED.total_questions,
+        correct = EXCLUDED.correct,
+        wrong = EXCLUDED.wrong,
+        score = EXCLUDED.score,
+        percentage = EXCLUDED.percentage,
+        evaluated_at = NOW()
+      RETURNING *
+      `,
+      [student_id, exam_id, class_id, tq, correct, wrong, score, percentage]
+    );
+
+    return res.status(201).json({
+      message: "Manual result submitted successfully",
+      result: resultRes.rows[0]
+    });
+  } catch (err) {
+    console.error("Error in manualSubmitResult:", err.message);
+    console.error("Error details:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+    

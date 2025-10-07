@@ -107,6 +107,39 @@ ORDER BY e.year DESC, e.created_at DESC;`);
   }
 };
 
+// ✅ Latest exam details (with optional schedule from environment)
+exports.getLatestExamDetails = async (_req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, exam_name, year, question_count, created_at
+       FROM exams
+       ORDER BY created_at DESC
+       LIMIT 1`
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "No exams found" });
+    }
+
+    const exam = result.rows[0];
+    const examDate = process.env.EXAM_DATE || null; // e.g., 2025-10-10
+    const examTime = process.env.EXAM_TIME || null; // e.g., 11:00 AM
+    const resultPublishTime = process.env.RESULT_PUBLISH_TIME || null; // e.g., 5:00 PM
+
+    res.json({
+      ...exam,
+      schedule: {
+        exam_date: examDate,
+        exam_time: examTime,
+        result_publish_time: resultPublishTime,
+      },
+    });
+  } catch (err) {
+    console.error("Error fetching latest exam details:", err.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 // ✏️ Edit exam
 exports.editExam = async (req, res) => {
   try {

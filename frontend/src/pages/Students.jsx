@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { getAllStudents, getStudentByRoll, getStudentsByClass, getStudentsBySchool, getStudentsBySchoolAndClass } from '../assets/services/api';
+import { getAllStudents, getStudentByRoll, getStudentsByClass, getStudentsBySchool, getStudentsBySchoolAndClass, deleteStudent } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
 import RegisterStudentModal from '../components/RegisterStudentModal';
 
-const Students = () => {
+const Students = ({ userRole = 'superadmin' }) => {
   const [students, setStudents] = useState([]);
   const [filteredStudents, setFilteredStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +15,21 @@ const Students = () => {
   const [rollSearch, setRollSearch] = useState('');
   const [showRollSearch, setShowRollSearch] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [registeredStudent, setRegisteredStudent] = useState(null);
   const { success, error } = useToast();
+
+  // Map numeric class to Bengali name
+  const bengaliClassName = (cls) => {
+    switch (String(cls)) {
+      case '6': return 'ষষ্ঠ শ্রেণী';
+      case '7': return 'সপ্তম শ্রেণী';
+      case '8': return 'অষ্টম শ্রেণী';
+      case '9': return 'নবম শ্রেণী';
+      case '10': return 'দশম শ্রেণী';
+      default: return `শ্রেণী ${cls}`;
+    }
+  };
 
   // Unique classes and schools for filters
   const uniqueClasses = [...new Set(students.map(s => s.class))].sort();
@@ -113,7 +127,9 @@ const Students = () => {
   const handleRegisterSuccess = (response) => {
     // Refresh the student list
     fetchStudents();
-    success(`Student registered successfully! Roll number: ${response.student.roll_number}`);
+    success(`ছাত্র নিবন্ধন সফল! রোল নম্বর: ${response.student.roll_number}`);
+    setRegisteredStudent(response.student);
+    setShowSuccessModal(true);
   };
 
   const formatDate = (dateString) => {
@@ -173,7 +189,7 @@ const Students = () => {
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               >
                 <option value="name">ছাত্রের নাম</option>
-                <option value="roll">রোল নম্বর</option>
+                {userRole === 'superadmin' && <option value="roll">রোল নম্বর</option>}
                 <option value="school">স্কুলের নাম</option>
                 <option value="class">শ্রেণী</option>
               </select>
@@ -193,28 +209,30 @@ const Students = () => {
             </div>
           </div>
           
-          {/* Roll Number Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-              রোল নম্বর দিয়ে খুঁজুন
-            </label>
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={rollSearch}
-                onChange={(e) => setRollSearch(e.target.value)}
-                placeholder="রোল নম্বর..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-              />
-              <button
-                onClick={handleRollSearch}
-                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
-              >
-                খুঁজুন
-              </button>
+          {/* Roll Number Search - Only for SuperAdmin */}
+          {userRole === 'superadmin' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                রোল নম্বর দিয়ে খুঁজুন
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={rollSearch}
+                  onChange={(e) => setRollSearch(e.target.value)}
+                  placeholder="রোল নম্বর..."
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                />
+                <button
+                  onClick={handleRollSearch}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all"
+                >
+                  খুঁজুন
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Filter Options */}
@@ -251,7 +269,7 @@ const Students = () => {
               >
                 <option value="">সব শ্রেণী</option>
                 {uniqueClasses.map(cls => (
-                  <option key={cls} value={cls}>শ্রেণী {cls}</option>
+                  <option key={cls} value={cls}>{bengaliClassName(cls)}</option>
                 ))}
               </select>
             </div>
@@ -307,7 +325,7 @@ const Students = () => {
                 >
                   <option value="">শ্রেণী নির্বাচন করুন</option>
                   {selectedSchool && [...new Set(students.filter(s => s.school === selectedSchool).map(s => s.class))].sort().map(cls => (
-                    <option key={cls} value={cls}>শ্রেণী {cls}</option>
+                    <option key={cls} value={cls}>{bengaliClassName(cls)}</option>
                   ))}
                 </select>
               </div>
@@ -370,6 +388,9 @@ const Students = () => {
                   <th className="text-left py-3 px-2 font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                     নিবন্ধন তারিখ
                   </th>
+                  <th className="text-center py-3 px-2 font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    কাজ
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -388,7 +409,7 @@ const Students = () => {
                       {student.school}
                     </td>
                     <td className="py-3 px-2 text-gray-700">
-                      শ্রেণী {student.class}
+                      {bengaliClassName(student.class)}
                     </td>
                     <td className="py-3 px-2 text-gray-700">
                       {student.phone}
@@ -404,6 +425,24 @@ const Students = () => {
                     <td className="py-3 px-2 text-gray-500 text-sm">
                       {formatDate(student.created_at)}
                     </td>
+                    <td className="py-3 px-2 text-center">
+                      <button
+                        onClick={async () => {
+                          if (!window.confirm('আপনি কি নিশ্চিত যে এই ছাত্রকে মুছে ফেলতে চান?')) return;
+                          try {
+                            await deleteStudent(student.id);
+                            success('ছাত্র মুছে ফেলা হয়েছে');
+                            fetchStudents();
+                          } catch (e) {
+                            error('ছাত্র মুছতে ব্যর্থ');
+                          }
+                        }}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors border border-red-300"
+                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                      >
+                        মুছুন
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -418,6 +457,56 @@ const Students = () => {
         onClose={() => setShowRegisterModal(false)}
         onSuccess={handleRegisterSuccess}
       />
+
+      {/* Registration Success Modal */}
+      {showSuccessModal && registeredStudent && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white/95 backdrop-blur-xl border border-green-500/30 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+            <div className="p-6 border-b border-green-500/20">
+              <h3 className="text-xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                নিবন্ধন সম্পন্ন!
+              </h3>
+              <p className="text-gray-600 text-sm mt-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                ছাত্রের তথ্য নিচে দেওয়া হল
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+                <div className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>রোল নম্বর</div>
+                <div className="text-3xl font-extrabold text-green-700 tracking-wider">
+                  {registeredStudent.roll_number}
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>নাম</div>
+                  <div className="text-gray-800 font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>{registeredStudent.name}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>স্কুল</div>
+                  <div className="text-gray-800 font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>{registeredStudent.school}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>শ্রেণী</div>
+                  <div className="text-gray-800 font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>{bengaliClassName(registeredStudent.class)}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>ফি</div>
+                  <div className="text-gray-800 font-medium">৳{registeredStudent.entry_fee}</div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-gray-200 flex justify-end">
+              <button
+                onClick={() => { setShowSuccessModal(false); setRegisteredStudent(null); }}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

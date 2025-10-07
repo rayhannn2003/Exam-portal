@@ -6,6 +6,7 @@ const {
   submitDetailedResult,
   editSubmittedResult,
   deleteSubmittedResult,
+  manualSubmitResult,
   getResultByStudentRoll,
   getResultByClass,
   getResultBySchool,
@@ -18,6 +19,7 @@ const {
 // Submit answers
 router.post("/submit", submitResult);
 router.post("/submit-detailed", submitDetailedResult);
+router.post("/manual-submit", manualSubmitResult);
 
 // Edit submitted answers/result
 router.put("/submit", editSubmittedResult);

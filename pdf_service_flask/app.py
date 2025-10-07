@@ -455,6 +455,63 @@ def download_scholarship_pdf():
         logger.error(f"Error downloading scholarship PDF: {str(e)}")
         return jsonify({"error": f"Failed to generate scholarship PDF: {str(e)}"}), 500
 
+class AdmitRequest(BaseModel):
+    student_name: str
+    school: str
+    class_name: str
+    roll_number: str
+    exam_name: str
+    exam_date: str
+    exam_time: str
+    center_name: str
+    instructions: Optional[str] = None
+
+@app.route("/generate-admit-card", methods=['POST'])
+def generate_admit_card():
+    try:
+        payload = request.get_json()
+        if not payload:
+            return jsonify({"error": "Request body is required"}), 400
+
+        try:
+            admit_req = AdmitRequest(**payload)
+        except ValidationError as e:
+            return jsonify({"error": f"Invalid request data: {str(e)}"}), 400
+
+        import asyncio
+        pdf_bytes = asyncio.run(pdf_generator.generate_admit_card_pdf(admit_req))
+        pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
+        return jsonify({
+            "success": True,
+            "message": "Admit card generated successfully",
+            "pdf_data": pdf_b64
+        })
+    except Exception as e:
+        logger.error(f"Error generating admit card: {str(e)}")
+        return jsonify({"error": f"Failed to generate admit card: {str(e)}"}), 500
+
+@app.route("/generate-admit-card/download", methods=['POST'])
+def download_admit_card():
+    try:
+        payload = request.get_json()
+        if not payload:
+            return jsonify({"error": "Request body is required"}), 400
+        try:
+            admit_req = AdmitRequest(**payload)
+        except ValidationError as e:
+            return jsonify({"error": f"Invalid request data: {str(e)}"}), 400
+        import asyncio
+        pdf_bytes = asyncio.run(pdf_generator.generate_admit_card_pdf(admit_req))
+        safe_filename = f"Admit_{admit_req.roll_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        safe_filename = "".join(c for c in safe_filename if c.isascii() and (c.isalnum() or c in (' ', '-', '_'))).rstrip()
+        return Response(pdf_bytes, mimetype="application/pdf", headers={
+            "Content-Disposition": f"attachment; filename={safe_filename}",
+            "Content-Type": "application/pdf"
+        })
+    except Exception as e:
+        logger.error(f"Error downloading admit card: {str(e)}")
+        return jsonify({"error": f"Failed to download admit card: {str(e)}"}), 500
+
 # Error handlers
 @app.errorhandler(404)
 def not_found(error):

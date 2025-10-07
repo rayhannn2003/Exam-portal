@@ -1,0 +1,17 @@
+/home/rayhan/Documents/exam-portal/pdf_service_flask/venv/lib/python3.13/site-packages/pydantic/_internal/_config.py:373: UserWarning: Valid config keys have changed in V2:
+* 'schema_extra' has been renamed to 'json_schema_extra'
+  warnings.warn(message, UserWarning)
+2025-10-07 07:50:35,964 - __main__ - INFO - Downloading SolaimanLipi font...
+2025-10-07 07:50:36,489 - __main__ - WARNING - Could not download SolaimanLipi font: HTTP Error 404: Not Found
+2025-10-07 07:50:36,490 - services.template_engine - INFO - Template engine initialized with template directory: templates
+2025-10-07 07:50:36,533 - services.pdf_generator - INFO - PDF generator initialized
+2025-10-07 07:50:36,533 - services.template_engine - INFO - Template engine initialized with template directory: templates
+2025-10-07 07:50:36,536 - __main__ - INFO - Starting PDF Service on 0.0.0.0:8000
+2025-10-07 07:50:36,536 - __main__ - INFO - Debug mode: False
+ * Serving Flask app 'app'
+ * Debug mode: off
+2025-10-07 07:50:36,544 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8000
+ * Running on http://10.18.83.157:8000
+2025-10-07 07:50:36,544 - werkzeug - INFO - [33mPress CTRL+C to quit[0m

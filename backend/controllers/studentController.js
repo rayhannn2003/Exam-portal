@@ -3,6 +3,7 @@ const generateRoll = require("../utils/rollNumberGenerator");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const moment = require("moment-timezone");
+const smsService = require("../utils/smsService");
 
 // Register a student
 exports.registerStudent = async (req, res) => {
@@ -23,6 +24,22 @@ exports.registerStudent = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id, name, father_name, mother_name, school, class, email_id, gender, phone, roll_number, payment_status, entry_fee, created_at `,
       [name, father_name, mother_name, school, student_class, class_roll, email_id, gender, phone, roll_number, payment_status, entry_fee, passwordHash, registered_by]
     );
+
+    // Fire-and-forget SMS (non-blocking)
+    (async () => {
+      try {
+        await smsService.sendStudentRegistrationSMS({
+          to: phone,
+          name,
+          schoolName: school,
+          rollNumber: roll_number,
+          password: rawPassword,
+          portalUrl: process.env.FRONTEND_URL || process.env.PORTAL_URL,
+        });
+      } catch (e) {
+        console.warn("SMS send failed:", e?.message || e);
+      }
+    })();
 
     res.status(201).json({ message: "Student registered", student: result.rows[0], temp_password: rawPassword });
   } catch (err) {
@@ -49,6 +66,50 @@ exports.loginStudent = async (req, res) => {
   } catch (err) {
     console.error("❌ Error logging in student:", err);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// Change student password (by roll_number)
+exports.changeStudentPassword = async (req, res) => {
+  try {
+    const { roll_number, old_password, new_password } = req.body;
+    if (!roll_number || !old_password || !new_password) {
+      return res.status(400).json({ error: "roll_number, old_password, new_password are required" });
+    }
+
+    const result = await pool.query("SELECT id, password FROM students WHERE roll_number = $1", [roll_number]);
+    if (result.rowCount === 0) return res.status(404).json({ error: "Student not found" });
+
+    const student = result.rows[0];
+    const isMatch = await bcrypt.compare(old_password, student.password);
+    if (!isMatch) return res.status(401).json({ error: "Old password is incorrect" });
+
+    const newHash = await bcrypt.hash(new_password, 10);
+    await pool.query("UPDATE students SET password = $1 WHERE id = $2", [newHash, student.id]);
+
+    res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error("❌ Error changing password:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// Verify student's old password correctness (pre-check)
+exports.verifyStudentPassword = async (req, res) => {
+  try {
+    const { roll_number, old_password } = req.body;
+    if (!roll_number || !old_password) {
+      return res.status(400).json({ error: "roll_number এবং পুরনো পাসওয়ার্ড প্রয়োজন" });
+    }
+    const result = await pool.query("SELECT id, password FROM students WHERE roll_number = $1", [roll_number]);
+    if (result.rowCount === 0) return res.status(404).json({ error: "ছাত্র পাওয়া যায়নি" });
+    const student = result.rows[0];
+    const isMatch = await bcrypt.compare(old_password, student.password);
+    if (!isMatch) return res.status(401).json({ error: "পুরনো পাসওয়ার্ড সঠিক নয়" });
+    return res.json({ valid: true, message: "পাসওয়ার্ড যাচাই সফল" });
+  } catch (err) {
+    console.error("❌ Error verifying student password:", err);
+    res.status(500).json({ error: "সার্ভার ত্রুটি" });
   }
 };
 
@@ -186,5 +247,54 @@ exports.getRegistrationCountOverTime = async (req, res) => {
   } catch (err) {
     console.error("Error fetching registrations over time:", err.message);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Send reminder SMS to all students of a class
+exports.sendReminderToClass = async (req, res) => {
+  try {
+    const { class: cls, message } = req.body;
+    if (!cls) {
+      return res.status(400).json({ message: "Missing required field: class" });
+    }
+
+    // Fetch students with valid phone numbers for the class
+    const result = await pool.query(
+      `SELECT name, school, roll_number, phone FROM students WHERE class = $1 AND phone IS NOT NULL`,
+      [cls]
+    );
+
+    const students = result.rows || [];
+    if (students.length === 0) {
+      return res.status(200).json({ message: "No students found for this class", total: 0, success: 0, failed: 0 });
+    }
+
+    const defaultTemplate =
+      "Dear Student, your UTCKS Scholarship Exam is tomorrow at 11 AM. Roll: {ROLL}. Please be present by 10:30 AM and bring your admit card. Best of luck!";
+    const template = message && message.trim() ? message.trim() : defaultTemplate;
+
+    // Build personalized messages with roll number
+    const messages = students.map((s) => {
+      let personalized = template;
+      if (personalized.includes("{ROLL}")) {
+        personalized = personalized.replace(/\{ROLL\}/g, String(s.roll_number));
+      } else {
+        personalized = `${template} Roll: ${s.roll_number}.`;
+      }
+      return { to: s.phone, message: personalized };
+    });
+
+    const smsResult = await smsService.sendBulkDifferentMessages(messages);
+
+    res.json({
+      message: "Reminder SMS processed",
+      total: messages.length,
+      success: smsResult?.success ? messages.length : 0,
+      failed: smsResult?.success ? 0 : messages.length,
+      results: [smsResult],
+    });
+  } catch (err) {
+    console.error("❌ Error sending reminder SMS:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 };

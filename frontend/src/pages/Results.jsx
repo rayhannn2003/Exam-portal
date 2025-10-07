@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getFullResults, getResultByStudentRoll, getResultByClass, getResultBySchool, markForScholarship, unmarkForScholarship } from '../assets/services/api';
+import { getFullResults, getResultByStudentRoll, getResultByClass, getResultBySchool, markForScholarship, unmarkForScholarship, manualSubmitResult } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
 import IndividualResultModal from '../components/IndividualResultModal';
 import OMRUpload from '../components/OMRUpload';
 
-const Results = () => {
+const Results = ({ userRole = 'superadmin' }) => {
   console.log('Results component rendered!');
   const [results, setResults] = useState([]);
   const [filteredResults, setFilteredResults] = useState([]);
@@ -19,7 +19,23 @@ const Results = () => {
   const [showIndividualResult, setShowIndividualResult] = useState(false);
   const [individualResultData, setIndividualResultData] = useState([]);
   const [showOMRUpload, setShowOMRUpload] = useState(false);
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualRoll, setManualRoll] = useState('');
+  const [manualCorrect, setManualCorrect] = useState('');
+  const [manualWrong, setManualWrong] = useState('0');
   const { success, error } = useToast();
+
+  // Map numeric class to Bengali name
+  const bengaliClassName = (cls) => {
+    switch (String(cls)) {
+      case '6': return 'ষষ্ঠ শ্রেণী';
+      case '7': return 'সপ্তম শ্রেণী';
+      case '8': return 'অষ্টম শ্রেণী';
+      case '9': return 'নবম শ্রেণী';
+      case '10': return 'দশম শ্রেণী';
+      default: return `শ্রেণী ${cls}`;
+    }
+  };
 
   // Unique classes and schools for filters
   const uniqueClasses = [...new Set(results.map(r => r.class))].sort();
@@ -164,6 +180,16 @@ const Results = () => {
             <span>📄</span>
             <span>OMR আপলোড</span>
           </button>
+          {userRole === 'superadmin' && (
+            <button
+              onClick={() => setShowManualInput(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors duration-200 flex items-center space-x-2 cursor-pointer"
+              style={{ fontFamily: "'Hind Siliguri', sans-serif", pointerEvents: 'auto', zIndex: 10 }}
+              disabled={false}
+            >
+              ✍️ ম্যানুয়াল ইনপুট
+            </button>
+          )}
         </div>
       </div>
 
@@ -254,7 +280,7 @@ const Results = () => {
               >
                 <option value="">সব শ্রেণী</option>
                 {uniqueClasses.map(cls => (
-                  <option key={cls} value={cls}>শ্রেণী {cls}</option>
+                  <option key={cls} value={cls}>{bengaliClassName(cls)}</option>
                 ))}
               </select>
             </div>
@@ -310,7 +336,7 @@ const Results = () => {
                 >
                   <option value="">শ্রেণী নির্বাচন করুন</option>
                   {selectedSchool && [...new Set(results.filter(r => r.school === selectedSchool).map(r => r.class))].sort().map(cls => (
-                    <option key={cls} value={cls}>শ্রেণী {cls}</option>
+                    <option key={cls} value={cls}>{bengaliClassName(cls)}</option>
                   ))}
                 </select>
               </div>
@@ -391,7 +417,7 @@ const Results = () => {
                       {result.school}
                     </td>
                     <td className="py-3 px-2 text-gray-700">
-                      শ্রেণী {result.class}
+                      {bengaliClassName(result.class)}
                     </td>
                     {/* <td className="py-3 px-2 text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                       {result.title}
@@ -472,6 +498,83 @@ const Results = () => {
             setShowOMRUpload(false);
           }}
         />
+      )}
+
+      {/* Manual Input Modal */}
+      {showManualInput && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-xl font-semibold mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>ম্যানুয়াল রেজাল্ট ইনপুট</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-700 mb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>রোল নম্বর</label>
+                <input
+                  type="text"
+                  value={manualRoll}
+                  onChange={(e) => setManualRoll(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="রোল নম্বর"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>সঠিক সংখ্যা</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={manualCorrect}
+                  onChange={(e) => setManualCorrect(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="সঠিক উত্তর সংখ্যা"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-700 mb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>ভুল সংখ্যা (ডিফল্ট 0)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={manualWrong}
+                  onChange={(e) => setManualWrong(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                  placeholder="ভুল উত্তর সংখ্যা"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowManualInput(false)}
+                className="px-4 py-2 rounded-lg border"
+              >
+                বাতিল
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    if (!manualRoll || manualCorrect === '') {
+                      error('রোল নম্বর এবং সঠিক সংখ্যা প্রয়োজন');
+                      return;
+                    }
+                    await manualSubmitResult({
+                      roll_number: manualRoll.trim(),
+                      correct_count: Number(manualCorrect),
+                      wrong_count: Number(manualWrong || 0),
+                    });
+                    success('ম্যানুয়াল রেজাল্ট সংরক্ষণ করা হয়েছে');
+                    setShowManualInput(false);
+                    setManualRoll('');
+                    setManualCorrect('');
+                    setManualWrong('0');
+                    fetchResults();
+                  } catch (e) {
+                    error(e.message || 'ম্যানুয়াল রেজাল্ট সংরক্ষণ ব্যর্থ');
+                  }
+                }}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              >
+                সংরক্ষণ করুন
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
