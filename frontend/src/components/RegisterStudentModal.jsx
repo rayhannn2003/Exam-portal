@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { registerStudent } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
 
@@ -17,6 +17,8 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
     entry_fee: '40',
     registered_by: null
   });
+  const [phoneError, setPhoneError] = useState('');
+  const phoneInputRef = useRef(null);
   const [schoolInputType, setSchoolInputType] = useState('select'); // 'select' or 'custom'
   const { success, error } = useToast();
 
@@ -84,6 +86,9 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
       ...prev,
       [name]: value
     }));
+    if (name === 'phone' && phoneError) {
+      setPhoneError('');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -93,6 +98,20 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
     if (!formData.name || !formData.school || !formData.student_class) {
       error('প্রয়োজনীয় তথ্য পূরণ করুন: নাম, স্কুল, শ্রেণী');
       return;
+    }
+
+    // Phone validation: optional; if provided, must be exactly 11 digits
+    const trimmedPhone = (formData.phone || '').trim();
+    if (trimmedPhone !== '' && !/^\d{11}$/.test(trimmedPhone)) {
+      const msg = 'ফোন নম্বরে ভুল হয়েছে — ১১ সংখ্যার সঠিক নম্বর দিন (যেমন: 01XXXXXXXXX)।';
+      setPhoneError(msg);
+      error(msg);
+      if (phoneInputRef.current) {
+        phoneInputRef.current.focus();
+      }
+      return;
+    } else if (trimmedPhone === '') {
+      setPhoneError('');
     }
 
     // Ensure entry fee is a valid number, default to 40 if empty
@@ -106,10 +125,11 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
       // Get admin ID from token
       const adminId = getAdminId();
       
-      // Prepare data with admin ID
+      // Prepare data with admin ID; send null if phone is empty
+      const trimmedPhoneForSend = (formData.phone || '').trim();
       const registrationData = {
         ...formData,
-        phone: formData.phone && formData.phone.trim() !== '' ? formData.phone : 'N/A',
+        phone: trimmedPhoneForSend !== '' ? trimmedPhoneForSend : null,
         entry_fee: entryFeeToSend,
         registered_by: adminId
       };
@@ -134,9 +154,11 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
         entry_fee: '40',
         registered_by: null
       });
+      setPhoneError('');
       setSchoolInputType('select');
     } catch (err) {
-      error(err.message || 'ছাত্র নিবন্ধন ব্যর্থ হয়েছে');
+      const msg = err?.error || err?.message || 'ছাত্র নিবন্ধন ব্যর্থ হয়েছে';
+      error(msg);
     } finally {
       setLoading(false);
     }
@@ -385,17 +407,25 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    ফোন নম্বর *
+                    ফোন নম্বর (ঐচ্ছিক)
                   </label>
                   <input
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="ফোন নম্বর"
-                    required
+                    ref={phoneInputRef}
+                    aria-invalid={!!phoneError}
+                    inputMode="numeric"
+                    title="১১ সংখ্যার মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${phoneError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
+                    placeholder="ফোন নম্বর (যেমন: 01XXXXXXXXX)"
                   />
+                  {phoneError && (
+                    <p className="mt-1 text-sm text-red-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      {phoneError}
+                    </p>
+                  )}
                 </div>
 
                 <div>

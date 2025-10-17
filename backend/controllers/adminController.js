@@ -42,6 +42,14 @@ exports.registerAdmin = async (req, res) => {
     const { username, name, password, role = "admin" } = req.body;
     if (!username || !name || !password) return res.status(400).json({ error: "Username, name and password are required" });
 
+    // Validate role - must be 'admin' or 'superadmin' (no underscore)
+    const validRoles = ['admin', 'superadmin'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ 
+        error: `Invalid role. Must be one of: ${validRoles.join(', ')}` 
+      });
+    }
+
     const exists = await pool.query("SELECT 1 FROM admins WHERE username = $1", [username]);
     if (exists.rowCount > 0) return res.status(400).json({ error: "Username already exists" });
 
@@ -62,6 +70,16 @@ exports.updateAdmin = async (req, res) => {
   try {
     const { id } = req.params;
     const { username, name, password, role } = req.body;
+
+    // Validate role if provided
+    if (typeof role === "string") {
+      const validRoles = ['admin', 'superadmin'];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ 
+          error: `Invalid role. Must be one of: ${validRoles.join(', ')}` 
+        });
+      }
+    }
 
     const fields = [];
     const values = [id];

@@ -406,16 +406,16 @@ const Students = ({ userRole = 'superadmin' }) => {
                       {student.father_name || 'N/A'}
                     </td>
                     <td className="py-3 px-2 text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                      {student.school}
+                      {student.school || 'N/A'}
                     </td>
                     <td className="py-3 px-2 text-gray-700">
-                      {bengaliClassName(student.class)}
+                      {student.class ? bengaliClassName(student.class) : 'N/A'}
                     </td>
                     <td className="py-3 px-2 text-gray-700">
-                      {student.phone}
+                      {student.phone || 'N/A'}
                     </td>
                     <td className="py-3 px-2 text-center font-medium text-gray-800">
-                      ৳{student.entry_fee}
+                      {student.entry_fee !== undefined && student.entry_fee !== null ? `৳${student.entry_fee}` : 'N/A'}
                     </td>
                     <td className="py-3 px-2 text-center">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${getPaymentStatusColor(student.payment_status)}`}>
@@ -423,7 +423,7 @@ const Students = ({ userRole = 'superadmin' }) => {
                       </span>
                     </td>
                     <td className="py-3 px-2 text-gray-500 text-sm">
-                      {formatDate(student.created_at)}
+                      {student.created_at ? formatDate(student.created_at) : 'N/A'}
                     </td>
                     <td className="py-3 px-2 text-center">
                       <button
