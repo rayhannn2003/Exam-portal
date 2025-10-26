@@ -88,6 +88,23 @@ exports.loginStudent = async (req, res) => {
           timestamp: new Date().toISOString()
         }
       });
+
+      // Also log to user_activity table for SuperAdmin tracking
+      await pool.query(
+        `INSERT INTO login_events (
+           user_id, role, identifier, name, ip_address, user_agent, platform, is_mobile
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          student.id,
+          'student',
+          student.roll_number,
+          student.name,
+          req.ip || req.connection.remoteAddress || 'Unknown',
+          req.get('User-Agent') || 'Unknown',
+          req.get('Sec-CH-UA-Platform') || 'Unknown',
+          req.get('Sec-CH-UA-Mobile') === '?1'
+        ]
+      );
     } catch (logError) {
       console.error("❌ Error logging student activity:", logError);
       // Don't fail login if logging fails

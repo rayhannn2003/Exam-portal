@@ -18,6 +18,28 @@ exports.loginAdmin = async (req, res) => {
 
     const token = jwt.sign({ id: admin.id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
+    // Log admin login activity for user tracking
+    try {
+      await pool.query(
+        `INSERT INTO login_events (
+           user_id, role, identifier, name, ip_address, user_agent, platform, is_mobile
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          admin.id,
+          admin.role,
+          admin.username,
+          admin.name || admin.username,
+          req.ip || req.connection.remoteAddress || 'Unknown',
+          req.get('User-Agent') || 'Unknown',
+          req.get('Sec-CH-UA-Platform') || 'Unknown',
+          req.get('Sec-CH-UA-Mobile') === '?1'
+        ]
+      );
+    } catch (logError) {
+      console.error("❌ Error logging admin activity:", logError);
+      // Don't fail login if logging fails
+    }
+
     res.json({ message: "Login successful", token ,admin});
   } catch (err) {
     console.error("❌ Error logging in admin:", err);

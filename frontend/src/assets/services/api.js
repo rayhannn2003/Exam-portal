@@ -555,3 +555,58 @@ export const updateDailyAnalytics = async (date = null) => {
     throw err.response?.data || { message: 'Failed to update daily analytics' };
   }
 };
+
+// ----- User Activity Tracking APIs -----
+export const getTodayActivity = async () => {
+  try {
+    const res = await api.get('/analytics/activity/today');
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch today\'s activity' };
+  }
+};
+
+export const getWeekActivity = async () => {
+  try {
+    const res = await api.get('/analytics/activity/week');
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch weekly activity' };
+  }
+};
+
+export const getActiveUsers = async () => {
+  try {
+    const res = await api.get('/analytics/activity/active');
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch active users' };
+  }
+};
+
+export const getActivitySummary = async () => {
+  try {
+    const res = await api.get('/analytics/activity/summary');
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch activity summary' };
+  }
+};
+
+export const getAllActivity = async (page = 1, limit = 50) => {
+  try {
+    const res = await api.get(`/analytics/activity/all?page=${page}&limit=${limit}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch all activity' };
+  }
+};
+
+export const getActivityStats = async () => {
+  try {
+    const res = await api.get('/analytics/activity/stats');
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch activity statistics' };
+  }
+};

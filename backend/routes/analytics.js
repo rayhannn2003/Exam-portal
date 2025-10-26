@@ -1,10 +1,11 @@
 /**
- * Student Analytics Routes
- * Routes for viewing student activity statistics
+ * Analytics Routes
+ * Routes for viewing student activity statistics and user activity tracking
  */
 
 const express = require('express');
 const router = express.Router();
+const pool = require('../models/db');
 const StudentActivityService = require('../utils/studentActivityService');
 const { verifyAdmin } = require('../middleware/verifyAdmin');
 
@@ -251,6 +252,130 @@ router.post('/update-analytics', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('Error updating daily analytics:', error);
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ========================================
+// USER ACTIVITY TRACKING ROUTES
+// ========================================
+
+// Get today's visitors
+router.get('/activity/today', verifyAdmin, async (req, res) => {
+  try {
+    const data = await pool.query(`
+      SELECT * FROM user_activity 
+      WHERE DATE(login_time) = CURRENT_DATE
+      ORDER BY login_time DESC
+    `);
+    res.json(data.rows);
+  } catch (err) {
+    console.error('❌ Error fetching today\'s activity:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Get past 7 days visitors
+router.get('/activity/week', verifyAdmin, async (req, res) => {
+  try {
+    const data = await pool.query(`
+      SELECT * FROM user_activity
+      WHERE login_time >= NOW() - INTERVAL '7 days'
+      ORDER BY login_time DESC
+    `);
+    res.json(data.rows);
+  } catch (err) {
+    console.error('❌ Error fetching weekly activity:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Get currently active users
+router.get('/activity/active', verifyAdmin, async (req, res) => {
+  try {
+    const data = await pool.query(`
+      SELECT * FROM user_activity
+      WHERE active = TRUE
+      ORDER BY login_time DESC
+    `);
+    res.json(data.rows);
+  } catch (err) {
+    console.error('❌ Error fetching active users:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Get day-wise login summary
+router.get('/activity/summary', verifyAdmin, async (req, res) => {
+  try {
+    const data = await pool.query(`
+      SELECT 
+        DATE(login_time) AS day, 
+        role, 
+        COUNT(*) AS logins,
+        COUNT(DISTINCT user_id) AS unique_users
+      FROM user_activity
+      WHERE login_time >= NOW() - INTERVAL '30 days'
+      GROUP BY DATE(login_time), role
+      ORDER BY day DESC, role
+    `);
+    res.json(data.rows);
+  } catch (err) {
+    console.error('❌ Error fetching activity summary:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Get all activity with pagination
+router.get('/activity/all', verifyAdmin, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = (page - 1) * limit;
+
+    const data = await pool.query(`
+      SELECT * FROM user_activity
+      ORDER BY login_time DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+
+    const countResult = await pool.query('SELECT COUNT(*) FROM user_activity');
+    const total = parseInt(countResult.rows[0].count);
+
+    res.json({
+      data: data.rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (err) {
+    console.error('❌ Error fetching all activity:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+// Get activity statistics
+router.get('/activity/stats', verifyAdmin, async (req, res) => {
+  try {
+    const stats = await pool.query(`
+      SELECT 
+        COUNT(*) as total_logins,
+        COUNT(DISTINCT user_id) as unique_users,
+        COUNT(CASE WHEN role = 'student' THEN 1 END) as student_logins,
+        COUNT(CASE WHEN role = 'admin' THEN 1 END) as admin_logins,
+        COUNT(CASE WHEN role = 'superadmin' THEN 1 END) as superadmin_logins,
+        COUNT(CASE WHEN active = true THEN 1 END) as currently_active,
+        COUNT(CASE WHEN DATE(login_time) = CURRENT_DATE THEN 1 END) as today_logins,
+        COUNT(CASE WHEN login_time >= NOW() - INTERVAL '7 days' THEN 1 END) as week_logins
+      FROM user_activity
+    `);
+
+    res.json(stats.rows[0]);
+  } catch (err) {
+    console.error('❌ Error fetching activity stats:', err);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

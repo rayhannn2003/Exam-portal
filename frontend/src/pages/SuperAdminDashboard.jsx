@@ -4,6 +4,7 @@ import CreateExamModal from '../components/CreateExamModal';
 import EditExamModal from '../components/EditExamModal';
 import SetManagementModal from '../components/SetManagementModal';
 import ExamManagement from '../components/ExamManagement';
+import Activity from './Activity';
 import Results from './Results';
 import Scholarship from './Scholarship';
 import Students from './Students';
@@ -211,6 +212,7 @@ const SuperAdminDashboard = () => {
     { id: 'students', name: 'Students', icon: '👥' },
     { id: 'admins', name: 'Admins', icon: '👨‍💼' },
     { id: 'finance', name: 'Finance', icon: '💰' },
+    { id: 'activity', name: 'Activity', icon: '📊' },
     { id: 'reminders', name: 'Reminders', icon: '📨' }
   ];
 
@@ -1356,6 +1358,8 @@ const SuperAdminDashboard = () => {
         return <Admins />;
       case 'finance':
         return <Finance />;
+      case 'activity':
+        return <Activity />;
       case 'reminders':
         return renderReminders();
       default:

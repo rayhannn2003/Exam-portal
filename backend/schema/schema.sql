@@ -2,12 +2,64 @@ CREATE TABLE admins (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL, -- bcrypt hashed
+    name TEXT,
     role TEXT CHECK (role IN ('superadmin','admin')) DEFAULT 'admin',
     created_at TIMESTAMP DEFAULT NOW()
 );
 
 INSERT INTO admins (username, password, role)
 VALUES ('superadmin', crypt('admin1', gen_salt('bf')), 'superadmin');
+
+-- User Activity Tracking Tables
+CREATE TABLE user_activity (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    role TEXT CHECK (role IN ('student', 'admin', 'superadmin')) NOT NULL,
+    name TEXT NOT NULL,
+    identifier TEXT,  -- roll_number or username
+    ip_address TEXT,
+    user_agent TEXT,
+    platform TEXT,
+    is_mobile BOOLEAN,
+    login_time TIMESTAMP DEFAULT NOW(),
+    logout_time TIMESTAMP,
+    active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE login_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    role TEXT CHECK (role IN ('student','admin','superadmin')) NOT NULL,
+    identifier TEXT NOT NULL,  -- roll_number or username
+    name TEXT NOT NULL,
+    ip_address TEXT,
+    user_agent TEXT,
+    platform TEXT,
+    is_mobile BOOLEAN,
+    login_time TIMESTAMP DEFAULT NOW()
+);
+
+-- Trigger Function for Activity Logging
+CREATE OR REPLACE FUNCTION log_user_activity()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO user_activity (
+      user_id, role, name, identifier, ip_address,
+      user_agent, platform, is_mobile, login_time
+  )
+  VALUES (
+      NEW.user_id, NEW.role, NEW.name, NEW.identifier, NEW.ip_address,
+      NEW.user_agent, NEW.platform, NEW.is_mobile, NEW.login_time
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger for Activity Logging
+CREATE TRIGGER trg_log_user_activity
+AFTER INSERT ON login_events
+FOR EACH ROW
+EXECUTE FUNCTION log_user_activity();
 
 
 -- CREATE TABLE exams_archived (
