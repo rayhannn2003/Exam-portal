@@ -2,7 +2,8 @@ import axios from "axios";
 
 // Base URL of your backend API
 const API_BASE_URL = "https://examapi.daftar-e.com/api";
-//"https://examapi.daftar-e.com/api"; // Updated to match your backend PORT
+// const API_BASE_URL ="http://localhost:4000/api";
+ // Updated to match your backend PORT
 // Base URL of Flask PDF service (admit card)
 const FLASK_PDF_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLASK_PDF_URL) || "https://ahmfuad.pythonanywhere.com"; //"localhost:8000";
 
@@ -608,5 +609,21 @@ export const getActivityStats = async () => {
     return res.data;
   } catch (err) {
     throw err.response?.data || { message: 'Failed to fetch activity statistics' };
+  }
+};
+
+//question analysis selectedAnalysisExam.id}/${classData.id
+
+
+export const getAnalysis = async (examID, classId) => {
+  try {
+    const res = await api.get(`/analytics/exam-analysis/${examID}/${classId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    return res.data; // axios automatically parses JSON
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch exam analysis' };
   }
 };

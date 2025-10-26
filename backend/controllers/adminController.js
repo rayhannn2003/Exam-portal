@@ -16,7 +16,7 @@ exports.loginAdmin = async (req, res) => {
 
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: admin.id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: admin.id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: "2h" });
 
     // Log admin login activity for user tracking
     try {

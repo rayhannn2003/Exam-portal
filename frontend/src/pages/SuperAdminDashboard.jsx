@@ -12,6 +12,8 @@ import Admins from './Admins';
 import Finance from './Finance';
 import { ToastProvider } from '../contexts/ToastContext';
 import { sendClassReminder } from '../assets/services/api';
+import { getAnalysis } from '../assets/services/api';
+
 
 // Logout function
 const handleLogout = () => {
@@ -51,6 +53,8 @@ const SuperAdminDashboard = () => {
   const [availableClasses, setAvailableClasses] = useState([]);
   const [analysisLoading, setAnalysisLoading] = useState(false);
   const [analysisView, setAnalysisView] = useState('exams'); // 'exams', 'classes', 'analysis'
+
+  // const [getAnalysis]
 
   useEffect(() => {
     fetchDashboardData();
@@ -159,35 +163,32 @@ const SuperAdminDashboard = () => {
     }
   };
 
-  const handleAnalysisClassSelect = async (classData) => {
-    setSelectedAnalysisClass(classData);
-    setAnalysisView('analysis');
-    
-    // Fetch analysis data
-    setAnalysisLoading(true);
-    try {
-      const response = await fetch(`/api/analytics/exam-analysis/${selectedAnalysisExam.id}/${classData.id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      if (data.success) {
-        setExamAnalysisData(data.data);
-      } else {
-        if (window.showToast) {
-          window.showToast(data.message || 'Failed to fetch exam analysis', 'error');
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching exam analysis:', error);
+const handleAnalysisClassSelect = async (classData) => {
+  setSelectedAnalysisClass(classData);
+  setAnalysisView('analysis');
+  setAnalysisLoading(true);
+
+  try {
+    // Use the centralized API function
+    const data = await getAnalysis(selectedAnalysisExam.id, classData.id);
+
+    if (data.success) {
+      setExamAnalysisData(data.data);
+    } else {
       if (window.showToast) {
-        window.showToast('Failed to fetch exam analysis', 'error');
+        window.showToast(data.message || 'Failed to fetch exam analysis', 'error');
       }
-    } finally {
-      setAnalysisLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('Error fetching exam analysis:', error);
+    if (window.showToast) {
+      window.showToast(error.message || 'Failed to fetch exam analysis', 'error');
+    }
+  } finally {
+    setAnalysisLoading(false);
+  }
+};
+
 
   const handleBackToAnalysisExams = () => {
     setAnalysisView('exams');

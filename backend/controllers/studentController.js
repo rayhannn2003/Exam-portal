@@ -62,6 +62,7 @@ exports.registerStudent = async (req, res) => {
 exports.loginStudent = async (req, res) => {
   try {
     const { roll_number, password } = req.body;
+    // console.log("Login attempt for roll number:", roll_number);
     const result = await pool.query("SELECT * FROM students WHERE roll_number = $1", [roll_number]);
 
     if (result.rows.length === 0) return res.status(401).json({ error: "Invalid credentials" });
@@ -71,24 +72,24 @@ exports.loginStudent = async (req, res) => {
 
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: student.id, role: "student", roll_number: student.roll_number, name: student.name }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: student.id, role: "student", roll_number: student.roll_number, name: student.name }, process.env.JWT_SECRET, { expiresIn: "2h" });
 
     // Log student login activity
     try {
-      await StudentActivityService.logStudentLogin({
-        studentId: student.id,
-        rollNumber: student.roll_number,
-        studentName: student.name,
-        ipAddress: req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 
-                   (req.connection.socket ? req.connection.socket.remoteAddress : null),
-        userAgent: req.get('User-Agent') || 'Unknown',
-        deviceInfo: {
-          platform: req.get('Sec-CH-UA-Platform') || 'Unknown',
-          mobile: req.get('Sec-CH-UA-Mobile') === '?1',
-          timestamp: new Date().toISOString()
-        }
-      });
-
+      // await StudentActivityService.logStudentLogin({
+      //   studentId: student.id,
+      //   rollNumber: student.roll_number,
+      //   studentName: student.name,
+      //   ipAddress: req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 
+      //              (req.connection.socket ? req.connection.socket.remoteAddress : null),
+      //   userAgent: req.get('User-Agent') || 'Unknown',
+      //   deviceInfo: {
+      //     platform: req.get('Sec-CH-UA-Platform') || 'Unknown',
+      //     mobile: req.get('Sec-CH-UA-Mobile') === '?1',
+      //     timestamp: new Date().toISOString()
+      //   }
+      // });
+      // console.log("Logging student login activity for student ID:", student.id);
       // Also log to user_activity table for SuperAdmin tracking
       await pool.query(
         `INSERT INTO login_events (
