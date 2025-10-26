@@ -10,8 +10,8 @@ const multer = require('multer');
 const axios = require('axios');
 
 // OMR Service Configuration
-const OMR_SERVICE_URL = process.env.OMR_SERVICE_URL || 'http://localhost:8001';
-const OMR_API_URL = 'https://omr.daftar-e.com/process-omr';
+const OMR_SERVICE_URL = process.env.OMR_SERVICE_URL || 'http://20.189.126.248';
+const OMR_API_URL = 'http://20.189.126.248/process-omr';
 
 // Configure multer for file uploads
 const upload = multer({

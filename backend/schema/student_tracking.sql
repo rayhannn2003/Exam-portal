@@ -1,0 +1,97 @@
+-- -- Student Activity Tracking Tables
+
+-- -- Table to track student login sessions
+-- CREATE TABLE student_login_logs (
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     student_id UUID NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+--     roll_number TEXT NOT NULL,
+--     student_name TEXT,
+--     ip_address INET,
+--     user_agent TEXT,
+--     login_time TIMESTAMP DEFAULT NOW(),
+--     session_duration INTERVAL,  -- Will be updated on logout/session end
+--     device_info JSONB,  -- Store additional device/browser info
+--     created_at TIMESTAMP DEFAULT NOW()
+-- );
+
+-- -- Table to track PDF download activities
+-- CREATE TABLE pdf_download_logs (
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     student_id UUID REFERENCES students(id) ON DELETE SET NULL,
+--     roll_number TEXT,
+--     student_name TEXT,
+--     pdf_type TEXT NOT NULL CHECK (pdf_type IN ('admit_card', 'question_paper', 'result', 'scholarship')),
+--     file_name TEXT,
+--     download_time TIMESTAMP DEFAULT NOW(),
+--     ip_address INET,
+--     user_agent TEXT,
+--     file_size BIGINT,  -- Size in bytes
+--     success BOOLEAN DEFAULT TRUE,
+--     error_message TEXT,
+--     created_at TIMESTAMP DEFAULT NOW()
+-- );
+
+-- -- Table for daily/monthly analytics summary
+-- CREATE TABLE student_analytics_summary (
+--     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--     date DATE NOT NULL,
+--     total_logins INTEGER DEFAULT 0,
+--     unique_students INTEGER DEFAULT 0,
+--     total_pdf_downloads INTEGER DEFAULT 0,
+--     admit_card_downloads INTEGER DEFAULT 0,
+--     question_paper_downloads INTEGER DEFAULT 0,
+--     scholarship_downloads INTEGER DEFAULT 0,
+--     result_downloads INTEGER DEFAULT 0,
+--     created_at TIMESTAMP DEFAULT NOW(),
+--     updated_at TIMESTAMP DEFAULT NOW(),
+--     UNIQUE(date)
+-- );
+
+-- -- Indexes for better performance
+-- CREATE INDEX idx_student_login_logs_student_id ON student_login_logs(student_id);
+-- CREATE INDEX idx_student_login_logs_roll_number ON student_login_logs(roll_number);
+-- CREATE INDEX idx_student_login_logs_login_time ON student_login_logs(login_time);
+
+-- CREATE INDEX idx_pdf_download_logs_student_id ON pdf_download_logs(student_id);
+-- CREATE INDEX idx_pdf_download_logs_roll_number ON pdf_download_logs(roll_number);
+-- CREATE INDEX idx_pdf_download_logs_pdf_type ON pdf_download_logs(pdf_type);
+-- CREATE INDEX idx_pdf_download_logs_download_time ON pdf_download_logs(download_time);
+
+-- CREATE INDEX idx_student_analytics_summary_date ON student_analytics_summary(date);
+
+-- -- Function to update daily analytics
+-- CREATE OR REPLACE FUNCTION update_daily_analytics(target_date DATE DEFAULT CURRENT_DATE)
+-- RETURNS VOID AS $$
+-- BEGIN
+--     INSERT INTO student_analytics_summary (
+--         date,
+--         total_logins,
+--         unique_students,
+--         total_pdf_downloads,
+--         admit_card_downloads,
+--         question_paper_downloads,
+--         scholarship_downloads,
+--         result_downloads
+--     )
+--     VALUES (
+--         target_date,
+--         (SELECT COUNT(*) FROM student_login_logs WHERE DATE(login_time) = target_date),
+--         (SELECT COUNT(DISTINCT student_id) FROM student_login_logs WHERE DATE(login_time) = target_date),
+--         (SELECT COUNT(*) FROM pdf_download_logs WHERE DATE(download_time) = target_date),
+--         (SELECT COUNT(*) FROM pdf_download_logs WHERE DATE(download_time) = target_date AND pdf_type = 'admit_card'),
+--         (SELECT COUNT(*) FROM pdf_download_logs WHERE DATE(download_time) = target_date AND pdf_type = 'question_paper'),
+--         (SELECT COUNT(*) FROM pdf_download_logs WHERE DATE(download_time) = target_date AND pdf_type = 'scholarship'),
+--         (SELECT COUNT(*) FROM pdf_download_logs WHERE DATE(download_time) = target_date AND pdf_type = 'result')
+--     )
+--     ON CONFLICT (date) 
+--     DO UPDATE SET
+--         total_logins = EXCLUDED.total_logins,
+--         unique_students = EXCLUDED.unique_students,
+--         total_pdf_downloads = EXCLUDED.total_pdf_downloads,
+--         admit_card_downloads = EXCLUDED.admit_card_downloads,
+--         question_paper_downloads = EXCLUDED.question_paper_downloads,
+--         scholarship_downloads = EXCLUDED.scholarship_downloads,
+--         result_downloads = EXCLUDED.result_downloads,
+--         updated_at = NOW();
+-- END;
+-- $$ LANGUAGE plpgsql;

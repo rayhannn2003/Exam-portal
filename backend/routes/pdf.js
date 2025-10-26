@@ -16,6 +16,9 @@ router.post('/preview/:examId/:classId', verifyAdmin, pdfController.generateQues
 // Scholarship PDF Generation Routes
 router.post('/scholarship/:class_name', verifyAdmin, pdfController.generateScholarshipPDF);
 
+// Admit Card PDF Generation Routes
+router.post('/admit-card', pdfController.generateAdmitCardPDF);
+
 // PDF Service Management Routes
 router.get('/templates', verifyAdmin, pdfController.getAvailableTemplates);
 router.get('/customization-options', verifyAdmin, pdfController.getCustomizationOptions);

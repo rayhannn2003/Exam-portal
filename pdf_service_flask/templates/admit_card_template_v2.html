@@ -158,8 +158,8 @@
         }
 
         .detail-row {
-            display: flex;
-            align-items: center;
+            display:inline;
+            align-items:center;
             margin-bottom: 5px;
             font-size: 11pt;
         }
@@ -279,30 +279,30 @@
         <div class="details-section">
             <div class="applicant-info">
                 <div class="detail-row">
-                    <span class="detail-label">বৃত্তি রোল:</span>
+                    <span class="detail-label">বৃত্তি রোল: </span>
                     <span class="detail-value roll-id">{{ admit.roll_number }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">পরীক্ষার্থীর নাম:</span>
+                    <span class="detail-label">পরীক্ষার্থীর নাম: </span>
                     <span class="detail-value">{{ admit.student_name }}</span>
                 </div>
                 
                 <div class="detail-row">
-                    <span class="detail-label">শ্রেণি:</span>
+                    <span class="detail-label">শ্রেণি: </span>
                     <span class="detail-value">{{ admit.class_name|bengali_class }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">বিদ্যালয়ের নাম:</span>
+                    <span class="detail-label">বিদ্যালয়ের নাম: </span>
                     <span class="detail-value">{{ admit.school }}</span>
                 </div>
             </div>
             <div class="exam-info">
                 <div class="detail-row">
-                    <span class="detail-label">পরীক্ষার তারিখ:</span>
+                    <span class="detail-label">পরীক্ষার তারিখ: </span>
                     <span class="detail-value">{{ admit.exam_date }}</span>
                 </div>
                 <div class="detail-row">
-                    <span class="detail-label">সময়:</span>
+                    <span class="detail-label">সময়: </span>
                     <span class="detail-value">সকাল ১০ টা </span>
                 </div>
             </div>

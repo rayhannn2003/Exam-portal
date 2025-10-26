@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { getAllStudents, getStudentByRoll, getStudentsByClass, getStudentsBySchool, getStudentsBySchoolAndClass, deleteStudent } from '../assets/services/api';
+import { getAllStudents, getStudentByRoll, getStudentsByClass, getStudentsBySchool, getStudentsBySchoolAndClass, deleteStudent, updateStudent } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
 import RegisterStudentModal from '../components/RegisterStudentModal';
+import EditStudentModal from '../components/EditStudentModal';
 
 const Students = ({ userRole = 'superadmin' }) => {
   const [students, setStudents] = useState([]);
@@ -17,6 +18,8 @@ const Students = ({ userRole = 'superadmin' }) => {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [registeredStudent, setRegisteredStudent] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
   const { success, error } = useToast();
 
   // Map numeric class to Bengali name
@@ -130,6 +133,16 @@ const Students = ({ userRole = 'superadmin' }) => {
     success(`ছাত্র নিবন্ধন সফল! রোল নম্বর: ${response.student.roll_number}`);
     setRegisteredStudent(response.student);
     setShowSuccessModal(true);
+  };
+
+  const handleEditSuccess = () => {
+    // Refresh the student list
+    fetchStudents();
+  };
+
+  const handleEditClick = (student) => {
+    setEditingStudent(student);
+    setShowEditModal(true);
   };
 
   const formatDate = (dateString) => {
@@ -426,22 +439,31 @@ const Students = ({ userRole = 'superadmin' }) => {
                       {student.created_at ? formatDate(student.created_at) : 'N/A'}
                     </td>
                     <td className="py-3 px-2 text-center">
-                      <button
-                        onClick={async () => {
-                          if (!window.confirm('আপনি কি নিশ্চিত যে এই ছাত্রকে মুছে ফেলতে চান?')) return;
-                          try {
-                            await deleteStudent(student.id);
-                            success('ছাত্র মুছে ফেলা হয়েছে');
-                            fetchStudents();
-                          } catch (e) {
-                            error('ছাত্র মুছতে ব্যর্থ');
-                          }
-                        }}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors border border-red-300"
-                        style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
-                      >
-                        মুছুন
-                      </button>
+                      <div className="flex items-center justify-center space-x-2">
+                        <button
+                          onClick={() => handleEditClick(student)}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors border border-blue-300"
+                          style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                        >
+                          সম্পাদনা
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm('আপনি কি নিশ্চিত যে এই ছাত্রকে মুছে ফেলতে চান?')) return;
+                            try {
+                              await deleteStudent(student.id);
+                              success('ছাত্র মুছে ফেলা হয়েছে');
+                              fetchStudents();
+                            } catch (e) {
+                              error('ছাত্র মুছতে ব্যর্থ');
+                            }
+                          }}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 hover:bg-red-200 transition-colors border border-red-300"
+                          style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                        >
+                          মুছুন
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -456,6 +478,17 @@ const Students = ({ userRole = 'superadmin' }) => {
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
         onSuccess={handleRegisterSuccess}
+      />
+
+      {/* Edit Student Modal */}
+      <EditStudentModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingStudent(null);
+        }}
+        student={editingStudent}
+        onSuccess={handleEditSuccess}
       />
 
       {/* Registration Success Modal */}

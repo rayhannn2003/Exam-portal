@@ -149,4 +149,16 @@ CREATE TABLE results (
 );
 
 
-
+create table students {
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    roll_number TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    school TEXT NOT NULL,
+    father_name VARCHAR(40),
+    mother_name VARCHAR(40),
+    class_roll VARCHAR(25),
+    class TEXT NOT NULL, -- 7 
+    password TEXT,
+    registered_by UUID REFERENCES admins(id),
+    created_at TIMESTAMP DEFAULT NOW()
+}

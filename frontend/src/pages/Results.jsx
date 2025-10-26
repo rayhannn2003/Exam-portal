@@ -28,12 +28,12 @@ const Results = ({ userRole = 'superadmin' }) => {
   // Map numeric class to Bengali name
   const bengaliClassName = (cls) => {
     switch (String(cls)) {
-      case '6': return 'ষষ্ঠ শ্রেণী';
-      case '7': return 'সপ্তম শ্রেণী';
-      case '8': return 'অষ্টম শ্রেণী';
-      case '9': return 'নবম শ্রেণী';
-      case '10': return 'দশম শ্রেণী';
-      default: return `শ্রেণী ${cls}`;
+      case '6': return 'ষষ্ঠ শ্রেণি';
+      case '7': return 'সপ্তম শ্রেণি';
+      case '8': return 'অষ্টম শ্রেণি';
+      case '9': return 'নবম শ্রেণি';
+      case '10': return 'দশম শ্রেণি';
+      default: return `শ্রেণি ${cls}`;
     }
   };
 

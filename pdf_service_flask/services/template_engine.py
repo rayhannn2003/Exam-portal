@@ -9,6 +9,7 @@ import logging
 from datetime import datetime
 
 from models.question_models import Exam, ExamSet, PaperCustomization, TemplateInfo
+from services.latex_renderer import latex_renderer
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ class TemplateEngine:
         self.jinja_env.filters['format_date'] = self._format_date
         self.jinja_env.filters['bengali_number'] = self._bengali_number
         self.jinja_env.filters['bengali_class'] = self._bengali_class
+        self.jinja_env.filters['process_latex'] = self._process_latex
         
         logger.info(f"Template engine initialized with template directory: {template_dir}")
     
@@ -59,6 +61,28 @@ class TemplateEngine:
             if customization is None:
                 customization = PaperCustomization()
             
+            # Process questions to convert LaTeX expressions to SVG
+            processed_exam_set = exam_set.copy() if hasattr(exam_set, 'copy') else exam_set
+            if hasattr(processed_exam_set, 'questions') and processed_exam_set.questions:
+                # Convert questions to list of dicts for processing
+                questions_data = []
+                for question in processed_exam_set.questions:
+                    if hasattr(question, 'dict'):
+                        questions_data.append(question.dict())
+                    elif hasattr(question, '__dict__'):
+                        questions_data.append(question.__dict__)
+                    else:
+                        questions_data.append(question)
+                
+                # Process LaTeX expressions in questions
+                processed_questions = latex_renderer.process_questions_list(questions_data)
+                
+                # Update exam_set with processed questions
+                # Note: We'll pass both original and processed questions to template
+                logger.info(f"Processed {len(processed_questions)} questions for LaTeX expressions")
+            else:
+                processed_questions = []
+            
             # Load template - use compact Bengali template by default
             if template_type == "bengali" or template_type == "default" or template_type == "compact_bengali":
                 template_name = "compact_bengali_question_paper.html"
@@ -71,6 +95,7 @@ class TemplateEngine:
             context = {
                 "exam": exam,
                 "exam_set": exam_set,
+                "processed_questions": processed_questions,  # Add processed questions
                 "customization": customization,
                 "generation_time": datetime.now(),
                 "page_break": "page-break-after: always;",
@@ -226,16 +251,22 @@ class TemplateEngine:
         return ''.join(bengali_digits[int(digit)] for digit in str(number))
         
     def _bengali_class(self, value) -> str:
-        """Map class numeric values to Bengali class names with শ্রেণী suffix"""
+        """Map class numeric values to Bengali class names with শ্রেণি suffix"""
         mapping = {
-            '6': 'ষষ্ঠ শ্রেণী',
-            '7': 'সপ্তম শ্রেণী',
-            '8': 'অষ্টম শ্রেণী',
-            '9': 'নবম শ্রেণী',
-            '10': 'দশম শ্রেণী',
+            '6': 'ষষ্ঠ শ্রেণি',
+            '7': 'সপ্তম শ্রেণি',
+            '8': 'অষ্টম শ্রেণি',
+            '9': 'নবম শ্রেণি',
+            '10': 'দশম শ্রেণি',
         }
         s = str(value).strip()
-        return mapping.get(s, f"শ্রেণী {s}")
+        return mapping.get(s, f"শ্রেণি {s}")
+    
+    def _process_latex(self, text: str) -> str:
+        """Process text to convert LaTeX expressions to SVG"""
+        if not text:
+            return text
+        return latex_renderer.process_text_with_latex(str(text))
 
    
 

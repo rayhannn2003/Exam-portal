@@ -174,7 +174,7 @@ const AdminDashboard = () => {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                শ্রেণীভিত্তিক নিবন্ধিত ছাত্র
+                শ্রেণিভিত্তিক নিবন্ধিত ছাত্র
               </h3>
               <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                 মোট {students.length} জন ছাত্র নিবন্ধিত

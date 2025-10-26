@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useToast } from '../contexts/ToastContext';
 import { previewExamClassPDF, downloadExamClassPDF } from '../assets/services/api';
+import PDFLoadingModal from './PDFLoadingModal';
 
 const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
   const [loading, setLoading] = useState(false);
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
   const { success, error: showError } = useToast();
 
   const handleDownloadPDF = async () => {
     setLoading(true);
+    setShowLoadingModal(true);
+    
     try {
       const blob = await downloadExamClassPDF(examId, classId, { 
         templateType: 'compact_bengali',
@@ -39,6 +43,7 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
       showError('PDF তৈরি করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
+      setShowLoadingModal(false);
     }
   };
 
@@ -159,6 +164,15 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
           </button>
         </div>
       </div>
+
+      {/* PDF Loading Modal */}
+      <PDFLoadingModal
+        isOpen={showLoadingModal}
+        onClose={() => setShowLoadingModal(false)}
+        title="প্রশ্নপত্র তৈরি হচ্ছে"
+        message="প্রশ্নপত্রের PDF তৈরি করা হচ্ছে"
+        type="question"
+      />
     </div>
   );
 };

@@ -389,7 +389,7 @@ exports.unmarkForScholarship = async (req, res) => {
 //getScholarshipResults
 exports.getScholarshipResults = async (req, res) => {
   try {
-    const result = await pool.query("SELECT s.name,s.roll_number,s.school,s.class,e.exam_name,e.year,r.* FROM results r JOIN students s ON s.id = r.student_id JOIN exams e ON e.id = r.exam_id WHERE r.scholarship = true");
+    const result = await pool.query("SELECT s.name,s.roll_number,s.school,s.class,e.exam_name,e.year,r.* FROM results r JOIN students s ON s.id = r.student_id JOIN exams e ON e.id = r.exam_id WHERE r.scholarship = true order by r.score DESC");
     res.json(result.rows);
   } catch (err) {
     console.error("Error fetching scholarship results:", err.message);

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="bn" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>স্বপ্নচূড়া ছাত্র সংগঠন - কার্যনির্বাহী কমিটি ২০২৫-২৬ ঘোষণা</title>
+    <style>
+        /* Modern Fonts for official look: Hind Siliguri & Noto Sans Bengali */
+        @import url('https://fonts.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+
+        /* Color Palette: Dark Professional Blue (#2c3e50), Accent Red (#e74c3c), Light Gray/Blue (#e6f0f7) */
+        :root {
+            --primary-dark: #2c3e50;
+            --accent-red: #e74c3c;
+            --light-bg: #e6f0f7;
+            --border-color: #bdc3c7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Hind Siliguri', 'Noto Sans Bengali', Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.5;
+            color: #000000;
+            font-weight: 500;
+            background: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            background: white;
+            padding: 10px;
+        }
+
+        /* Bismillah Line & Motto Line (from template) */
+        .bismillah {
+            font-size: 10pt;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        .motto-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10pt;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+            padding: 0 50px;
+            font-weight: 600;
+        }
+
+        /* Header Section (from template) */
+        .header {
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 25px;
+            position: relative;
+            padding-bottom: 15px;
+            border-bottom: 3px double #000000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0;
+        }
+
+        .logo-image {
+            width: 180px;
+            height: 180px;
+            object-fit: contain;
+            border: none;
+            margin-left: -30px;
+            margin-bottom: -80px;
+        }
+
+        .spacer {
+            width: 80px;
+            height: 80px;
+        }
+
+        .org-info {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .org-name {
+            font-size: 22pt;
+            font-weight: 800;
+            color: #000000;
+            margin-bottom: 5px;
+            line-height: 1.1;
+        }
+
+        .org-details {
+            font-size: 12pt;
+            color: #333;
+            margin-bottom: 0;
+            line-height: 1.4;
+        }
+
+        .motto {
+            font-size: 10pt;
+            color: #555;
+            margin-bottom: 5px;
+            font-style: italic;
+        }
+
+        /* Main Announcement Title (Replaced exam-title) */
+        .announcement-title {
+            font-size: 16pt;
+            font-weight: 700;
+            color: var(--accent-red); /* Using the accent red color */
+            text-align: center;
+            margin: 15px auto 0 auto;
+            display: inline-block;
+            padding: 5px 20px;
+            border: 2px solid var(--accent-red);
+            border-radius: 20px;
+            background-color: #fffaf0;
+        }
+
+        /* Section Title (Used for Committee Groups) - Replaced class-title */
+        .committee-group-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: var(--primary-dark);
+            text-align: center;
+            margin: 30px auto 15px auto;
+            padding: 10px 20px;
+            background: var(--light-bg);
+            border-radius: 5px;
+            border: 1px solid var(--border-color);
+            display: block;
+            width: 70%;
+            min-width: 300px;
+        }
+
+        /* Table Styling (Adapted for two columns: Role and Name) */
+        .table-container {
+            margin: 15px 0 20px 0;
+            overflow: hidden;
+            border: 2px solid var(--primary-dark);
+            border-radius: 5px;
+        }
+
+        .committee-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .committee-table th {
+            background: var(--primary-dark);
+            color: white;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 13pt;
+            border: 1px solid var(--primary-dark);
+        }
+
+        .committee-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid var(--border-color);
+            font-size: 13pt;
+            vertical-align: middle;
+            color: #000000;
+        }
+
+        .committee-table tr:nth-child(even) {
+            background-color: #f7f7f7;
+        }
+
+        .role-column {
+            font-weight: 700;
+            color: var(--primary-dark);
+            width: 40%; /* Role column is wider */
+            padding-left: 15px;
+            background-color: #e6f0f7; /* Light background for emphasis */
+        }
+
+        .name-column {
+            font-weight: 600;
+            color: #000000;
+            width: 60%;
+            padding-left: 15px;
+        }
+
+        /* Signature Section (from template) */
+        .signature-section {
+            margin-top: 30px;
+            margin-bottom: 0px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 40%;
+        }
+
+        .signature-image {
+            width: 150px;
+            height: 50px;
+            object-fit:scale-down;
+            margin-bottom: -5px;
+        }
+
+        .signature-line {
+            border-top: 1.5px dashed var(--primary-dark);
+            width: 220px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .signature-title {
+            font-size: 12pt;
+            font-weight: 700;
+            color: #000;
+            margin-top: 5px;
+        }
+
+        /* Footer */
+        .footer {
+            display: block;
+            margin-top: 10px;
+            padding-top: 15px;
+            text-align: center;
+        }
+
+        .footer-time {
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 5px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 5px;
+        }
+
+        .bottom-line {
+            font-size: 10pt;
+            font-weight: 700;
+            color: var(--primary-dark);
+            padding: 5px 0;
+        }
+
+        /* Print Specific Styles */
+        @media print {
+            body {
+                font-size: 11pt;
+                padding: 10px;
+                margin: 0;
+            }
+            .container {
+                max-width: none;
+                box-shadow: none;
+            }
+            /* Crucial for multi-page documents */
+            .table-container {
+                page-break-inside: avoid;
+            }
+            .committee-group-title {
+                page-break-after: avoid;
+            }
+            .signature-section {
+                margin-top: 25px;
+                page-break-inside: avoid;
+            }
+            /* Watermark from template */
+            #watermark-overlay {
+                opacity: 0.1;
+                background-size: 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Watermark Overlay (from template) -->
+    <div id="watermark-overlay" style="background-image: url('https://i.imgur.com/gwVn3kD.png'); opacity: 0.08;"></div>
+    
+    <div class="container">
+        <!-- Bismillah and Motto Line (Top Text) -->
+        <div class="bismillah">বিসমিল্লাহির রাহমানির রাহিম</div>
+        <div class="motto-line">
+            <span>শিক্ষা</span>
+            <span>ক্রীড়া</span>
+            <span>সেবা</span>
+        </div>
+
+        <!-- Header Section -->
+        <div class="header">
+            <div class="header-top">
+                <img src="https://i.imgur.com/gwVn3kD.png" alt="Logo" class="logo-image">
+                <div class="org-info">
+                    <div class="motto">"দৃষ্টিভঙ্গি বদলান, জীবন বদলে যাবে"</div>
+                    <!-- Organization Name (Set to Shopnochura) -->
+                    <div class="org-name">স্বপ্নচূড়া ছাত্র সংগঠন</div>
+                    <div class="org-details">স্থাপিত - [প্রতিষ্ঠার বছর] </div>
+                    <div class="org-details">[সংগঠনের ঠিকানা]</div>
+                </div>
+                <div class="spacer"></div>
+            </div>
+            
+            <!-- Main Announcement Title -->
+            <div class="announcement-title">
+               প্রেস বিজ্ঞপ্তি 
+            </div>
+        </div>
+
+        <!-- Short Committee Formation Description -->
+        <p style="text-align: center; margin: 20px auto 30px auto; max-width: 600px; font-size: 13pt; font-weight: 500; color: #333;">
+             এতদ্বারা স্বপ্নচূড়া ছাত্র সংগঠনের ২০২৫-২৬ সেশনের নবগঠিত কার্যনির্বাহী কমিটি ঘোষণা করা হলো।
+        </p>
+
+        <!-- --- COMMITTEE SECTIONS --- -->
+
+        <!-- 1. কেন্দ্রীয় নির্বাহী কমিটি -->
+        <div class="committee-group-title">১. কেন্দ্রীয় নির্বাহী কমিটি</div>
+        <div class="table-container">
+            <table class="committee-table">
+                <thead>
+                    <tr>
+                        <th style="width: 40%; text-align: center;">পদবী</th>
+                        <th style="width: 60%; text-align: center;">নাম</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="role-column">সভাপতি</td>
+                        <td class="name-column">কবির আল মাহমুদ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ সভাপতি (১)</td>
+                        <td class="name-column">রায়হান মাহমুদ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ সভাপতি (২)</td>
+                        <td class="name-column">আব্দুর রহমান</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সাধারণ সম্পাদক</td>
+                        <td class="name-column">আব্দুল আজিজ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">যুগ্ম সাধারণ সম্পাদক (১)</td>
+                        <td class="name-column">জহিরুল ইসলাম</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">যুগ্ম সাধারণ সম্পাদক (২)</td>
+                        <td class="name-column">দেওয়ান নজরুল</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">যুগ্ম সাধারণ সম্পাদক (৩)</td>
+                        <td class="name-column">বারেক মাহমুদ</td>
+                    </tr>
+                     <tr>
+                        <td class="role-column">যুগ্ম সাধারণ সম্পাদক (৪)</td>
+                        <td class="name-column">অনিক মাহমুদ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 2. সাংগঠনিক ও অর্থ বিভাগ -->
+        <div class="committee-group-title">২. সাংগঠনিক ও অর্থ বিভাগ</div>
+        <div class="table-container">
+            <table class="committee-table">
+                <tbody>
+                    <tr>
+                        <td class="role-column">সাংগঠনিক সম্পাদক</td>
+                        <td class="name-column">আলভি ইমরান</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ সাংগঠনিক সম্পাদক (১)</td>
+                        <td class="name-column">মেহেদী দেওয়ান</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ সাংগঠনিক সম্পাদক (২)</td>
+                        <td class="name-column">মোঃ শুক্কুর আলী</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">কোষাধ্যক্ষ</td>
+                        <td class="name-column">মোঃ কাউসার আহমেদ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">দপ্তর সম্পাদক</td>
+                        <td class="name-column">মোঃ বোরহান</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ দপ্তর সম্পাদক</td>
+                        <td class="name-column">আমির আদনান</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 3. প্রচার ও কার্যক্রম বিভাগ -->
+        <div class="committee-group-title">৩. প্রচার ও কার্যক্রম বিভাগ</div>
+        <div class="table-container">
+            <table class="committee-table">
+                <tbody>
+                     <tr>
+                        <td class="role-column">প্রচার সম্পাদক</td>
+                        <td class="name-column">মো: নয়ন হোসেন</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রচার সম্পাদক (১)</td>
+                        <td class="name-column">আবুল কাশেম আদর</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রচার সম্পাদক (২)</td>
+                        <td class="name-column">সোহরাব বেপারী</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">শিক্ষাবিষয়ক সম্পাদক</td>
+                        <td class="name-column">আরিয়ান জমির</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সামাজিক কল্যাণ বিষয়ক সম্পাদক</td>
+                        <td class="name-column">সাইফুল ইসলাম</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ-সামাজিক সম্পাদক (১)</td>
+                        <td class="name-column">ফাহাদ আহমেদ সোহাগ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ-সামাজিক সম্পাদক (২)</td>
+                        <td class="name-column">আবুল কালাম</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 4. প্রবাসী কল্যাণ ও কার্যকরী সদস্য -->
+        <div class="committee-group-title">৪. প্রবাসী কল্যাণ বিভাগ</div>
+        <div class="table-container">
+            <table class="committee-table">
+                <tbody>
+                    <tr>
+                        <td class="role-column">প্রবাসী কল্যাণ বিষয়ক সম্পাদক</td>
+                        <td class="name-column">সুমন আহমেদ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রবাসী কল্যাণ সম্পাদক (১)</td>
+                        <td class="name-column">বিএম আজিজ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রবাসী কল্যাণ সম্পাদক (২)</td>
+                        <td class="name-column">হাবিব উল্ল্যাহ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রবাসী কল্যাণ সম্পাদক (৩)</td>
+                        <td class="name-column">মোঃ উসমান</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রবাসী কল্যাণ সম্পাদক (৪)</td>
+                        <td class="name-column">ইমরান হোসেন জিহাদ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রবাসী কল্যাণ সম্পাদক (৫)</td>
+                        <td class="name-column">নাজমুল হোসেন শান্ত</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রবাসী কল্যাণ সম্পাদক (৬)</td>
+                        <td class="name-column">নাহিদুল ইসলাম তারেক</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রবাসী কল্যাণ সম্পাদক (৭)</td>
+                        <td class="name-column">আব্দুল জামাল</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">সহ প্রবাসী কল্যাণ সম্পাদক (৮)</td>
+                        <td class="name-column">মোঃ রাব্বি</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 5. কার্যকরী সদস্য -->
+        <div class="committee-group-title">৫. কার্যকরী সদস্যবৃন্দ</div>
+        <div class="table-container">
+            <table class="committee-table">
+                <tbody>
+                    <tr>
+                        <td class="role-column">কার্যকরী সদস্য (১)</td>
+                        <td class="name-column">শাহ আলম</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">কার্যকরী সদস্য (২)</td>
+                        <td class="name-column">আল আমিন</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">কার্যকরী সদস্য (৩)</td>
+                        <td class="name-column">হাসিবুল ইসলাম</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">কার্যকরী সদস্য (৪)</td>
+                        <td class="name-column">মোজাম্মেল আহমেদ</td>
+                    </tr>
+                    <tr>
+                        <td class="role-column">কার্যকরী সদস্য (৫)</td>
+                        <td class="name-column">নিরব সরদার</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Final Note -->
+         <p style="text-align: center; margin-top: 40px; font-weight: 700; font-size: 14pt; color: var(--primary-dark);">
+            নবগঠিত কমিটির সকলের জন্য শুভকামনা রইল। 
+        </p>
+
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-box">
+               <img src="https://i.imgur.com/kfAJFZz.png" alt="সাধারণ সম্পাদক স্বাক্ষর" class="signature-image">
+                <div class="signature-line"></div>
+                <div class="signature-title">সাধারণ সম্পাদক</div>
+                <div class="org-details" style="font-size: 11pt;">স্বপ্নচূড়া ছাত্র সংগঠন</div>
+            </div>
+            <div class="signature-box">
+                <img src="https://i.imgur.com/BgVaO19.png" alt="সভাপতি স্বাক্ষর" class="signature-image">
+                <div class="signature-line"></div>
+                <div class="signature-title">সভাপতি</div>
+                <div class="org-details" style="font-size: 11pt;">স্বপ্নচূড়া ছাত্র সংগঠন</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-time">
+                <!-- Mock date and time inserted -->
+                ডকুমেন্ট তৈরির সময়: ২৬ অক্টোবর, ২০২৫ ০২:২৭ অপরাহ্ন
+            </div>
+            <div class="bottom-line">
+                <p>Powered by : Daftar-E</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

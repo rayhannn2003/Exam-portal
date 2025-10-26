@@ -1,9 +1,10 @@
 import axios from "axios";
 
 // Base URL of your backend API
-const API_BASE_URL = "http://localhost:4000/api"; // Updated to match your backend PORT
+const API_BASE_URL = "https://examapi.daftar-e.com/api";
+//"https://examapi.daftar-e.com/api"; // Updated to match your backend PORT
 // Base URL of Flask PDF service (admit card)
-const FLASK_PDF_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLASK_PDF_URL) || "https://ahmfuad.pythonanywhere.com";
+const FLASK_PDF_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLASK_PDF_URL) || "https://ahmfuad.pythonanywhere.com"; //"localhost:8000";
 
 // Create an Axios instance
 const api = axios.create({
@@ -375,6 +376,16 @@ export const sendClassReminder = async (className, message) => {
   }
 };
 
+// Update Student API
+export const updateStudent = async (studentId, updateData) => {
+  try {
+    const res = await api.put(`/students/${studentId}`, updateData);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: "Failed to update student" };
+  }
+};
+
 // Delete Student API
 export const deleteStudent = async (studentId) => {
   try {
@@ -483,14 +494,64 @@ export const getAllAdminCollections = async () => {
 
 export default api;
 
-// ----- Admit Card (Flask) APIs -----
+// ----- Admit Card APIs -----
 export const downloadAdmitCardFlask = async (payload) => {
   try {
-    const res = await axios.post(`${FLASK_PDF_BASE_URL}/generate-admit-card/download`, payload, { responseType: 'blob' });
+    // Use backend route that includes activity tracking
+    const res = await api.post('/pdf/admit-card', payload, { responseType: 'blob' });
     return res.data; // Blob
   } catch (err) {
     const status = err?.response?.status;
-    const message = err?.response?.data?.error || 'Failed to download admit card';
+    const message = err?.response?.data?.message || 'Failed to download admit card';
     throw { status, message };
+  }
+};
+
+// ----- Analytics APIs -----
+export const getLoginStats = async (params = {}) => {
+  try {
+    const queryString = new URLSearchParams(params).toString();
+    const res = await api.get(`/analytics/login-stats?${queryString}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch login statistics' };
+  }
+};
+
+export const getPDFStats = async (params = {}) => {
+  try {
+    const queryString = new URLSearchParams(params).toString();
+    const res = await api.get(`/analytics/pdf-stats?${queryString}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch PDF statistics' };
+  }
+};
+
+export const getDailySummary = async (params = {}) => {
+  try {
+    const queryString = new URLSearchParams(params).toString();
+    const res = await api.get(`/analytics/daily-summary?${queryString}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch daily summary' };
+  }
+};
+
+export const getActivityOverview = async () => {
+  try {
+    const res = await api.get('/analytics/overview');
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to fetch activity overview' };
+  }
+};
+
+export const updateDailyAnalytics = async (date = null) => {
+  try {
+    const res = await api.post('/analytics/update-analytics', { date });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || { message: 'Failed to update daily analytics' };
   }
 };

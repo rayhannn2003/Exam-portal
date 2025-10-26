@@ -196,7 +196,7 @@ const Registration = ({ onClose, onSuccess }) => {
             
             <div>
               <label className="block text-white/90 font-medium mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                শ্রেণী *
+                শ্রেণি *
               </label>
               <select
                 name="student_class"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getScholarshipResults, markForScholarship, unmarkForScholarship } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
+import PDFLoadingModal from '../components/PDFLoadingModal';
 
 const Scholarship = () => {
   const [scholarshipResults, setScholarshipResults] = useState([]);
@@ -12,6 +13,7 @@ const Scholarship = () => {
   const [showClassModal, setShowClassModal] = useState(false);
   const [pdfClassSelection, setPdfClassSelection] = useState('');
   const [availableClassesForModal, setAvailableClassesForModal] = useState([]);
+  const [showPDFLoadingModal, setShowPDFLoadingModal] = useState(false);
   const { success, error } = useToast();
 
   // Map numeric class to Bengali name
@@ -98,6 +100,10 @@ const Scholarship = () => {
       error(`${bengaliClassName(originalClassName)} এর জন্য কোন বৃত্তিপ্রাপ্ত ছাত্র নেই`);
       return;
     }
+    
+    setShowPDFLoadingModal(true);
+    setShowClassModal(false);
+    
     try {
       const scholarshipStudents = classStudents.map((student, index) => ({
         serial_no: index + 1,
@@ -115,7 +121,7 @@ const Scholarship = () => {
         established_year: "২০০৪ ইং",
         location: "উত্তর তারাবুনিয়া, সখিপুর, শরিয়তপুর, বাংলাদেশ"
       };
-
+//https://ahmfuad.pythonanywhere.com
       const response = await fetch('https://ahmfuad.pythonanywhere.com/generate-scholarship-pdf/download', {
         method: 'POST',
         headers: {
@@ -138,10 +144,11 @@ const Scholarship = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       success(`${bengaliClassName(originalClassName)} এর তালিকা PDF ডাউনলোড শুরু হয়েছে`);
-      setShowClassModal(false);
     } catch (err) {
       console.error('Error generating PDF:', err);
       error('PDF ডাউনলোড করতে ব্যর্থ। দয়া করে আবার চেষ্টা করুন।');
+    } finally {
+      setShowPDFLoadingModal(false);
     }
   };
 
@@ -421,6 +428,15 @@ const Scholarship = () => {
           </div>
         </div>
       )}
+
+      {/* PDF Loading Modal */}
+      <PDFLoadingModal
+        isOpen={showPDFLoadingModal}
+        onClose={() => setShowPDFLoadingModal(false)}
+        title="বৃত্তির তালিকা তৈরি হচ্ছে"
+        message="বৃত্তিপ্রাপ্ত ছাত্রদের তালিকার PDF তৈরি করা হচ্ছে"
+        type="scholarship"
+      />
     </div>
   );
 };

@@ -54,6 +54,30 @@ router.delete("/:examId", verifyAdmin, deleteExam);
 // Get single exam with classes
 router.get("/:examId", getExamWithClasses);
 
+// Get classes for an exam (for analysis)
+router.get("/:examId/classes", async (req, res) => {
+  try {
+    const { examId } = req.params;
+    const pool = require("../models/db");
+    
+    const result = await pool.query(
+      `SELECT id, class_name, set_name FROM exam_class WHERE exam_id = $1 ORDER BY class_name, set_name`,
+      [examId]
+    );
+    
+    res.json({ 
+      success: true, 
+      classes: result.rows 
+    });
+  } catch (err) {
+    console.error("Error fetching exam classes:", err.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
+  }
+});
+
 // Get all exams (list)
 router.get("/", getAllExams);
 

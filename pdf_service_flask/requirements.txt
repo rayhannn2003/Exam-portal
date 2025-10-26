@@ -28,6 +28,9 @@ pytest-cov>=4.1.0
 # Image processing (for logo support) - use latest compatible version
 Pillow>=10.0.0
 
+# Mathematical equations rendering
+matplotlib>=3.7.0
+
 # Additional utilities
 python-dotenv>=1.0.0
 typing-extensions>=4.8.0

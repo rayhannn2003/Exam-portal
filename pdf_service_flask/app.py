@@ -10,6 +10,8 @@ import os
 import base64
 from datetime import datetime
 import urllib.request
+import re 
+import io
 
 from models.question_models import (
     QuestionPaperRequest,
@@ -64,6 +66,38 @@ app.config.update(
     PDF_SERVICE_PORT=int(os.getenv('PDF_SERVICE_PORT', 8000)),
     DEBUG=os.getenv('DEBUG', 'False').lower() == 'true'
 )
+
+import matplotlib.pyplot as plt
+def latex_to_svg_matplotlib(latex_expr: str) -> str:
+    """
+    Render a limited LaTeX math expression to inline SVG using Matplotlib.
+    Works without a TeX installation.
+    """
+    fig, ax = plt.subplots(figsize=(0.01, 0.01))
+    ax.axis("off")
+    ax.text(0, 0, f"${latex_expr}$", fontsize=14)
+    buf = io.BytesIO()
+    plt.savefig(buf, format="svg", bbox_inches="tight", pad_inches=0.05)
+    plt.close(fig)
+    svg = buf.getvalue().decode("utf-8")
+    svg = svg.split("<svg", 1)[-1]
+    return "<svg" + svg
+
+
+def preprocess_latex_to_svg(payload):
+    """Finds $...$ LaTeX math and replaces with SVGs."""
+    pattern = r"\$(.*?)\$"
+
+    for q in payload["exam_set"]["questions"]:
+        def repl(match):
+            expr = match.group(1).strip()
+            return latex_to_svg_matplotlib(expr)
+
+        q["question"] = re.sub(pattern, repl, q["question"])
+        q["options"] = {k: re.sub(pattern, repl, v) for k, v in q["options"].items()}
+
+    return payload
+
 
 # Function to download SolaimanLipi font (exact copy from FastAPI)
 def download_solaiman_font():
@@ -186,6 +220,7 @@ def download_question_paper():
         if not request_data:
             return jsonify({"error": "Request body is required"}), 400
         
+        request_data = preprocess_latex_to_svg(request_data)
         # Validate request data
         try:
             pdf_request = QuestionPaperRequest(**request_data)

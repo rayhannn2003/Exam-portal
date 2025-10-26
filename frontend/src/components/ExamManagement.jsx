@@ -6,6 +6,7 @@ import EditExamModal from './EditExamModal';
 import SetManagementModal from './SetManagementModal';
 import QuestionPreviewModal from './QuestionPreviewModal';
 import PDFGenerator from './PDFGenerator';
+import PDFLoadingModal from './PDFLoadingModal';
 
 const ExamManagement = () => {
   const [exams, setExams] = useState([]);
@@ -22,17 +23,18 @@ const ExamManagement = () => {
   const [showPDFGenerator, setShowPDFGenerator] = useState(false);
   const [selectedSetForPDF, setSelectedSetForPDF] = useState(null);
   const [openMenuSetId, setOpenMenuSetId] = useState(null);
+  const [showQuickPDFLoadingModal, setShowQuickPDFLoadingModal] = useState(false);
   const { success, error } = useToast();
 
   // Map numeric class to Bengali display
   const bengaliClassName = (cls) => {
     switch (String(cls)) {
-      case '6': return 'ষষ্ঠ শ্রেণী';
-      case '7': return 'সপ্তম শ্রেণী';
-      case '8': return 'অষ্টম শ্রেণী';
-      case '9': return 'নবম শ্রেণী';
-      case '10': return 'দশম শ্রেণী';
-      default: return `শ্রেণী ${cls}`;
+      case '6': return 'ষষ্ঠ শ্রেণি';
+      case '7': return 'সপ্তম শ্রেণি';
+      case '8': return 'অষ্টম শ্রেণি';
+      case '9': return 'নবম শ্রেণি';
+      case '10': return 'দশম শ্রেণি';
+      default: return `শ্রেণি ${cls}`;
     }
   };
 
@@ -156,6 +158,7 @@ const ExamManagement = () => {
 
   const handleDownloadPDF = async (set) => {
     if (!selectedExam) return;
+    setShowQuickPDFLoadingModal(true);
     try {
       const blob = await downloadExamClassPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
       const url = window.URL.createObjectURL(blob);
@@ -170,6 +173,8 @@ const ExamManagement = () => {
     } catch (err) {
       console.error('Error downloading PDF:', err);
       error('Failed to download PDF');
+    } finally {
+      setShowQuickPDFLoadingModal(false);
     }
   };
 
@@ -483,6 +488,15 @@ const ExamManagement = () => {
           }}
         />
       )}
+
+      {/* Quick PDF Loading Modal */}
+      <PDFLoadingModal
+        isOpen={showQuickPDFLoadingModal}
+        onClose={() => setShowQuickPDFLoadingModal(false)}
+        title="প্রশ্নপত্র তৈরি হচ্ছে"
+        message="প্রশ্নপত্রের PDF তৈরি করা হচ্ছে"
+        type="question"
+      />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getLatestExamDetails, downloadExamClassPDF, getStudentByRoll, changeStudentPassword, verifyStudentPassword, downloadAdmitCardFlask } from '../assets/services/api';
 import ToastContainer from '../components/ToastContainer';
+import PDFLoadingModal from '../components/PDFLoadingModal';
 
 const StudentDashboard = () => {
   const [activeTab, setActiveTab] = useState('exam');
@@ -8,11 +9,14 @@ const StudentDashboard = () => {
   const [student, setStudent] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [tipsOpen, setTipsOpen] = useState(false);
+  const [showAdmitCardLoadingModal, setShowAdmitCardLoadingModal] = useState(false);
 
   // Change password state
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [savingPwd, setSavingPwd] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
 
   const showToast = (message, type = 'error', duration = 3000) => {
     if (window && typeof window.showToast === 'function') {
@@ -51,14 +55,15 @@ const StudentDashboard = () => {
     try {
       if (!student) return;
       setDownloading(true);
+      setShowAdmitCardLoadingModal(true);
       const payload = {
         student_name: student.name,
         school: student.school || 'N/A',
         class_name: String(student.class || ''),
         roll_number: String(student.roll_number),
         exam_name: examDetails?.exam_name || 'বৃত্তি পরীক্ষা',
-        exam_date: '২৫ অক্টোবর, ২০২৫',
-        exam_time: 'সকাল ১০ টা থেকে ১১ টা পর্যন্ত',
+        exam_date: '৭ নভেম্বর, ২০২৫',
+        exam_time: 'সকাল ৯ টা থেকে ১০ টা পর্যন্ত',
         center_name: 'আব্বাস আলী উচ্চ বিদ্যালয়',
         instructions: 'পরীক্ষার সময় অ্যাডমিট কার্ড সাথে আনতে হবে এবং পরীক্ষার সকল নিয়ম মেনে চলতে হবে।'
       };
@@ -77,6 +82,7 @@ const StudentDashboard = () => {
       showToast(e?.message || 'ডাউনলোড ব্যর্থ হয়েছে', 'error');
     } finally {
       setDownloading(false);
+      setShowAdmitCardLoadingModal(false);
     }
   };
 
@@ -123,10 +129,11 @@ const StudentDashboard = () => {
             <div className="text-xl font-extrabold">সংগঠনঃ উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন</div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="text-base sm:text-lg"><span className="font-semibold">নাম:</span> {examDetails.exam_name}</div>
-              <div className="text-base sm:text-lg"><span className="font-semibold">বছর:</span> {examDetails.year || 'N/A'}</div>
-              <div className="text-base sm:text-lg"><span className="font-semibold">তারিখ:</span> ২৫ অক্টোবর, ২০২৫</div>
-              <div className="text-base sm:text-lg"><span className="font-semibold">সময়:</span> সকাল ১০ টা থেকে ১১ টা পর্যন্ত</div>
-              <div className="text-base sm:text-lg"><span className="font-semibold">ফল প্রকাশ:</span> ২৫ অক্টোবর, ২০২৫, সন্ধ্যাবেলা</div>
+              <div className="text-base sm:text-lg"><span className="font-semibold">বছর:</span> ২০২৫</div>
+              <div className="text-base sm:text-lg"><span className="font-semibold">তারিখ:</span> ৭ নভেম্বর, ২০২৫</div>
+               <div className="text-base sm:text-lg"><span className="font-semibold">দিন:</span> শুক্রবার</div>
+              <div className="text-base sm:text-lg"><span className="font-semibold">সময়:</span> সকাল ৯ টা থেকে ১০ টা পর্যন্ত</div>
+              <div className="text-base sm:text-lg"><span className="font-semibold">ফল প্রকাশ:</span> ৯ নভেম্বর, ২০২৫, সন্ধ্যাবেলা</div>
               <div className="text-base sm:text-lg"><span className="font-semibold">কেন্দ্রঃ</span> আব্বাস আলী উচ্চ বিদ্যালয়</div>
             </div>
           </div>
@@ -218,11 +225,11 @@ const StudentDashboard = () => {
   // Helper function to map numeric class to Bengali
   const getBengaliClassName = (classNum) => {
     const classMap = {
-      '6': 'ষষ্ঠ শ্রেণী',
-      '7': 'সপ্তম শ্রেণী',
-      '8': 'অষ্টম শ্রেণী',
-      '9': 'নবম শ্রেণী',
-      '10': 'দশম শ্রেণী'
+      '6': 'ষষ্ঠ শ্রেণি',
+      '7': 'সপ্তম শ্রেণি',
+      '8': 'অষ্টম শ্রেণি',
+      '9': 'নবম শ্রেণি',
+      '10': 'দশম শ্রেণি'
     };
     return classMap[String(classNum)] || `শ্রেণী ${classNum}`;
   };
@@ -247,8 +254,60 @@ const StudentDashboard = () => {
       <div className="bg-white/80 backdrop-blur-xl border border-rose-500/20 rounded-2xl p-6 shadow-xl">
         <h3 className="text-xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>পাসওয়ার্ড পরিবর্তন</h3>
         <div className="grid md:grid-cols-3 gap-4">
-          <input type="password" placeholder="পুরনো পাসওয়ার্ড" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} className="border rounded-lg px-4 py-3" />
-          <input type="password" placeholder="নতুন পাসওয়ার্ড" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="border rounded-lg px-4 py-3" />
+          <div className="relative">
+            <input 
+              type={showOldPassword ? "text" : "password"} 
+              placeholder="পুরনো পাসওয়ার্ড" 
+              value={oldPassword} 
+              onChange={(e) => setOldPassword(e.target.value)} 
+              className="w-full border rounded-lg px-4 py-3 pr-10" 
+            />
+            <button
+              type="button"
+              onClick={() => setShowOldPassword(!showOldPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+              tabIndex={-1}
+            >
+              {showOldPassword ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.62 6.62m3.258 3.258l4.242 4.242M9.878 9.878V6.62m4.242 4.242L18.36 18.36M14.12 14.12v3.258" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
+          
+          <div className="relative">
+            <input 
+              type={showNewPassword ? "text" : "password"} 
+              placeholder="নতুন পাসওয়ার্ড" 
+              value={newPassword} 
+              onChange={(e) => setNewPassword(e.target.value)} 
+              className="w-full border rounded-lg px-4 py-3 pr-10" 
+            />
+            <button
+              type="button"
+              onClick={() => setShowNewPassword(!showNewPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+              tabIndex={-1}
+            >
+              {showNewPassword ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.62 6.62m3.258 3.258l4.242 4.242M9.878 9.878V6.62m4.242 4.242L18.36 18.36M14.12 14.12v3.258" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              )}
+            </button>
+          </div>
+          
           <button onClick={handleSavePassword} disabled={savingPwd} className="px-5 py-3 rounded-lg bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50">
             {savingPwd ? 'সেভ হচ্ছে...' : 'সেভ করুন'}
           </button>
@@ -323,6 +382,15 @@ const StudentDashboard = () => {
       <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-4 sm:py-8">
         {renderContent()}
       </div>
+
+      {/* PDF Loading Modal for Admit Card */}
+      <PDFLoadingModal
+        isOpen={showAdmitCardLoadingModal}
+        onClose={() => setShowAdmitCardLoadingModal(false)}
+        title="অ্যাডমিট কার্ড তৈরি হচ্ছে"
+        message="আপনার অ্যাডমিট কার্ডের PDF তৈরি করা হচ্ছে"
+        type="admit"
+      />
     </div>
   );
 };
