@@ -1,8 +1,8 @@
 import axios from "axios";
 
 // Base URL of your backend API
-const API_BASE_URL = "https://examapi.daftar-e.com/api";
-// const API_BASE_URL ="http://localhost:4000/api";
+// const API_BASE_URL = "https://examapi.daftar-e.com/api";
+const API_BASE_URL ="http://localhost:4000/api";
  // Updated to match your backend PORT
 // Base URL of Flask PDF service (admit card)
 const FLASK_PDF_BASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_FLASK_PDF_URL) || "https://ahmfuad.pythonanywhere.com"; //"localhost:8000";

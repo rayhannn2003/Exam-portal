@@ -20,10 +20,18 @@ exports.loginAdmin = async (req, res) => {
 
     // Log admin login activity for user tracking
     try {
-      await pool.query(
+      // console.log("🟢 Attempting to log admin login activity for:", {
+      //   adminId: admin.id,
+      //   username: admin.username,
+      //   role: admin.role,
+      //   name: admin.name,
+      //   timestamp: new Date().toISOString()
+      // });
+
+      const logResult = await pool.query(
         `INSERT INTO login_events (
            user_id, role, identifier, name, ip_address, user_agent, platform, is_mobile
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
         [
           admin.id,
           admin.role,
@@ -35,6 +43,8 @@ exports.loginAdmin = async (req, res) => {
           req.get('Sec-CH-UA-Mobile') === '?1'
         ]
       );
+      
+      console.log("✅ Admin login activity logged successfully:", logResult.rows[0]);
     } catch (logError) {
       console.error("❌ Error logging admin activity:", logError);
       // Don't fail login if logging fails

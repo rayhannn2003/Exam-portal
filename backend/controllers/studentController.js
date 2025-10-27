@@ -76,25 +76,18 @@ exports.loginStudent = async (req, res) => {
 
     // Log student login activity
     try {
-      // await StudentActivityService.logStudentLogin({
+      // console.log("🟢 Attempting to log student login activity for:", {
       //   studentId: student.id,
       //   rollNumber: student.roll_number,
-      //   studentName: student.name,
-      //   ipAddress: req.ip || req.connection.remoteAddress || req.socket.remoteAddress || 
-      //              (req.connection.socket ? req.connection.socket.remoteAddress : null),
-      //   userAgent: req.get('User-Agent') || 'Unknown',
-      //   deviceInfo: {
-      //     platform: req.get('Sec-CH-UA-Platform') || 'Unknown',
-      //     mobile: req.get('Sec-CH-UA-Mobile') === '?1',
-      //     timestamp: new Date().toISOString()
-      //   }
+      //   name: student.name,
+      //   timestamp: new Date().toISOString()
       // });
-      // console.log("Logging student login activity for student ID:", student.id);
+
       // Also log to user_activity table for SuperAdmin tracking
-      await pool.query(
+      const logResult = await pool.query(
         `INSERT INTO login_events (
            user_id, role, identifier, name, ip_address, user_agent, platform, is_mobile
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
         [
           student.id,
           'student',
@@ -106,6 +99,8 @@ exports.loginStudent = async (req, res) => {
           req.get('Sec-CH-UA-Mobile') === '?1'
         ]
       );
+      
+      // console.log("✅ Student login activity logged successfully:", logResult.rows[0]);
     } catch (logError) {
       console.error("❌ Error logging student activity:", logError);
       // Don't fail login if logging fails
