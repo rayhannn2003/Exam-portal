@@ -29,7 +29,7 @@ exports.generateQuestionPaperPDF = async (req, res) => {
       'SELECT * FROM exams WHERE id = $1',
       [examId]
     );
-
+    
     if (examResult.rowCount === 0) {
       return res.status(404).json({ message: 'Exam not found' });
     }
