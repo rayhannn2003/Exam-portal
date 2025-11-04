@@ -549,7 +549,7 @@ router.get('/overview', verifyAdmin, async (req, res) => {
 router.get('/exam-analysis/:examId/:classId', verifyAdmin, async (req, res) => {
   try {
     const { examId, classId } = req.params;
-    
+    console.log("Exam Analysis Request for Exam ID:", examId, "Class ID:", classId);
     if (!examId || !classId) {
       return res.status(400).json({ 
         success: false, 
