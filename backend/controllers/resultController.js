@@ -175,7 +175,7 @@ exports.submitResult = async (req, res) => {
       [roll_number]
     );
 
-    console.log("🔍 Student/Exam/Class query result:", queryRes.rows);
+    // console.log("🔍 Student/Exam/Class query result:", queryRes.rows);
     if (queryRes.rowCount === 0) {
       return res.status(404).json({ message: "Student not found or exam not configured" });
     }
@@ -230,7 +230,7 @@ exports.submitResult = async (req, res) => {
       ? suppliedPercentage
       : (total_questions > 0 ? parseFloat(((correct / total_questions) * 100).toFixed(2)) : 0);
 
-    console.log("📊 Computed from answers:", { correct, wrong, skipped, total_questions, score, percentage });
+    // console.log("📊 Computed from answers:", { correct, wrong, skipped, total_questions, score, percentage });
 
     // Store student answers (JSON) - using normalizedAnswersForStorage
     await pool.query(
@@ -281,7 +281,7 @@ exports.submitResult = async (req, res) => {
       ]
     );
 
-    console.log("✅ Result saved successfully:", resultRes.rows[0]);
+    // console.log("✅ Result saved successfully:", resultRes.rows[0]);
 
     // Respond with the saved result and computed counts
     res.status(201).json({
