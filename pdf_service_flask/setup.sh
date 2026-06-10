@@ -105,7 +105,7 @@ create_env_file() {
     if [ ! -f ".env" ]; then
         cat > .env << EOF
 # PDF Service Flask Configuration
-PDF_SERVICE_PORT=8000
+PDF_SERVICE_PORT=5000
 PDF_SERVICE_HOST=0.0.0.0
 TEMPLATE_DIR=/app/templates
 UPLOAD_DIR=/app/uploads
@@ -227,14 +227,14 @@ main() {
     echo -e "${GREEN}  ./start_prod.sh${NC}"
     echo ""
     print_status "To test the service:"
-    echo -e "${GREEN}  curl http://localhost:8000/health${NC}"
+    echo -e "${GREEN}  curl http://localhost:5000/health${NC}"
     echo ""
     print_status "To run with Docker:"
     echo -e "${GREEN}  docker-compose up -d${NC}"
     echo ""
     print_warning "Make sure to configure your .env file with the appropriate settings"
-    print_warning "The service will be available at http://localhost:8000"
-    print_warning "API documentation will be available at http://localhost:8000/"
+    print_warning "The service will be available at http://localhost:5000"
+    print_warning "API documentation will be available at http://localhost:5000/"
     print_warning "Note: This Flask version runs on port 8001 in Docker to avoid conflicts"
 }
 

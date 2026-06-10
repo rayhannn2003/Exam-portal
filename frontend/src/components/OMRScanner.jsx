@@ -8,7 +8,7 @@ const OMRScanner = ({ examId, classId, onClose, onSuccess }) => {
   const fileInputRef = useRef(null);
   const { success, error: showError } = useToast();
 
-  const OMR_SERVICE_URL = process.env.REACT_APP_OMR_SERVICE_URL || 'http://localhost:8001';
+  const OMR_SERVICE_URL = import.meta.env.VITE_OMR_SERVICE_URL || 'http://localhost:8001';
 
   const handleFileSelect = (event) => {
     const files = Array.from(event.target.files);

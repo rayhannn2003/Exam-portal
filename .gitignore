@@ -1,0 +1,56 @@
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+
+# Node.js
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs and runtime state
+*.log
+*.pid
+.deps_installed
+uploads/
+
+# Generated documents and test output
+*.pdf
+test_output.*
+test_*.html
+
+# Local backups and abandoned source variants
+*.backup
+*.broken
+*.corrupted
+*_backup.py
+*_clean.jsx
+*_working.jsx
+
+# Local integration artifacts
+backend/data.html/
+
+# Local screenshots containing student-identifiable data
+docs/images/analysis.jpg
+docs/images/marked_omr.jpg
+docs/images/processed_omr.jpg
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo

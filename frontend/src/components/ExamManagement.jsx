@@ -6,6 +6,7 @@ import EditExamModal from './EditExamModal';
 import SetManagementModal from './SetManagementModal';
 import QuestionPreviewModal from './QuestionPreviewModal';
 import PDFGenerator from './PDFGenerator';
+import PDFLoadingModal from './PDFLoadingModal';
 
 const ExamManagement = () => {
   const [exams, setExams] = useState([]);
@@ -22,6 +23,8 @@ const ExamManagement = () => {
   const [showPDFGenerator, setShowPDFGenerator] = useState(false);
   const [selectedSetForPDF, setSelectedSetForPDF] = useState(null);
   const [openMenuSetId, setOpenMenuSetId] = useState(null);
+  const [isPDFLoading, setIsPDFLoading] = useState(false);
+  const [pdfFileName, setPdfFileName] = useState('');
   const { success, error } = useToast();
 
   // Map numeric class to Bengali display
@@ -156,12 +159,17 @@ const ExamManagement = () => {
 
   const handleDownloadPDF = async (set) => {
     if (!selectedExam) return;
+
+    const fileName = `${selectedExam.exam_name}_${set.class_name}_${new Date().toISOString().split('T')[0]}.pdf`;
+    setPdfFileName(fileName);
+    setIsPDFLoading(true);
+
     try {
       const blob = await downloadExamClassPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${selectedExam.exam_name}_${set.class_name}_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -170,6 +178,8 @@ const ExamManagement = () => {
     } catch (err) {
       console.error('Error downloading PDF:', err);
       error('Failed to download PDF');
+    } finally {
+      setIsPDFLoading(false);
     }
   };
 
@@ -448,6 +458,7 @@ const ExamManagement = () => {
         isOpen={showEditExamModal}
         onClose={() => setShowEditExamModal(false)}
         onSuccess={handleModalSuccess}
+        onEditSet={handleEditSet}
         exam={selectedExam}
       />
 
@@ -483,6 +494,11 @@ const ExamManagement = () => {
           }}
         />
       )}
+
+      <PDFLoadingModal
+        isOpen={isPDFLoading}
+        fileName={pdfFileName}
+      />
     </div>
   );
 };

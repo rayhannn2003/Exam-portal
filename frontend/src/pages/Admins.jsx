@@ -14,7 +14,14 @@ const Admins = () => {
   const { success, error } = useToast();
 
   useEffect(() => {
-    fetchAdmins();
+    // Check if user is authenticated before fetching admins
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchAdmins();
+    } else {
+      error('Authentication required');
+      setLoading(false);
+    }
   }, []);
 
   const fetchAdmins = async () => {
@@ -23,7 +30,9 @@ const Admins = () => {
       const data = await getAllAdmins();
       setAdmins(data);
     } catch (err) {
-      error('Failed to fetch admins');
+      console.error('Error fetching admins:', err);
+      const errorMessage = err?.error || err?.message || 'Failed to fetch admins';
+      error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -66,11 +75,11 @@ const Admins = () => {
   };
 
   const getRoleColor = (role) => {
-    return role === 'super_admin' ? 'text-purple-600 bg-purple-100' : 'text-blue-600 bg-blue-100';
+    return role === 'superadmin' ? 'text-purple-600 bg-purple-100' : 'text-blue-600 bg-blue-100';
   };
 
   const getRoleText = (role) => {
-    return role === 'super_admin' ? 'সুপার অ্যাডমিন' : 'অ্যাডমিন';
+    return role === 'superadmin' ? 'সুপার অ্যাডমিন' : 'অ্যাডমিন';
   };
 
   if (loading) {

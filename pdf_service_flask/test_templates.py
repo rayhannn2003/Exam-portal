@@ -95,7 +95,7 @@ def test_question_paper():
     
     try:
         response = requests.post(
-            'http://localhost:8000/generate-question-paper/download',
+            'http://localhost:5000/generate-question-paper/download',
             json=question_paper_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
@@ -124,7 +124,7 @@ def test_scholarship_pdf():
     
     try:
         response = requests.post(
-            'http://localhost:8000/generate-scholarship-pdf/download',
+            'http://localhost:5000/generate-scholarship-pdf/download',
             json=scholarship_data,
             headers={'Content-Type': 'application/json'},
             timeout=30
@@ -152,7 +152,7 @@ def test_health():
     print("🏥 Testing Service Health...")
     
     try:
-        response = requests.get('http://localhost:8000/health', timeout=10)
+        response = requests.get('http://localhost:5000/health', timeout=10)
         
         if response.status_code == 200:
             health_data = response.json()

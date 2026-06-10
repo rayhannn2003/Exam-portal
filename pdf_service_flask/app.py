@@ -9,7 +9,6 @@ import logging
 import os
 import base64
 from datetime import datetime
-import urllib.request
 
 from models.question_models import (
     QuestionPaperRequest,
@@ -61,27 +60,9 @@ CORS(app)
 # App configuration
 app.config.update(
     PDF_SERVICE_HOST=os.getenv('PDF_SERVICE_HOST', '0.0.0.0'),
-    PDF_SERVICE_PORT=int(os.getenv('PDF_SERVICE_PORT', 8000)),
+    PDF_SERVICE_PORT=int(os.getenv('PDF_SERVICE_PORT', 5000)),
     DEBUG=os.getenv('DEBUG', 'False').lower() == 'true'
 )
-
-# Function to download SolaimanLipi font (exact copy from FastAPI)
-def download_solaiman_font():
-    """Download SolaimanLipi font if not available locally"""
-    try:
-        font_path = "/tmp/SolaimanLipi.ttf"
-        if not os.path.exists(font_path):
-            logger.info("Downloading SolaimanLipi font...")
-            font_url = "https://github.com/ekushey/SolaimanLipi/raw/master/SolaimanLipi.ttf"
-            urllib.request.urlretrieve(font_url, font_path)
-            logger.info("SolaimanLipi font downloaded successfully")
-        return font_path
-    except Exception as e:
-        logger.warning(f"Could not download SolaimanLipi font: {e}")
-        return None
-
-# Download font on startup
-download_solaiman_font()
 
 # Initialize services (exact copy from FastAPI)
 pdf_generator = PDFGenerator()

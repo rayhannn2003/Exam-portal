@@ -115,12 +115,14 @@
         }
         
         .page-break {
-            page-break-before: auto;
+            page-break-before: always;
+            margin-top: 0;
         }
 
         @media print {
             body {
                 -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
                 color-adjust: exact;
             }
             .header {
@@ -137,7 +139,7 @@
     <div class="header">
         <div class="org-name">{{ customization.header_options.organization_name or "উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন" }}</div>
         <div class="exam-title">{{ exam.title }}</div>
-        <div class="exam-subline">শ্রেণী - {{ exam.class_name }}</div>
+        <div class="exam-subline">{{ exam.class_name | bengali_class }}</div>
         <div class="meta-row">
             <span>পূর্ণমান - {{ exam_set.total_marks or exam_set.questions|length }}</span>
             <span>সময়: {{ exam_set.duration_minutes or 60 }} মিনিট</span>
@@ -145,10 +147,10 @@
     </div>
      
 
-    <!-- Questions Section - First Page (26 questions) -->
+    <!-- Questions Section - First Page (28 questions: 14+14) -->
     <div class="questions-container">
         <div class="column">
-            {% for question in exam_set.questions[:13] %}
+            {% for question in exam_set.questions[:14] %}
             <div class="question">
                 <div class="question-text">
                     {{ loop.index | bengali_number }}. {{ question.question }}
@@ -163,10 +165,10 @@
             {% endfor %}
         </div>
         <div class="column">
-            {% for question in exam_set.questions[13:26] %}
+            {% for question in exam_set.questions[14:28] %}
             <div class="question">
                 <div class="question-text">
-                    {{ (loop.index + 13) | bengali_number }}. {{ question.question }}
+                    {{ (loop.index + 14) | bengali_number }}. {{ question.question }}
                 </div>
                 <div class="options">
                     <div class="option"><span class="option-key">ক</span><span class="option-text">{{ question.options.A }}</span></div>
@@ -179,14 +181,14 @@
         </div>
     </div>
 
-    <!-- Questions Section - Second Page (remaining 34 questions) -->
-    {% if exam_set.questions|length > 26 %}
-    <div class="questions-container">
+    <!-- Questions Section - Second Page (32 questions: 16+16) -->
+    {% if exam_set.questions|length > 28 %}
+    <div class="questions-container page-break">
         <div class="column">
-            {% for question in exam_set.questions[26:43] %}
+            {% for question in exam_set.questions[28:44] %}
             <div class="question">
                 <div class="question-text">
-                    {{ (loop.index + 26) | bengali_number }}. {{ question.question }}
+                    {{ (loop.index + 28) | bengali_number }}. {{ question.question }}
                 </div>
                 <div class="options">
                     <div class="option"><span class="option-key">ক</span><span class="option-text">{{ question.options.A }}</span></div>
@@ -198,10 +200,10 @@
             {% endfor %}
         </div>
         <div class="column">
-            {% for question in exam_set.questions[43:] %}
+            {% for question in exam_set.questions[44:60] %}
             <div class="question">
                 <div class="question-text">
-                    {{ (loop.index + 43) | bengali_number }}. {{ question.question }}
+                    {{ (loop.index + 44) | bengali_number }}. {{ question.question }}
                 </div>
                 <div class="options">
                     <div class="option"><span class="option-key">ক</span><span class="option-text">{{ question.options.A }}</span></div>

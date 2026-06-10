@@ -1,12 +1,49 @@
-# React + Vite
+# Exam Portal Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend is a React 19 and Vite application for the public landing page,
+student dashboard, admin workflows, exam management, results, scholarships,
+finance summaries, reminders, OMR uploads, and PDF actions.
 
-Currently, two official plugins are available:
+## Prerequisites
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 20 or newer recommended
+- npm
+- The Express backend running at `http://localhost:4000`
+- The primary Flask PDF service running at `http://localhost:5000` for direct
+  PDF actions
 
-## Expanding the ESLint configuration
+## Setup
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+cp .env.example .env
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`.
+
+## Environment
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:4000/api
+VITE_PDF_SERVICE_URL=http://localhost:5000
+VITE_OMR_SERVICE_URL=http://localhost:8001
+```
+
+Vite embeds these values at build time.
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Build the production bundle |
+| `npm run preview` | Preview the production bundle |
+| `npm run lint` | Run ESLint |
+
+## Notes
+
+- The production build currently passes.
+- The codebase has known lint debt. New changes should not add lint errors and
+  should reduce existing errors in touched files.
+- Screenshots used by the root README live in `../docs/images/`.

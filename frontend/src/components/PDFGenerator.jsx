@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
 import { useToast } from '../contexts/ToastContext';
 import { previewExamClassPDF, downloadExamClassPDF } from '../assets/services/api';
+import PDFLoadingModal from './PDFLoadingModal';
 
 const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
   const [loading, setLoading] = useState(false);
+  const [isPDFLoading, setIsPDFLoading] = useState(false);
+  const [pdfFileName, setPdfFileName] = useState('');
   const { success, error: showError } = useToast();
 
   const handleDownloadPDF = async () => {
+    const safeExamTitle = (examTitle || 'Bengali_Exam').replace(/[^\u0020-\u007E]/g, '').trim() || 'Exam';
+    const safeClassName = (className || 'Class').replace(/[^\u0020-\u007E]/g, '').trim() || 'Class';
+    const fileName = `${safeExamTitle}_${safeClassName}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+    setPdfFileName(fileName);
+    setIsPDFLoading(true);
     setLoading(true);
+
     try {
       const blob = await downloadExamClassPDF(examId, classId, { 
         templateType: 'compact_bengali',
@@ -21,10 +31,7 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      // Create safe filename without Bengali characters - use transliteration
-      const safeExamTitle = (examTitle || 'Bengali_Exam').replace(/[^\x00-\x7F]/g, '').trim() || 'Exam';
-      const safeClassName = (className || 'Class').replace(/[^\x00-\x7F]/g, '').trim() || 'Class';
-      a.download = `${safeExamTitle}_${safeClassName}_${new Date().toISOString().split('T')[0]}.pdf`;
+      a.download = fileName;
       
       document.body.appendChild(a);
       a.click();
@@ -39,6 +46,7 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
       showError('PDF তৈরি করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
+      setIsPDFLoading(false);
     }
   };
 
@@ -159,6 +167,11 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
           </button>
         </div>
       </div>
+
+      <PDFLoadingModal
+        isOpen={isPDFLoading}
+        fileName={pdfFileName}
+      />
     </div>
   );
 };

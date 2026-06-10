@@ -11,7 +11,7 @@ from datetime import datetime
 test_data = {
     "exam": {
         "title": "Mathematics Final Exam",
-        "class_name": "Class 10",
+        "class_name": "8",
         "year": 2024,
         "question_count": 50
     },
@@ -48,7 +48,7 @@ test_data = {
             "2": "B"
         }
     },
-    "template_type": "default",
+    "template_type": "compact_bengali",
     "customization": {
         "paper_size": "A4",
         "orientation": "portrait",
@@ -64,7 +64,7 @@ def test_health():
     """Test health endpoint"""
     print("🔍 Testing health endpoint...")
     try:
-        response = requests.get("http://localhost:8000/health")
+        response = requests.get("http://localhost:5000/health")
         if response.status_code == 200:
             print("✅ Health check passed")
             print(f"Response: {response.json()}")
@@ -80,7 +80,7 @@ def test_templates():
     """Test templates endpoint"""
     print("\n🔍 Testing templates endpoint...")
     try:
-        response = requests.get("http://localhost:8000/templates")
+        response = requests.get("http://localhost:5000/templates")
         if response.status_code == 200:
             print("✅ Templates endpoint passed")
             data = response.json()
@@ -97,7 +97,7 @@ def test_customization_options():
     """Test customization options endpoint"""
     print("\n🔍 Testing customization options endpoint...")
     try:
-        response = requests.get("http://localhost:8000/customization-options")
+        response = requests.get("http://localhost:5000/customization-options")
         if response.status_code == 200:
             print("✅ Customization options endpoint passed")
             data = response.json()
@@ -115,7 +115,7 @@ def test_preview():
     print("\n🔍 Testing preview endpoint...")
     try:
         response = requests.post(
-            "http://localhost:8000/preview-question-paper",
+            "http://localhost:5000/preview-question-paper",
             json=test_data,
             headers={"Content-Type": "application/json"}
         )
@@ -136,7 +136,7 @@ def test_pdf_generation():
     print("\n🔍 Testing PDF generation endpoint...")
     try:
         response = requests.post(
-            "http://localhost:8000/generate-question-paper/download",
+            "http://localhost:5000/generate-question-paper/download",
             json=test_data,
             headers={"Content-Type": "application/json"}
         )

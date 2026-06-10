@@ -35,7 +35,7 @@ const SuperAdminDashboard = () => {
   const [showSetManagementModal, setShowSetManagementModal] = useState(false);
   const [editingSet, setEditingSet] = useState(null);
   // Reminders tab state
-  const defaultReminderMessage = 'Dear Student, your UTCKS Scholarship Exam is tomorrow at 11 AM. Roll: {ROLL}. Please be present by 10:30 AM and bring your admit card. Best of luck!';
+  const defaultReminderMessage = 'Dear Student, your UTCKS Scholarship Exam is tomorrow at 10 AM. Roll: {ROLL}. Please be present by 9:30 AM and bring your admit card. Best of luck!';
   const [reminderSelectedClass, setReminderSelectedClass] = useState('');
   const [reminderMessage, setReminderMessage] = useState(defaultReminderMessage);
   const [reminderSending, setReminderSending] = useState(false);
@@ -925,10 +925,10 @@ const SuperAdminDashboard = () => {
       case 'exams':
         return <ExamManagement />;
       case 'results':
-        console.log('Rendering Results component');
+        // console.log('Rendering Results component');
         return <Results userRole="superadmin" />;
       case 'scholarship':
-        console.log('Rendering Scholarship component');
+        // console.log('Rendering Scholarship component');
         return <Scholarship />;
       case 'students':
         return <Students userRole="superadmin" />;
@@ -1104,9 +1104,9 @@ const SuperAdminDashboard = () => {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 relative">
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
@@ -1196,6 +1196,7 @@ const SuperAdminDashboard = () => {
         isOpen={showEditExamModal}
         onClose={() => setShowEditExamModal(false)}
         onSuccess={handleModalSuccess}
+        onEditSet={handleEditSet}
         exam={selectedExam}
       />
 

@@ -1,6 +1,7 @@
 # Flask and web server
 Flask>=2.3.0
 Flask-CORS>=4.0.0
+gunicorn>=21.2.0
 
 # PDF generation
 weasyprint>=60.0

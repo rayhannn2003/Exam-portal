@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import { getScholarshipResults, markForScholarship, unmarkForScholarship } from '../assets/services/api';
 import { useToast } from '../contexts/ToastContext';
+import PDFLoadingModal from '../components/PDFLoadingModal';
+import ScholarshipClassModal from '../components/ScholarshipClassModal';
+
+const PDF_SERVICE_URL = import.meta.env.VITE_PDF_SERVICE_URL || 'http://localhost:5000';
 
 const Scholarship = () => {
   const [scholarshipResults, setScholarshipResults] = useState([]);
@@ -12,6 +16,9 @@ const Scholarship = () => {
   const [showClassModal, setShowClassModal] = useState(false);
   const [pdfClassSelection, setPdfClassSelection] = useState('');
   const [availableClassesForModal, setAvailableClassesForModal] = useState([]);
+  const [isPDFLoading, setIsPDFLoading] = useState(false);
+  const [pdfFileName, setPdfFileName] = useState('');
+  const [showScholarshipListModal, setShowScholarshipListModal] = useState(false);
   const { success, error } = useToast();
 
   // Map numeric class to Bengali name
@@ -98,6 +105,12 @@ const Scholarship = () => {
       error(`${bengaliClassName(originalClassName)} এর জন্য কোন বৃত্তিপ্রাপ্ত ছাত্র নেই`);
       return;
     }
+
+    const fileName = `বৃত্তিপ্রাপ্ত_ছাত্রদের_তালিকা_${bengaliClassName(originalClassName)}_${new Date().toISOString().split('T')[0]}.pdf`;
+    setPdfFileName(fileName);
+    setIsPDFLoading(true);
+    setShowClassModal(false);
+
     try {
       const scholarshipStudents = classStudents.map((student, index) => ({
         serial_no: index + 1,
@@ -116,7 +129,7 @@ const Scholarship = () => {
         location: "উত্তর তারাবুনিয়া, সখিপুর, শরিয়তপুর, বাংলাদেশ"
       };
 
-      const response = await fetch('https://ahmfuad.pythonanywhere.com/generate-scholarship-pdf/download', {
+      const response = await fetch(`${PDF_SERVICE_URL}/generate-scholarship-pdf/download`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -132,16 +145,17 @@ const Scholarship = () => {
       const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `বৃত্তিপ্রাপ্ত_ছাত্রদের_তালিকা_${bengaliClassName(originalClassName)}_${new Date().toISOString().split('T')[0]}.pdf`;
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       success(`${bengaliClassName(originalClassName)} এর তালিকা PDF ডাউনলোড শুরু হয়েছে`);
-      setShowClassModal(false);
     } catch (err) {
       console.error('Error generating PDF:', err);
       error('PDF ডাউনলোড করতে ব্যর্থ। দয়া করে আবার চেষ্টা করুন।');
+    } finally {
+      setIsPDFLoading(false);
     }
   };
 
@@ -164,6 +178,15 @@ const Scholarship = () => {
           <div className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
             মোট বৃত্তিপ্রাপ্ত: {filteredScholarshipResults.length} জন
           </div>
+          <button
+            type="button"
+            onClick={() => setShowScholarshipListModal(true)}
+            className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-200 flex items-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-105 cursor-pointer relative z-10"
+            style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+          >
+            <span className="text-lg">📋</span>
+            <span className="font-semibold">শ্রেণীভিত্তিক তালিকা</span>
+          </button>
           <button
             onClick={downloadScholarshipPDF}
             className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 flex items-center space-x-2 cursor-pointer shadow-lg hover:shadow-xl transform hover:scale-105 z-10 relative"
@@ -421,6 +444,18 @@ const Scholarship = () => {
           </div>
         </div>
       )}
+
+      <ScholarshipClassModal
+        isOpen={showScholarshipListModal}
+        onClose={() => setShowScholarshipListModal(false)}
+        allResults={scholarshipResults}
+        availableClasses={[...new Set(scholarshipResults.map(r => r.class))].sort((a, b) => Number(a) - Number(b))}
+      />
+
+      <PDFLoadingModal
+        isOpen={isPDFLoading}
+        fileName={pdfFileName}
+      />
     </div>
   );
 };

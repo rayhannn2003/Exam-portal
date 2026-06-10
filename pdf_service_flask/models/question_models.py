@@ -169,7 +169,7 @@ class QuestionPaperRequest(BaseModel):
     preview_mode: bool = Field(default=False, description="Generate preview instead of PDF")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "exam": {
                     "title": "Mathematics Final Exam",
@@ -237,7 +237,7 @@ class TemplateInfo(BaseModel):
     preview_url: Optional[str] = Field(None, description="Preview URL")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "default",
                 "description": "Standard question paper template",

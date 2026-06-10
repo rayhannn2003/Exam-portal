@@ -3,7 +3,7 @@ import { addExamClass, editExamClass, deleteExamClass } from '../assets/services
 import { useToast } from '../contexts/ToastContext';
 import PDFGenerator from './PDFGenerator';
 
-const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = null }) => {
+const SetManagementModal = ({ isOpen, onClose, onSuccess, onEditSet, exam, editingSet = null }) => {
   const [formData, setFormData] = useState({
     class_name: '',
     questions: [
@@ -258,7 +258,7 @@ const SetManagementModal = ({ isOpen, onClose, onSuccess, exam, editingSet = nul
                           </button>
                           <button
                             onClick={() => {
-                              setEditingSet(set);
+                              onEditSet?.(set);
                               setFormData({
                                 class_name: set.class_name || '',
                                 questions: set.questions || [

@@ -1,4 +1,9 @@
-# 📝 Exam Question Paper PDF Generation Service
+# Experimental FastAPI PDF Service
+
+> **Status:** Experimental alternative. The active Exam Portal integration uses
+> `pdf_service_flask/` on port `5000` because it also provides admit-card
+> endpoints. Keep this service for comparison and future development; do not
+> assume it is the default application PDF service.
 
 A professional microservice for generating high-quality PDF question papers for the Exam Portal system. Built with FastAPI and WeasyPrint, this service provides comprehensive PDF generation capabilities with customizable templates and styling options.
 

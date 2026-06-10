@@ -6,6 +6,7 @@ WORKDIR /app
 
 # Install system dependencies required for WeasyPrint
 RUN apt-get update && apt-get install -y \
+    curl \
     build-essential \
     libffi-dev \
     libxml2-dev \
