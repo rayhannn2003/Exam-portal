@@ -6,10 +6,8 @@
 const axios = require('axios');
 const pool = require('../models/db');
 
-// PDF Service Configuration
-const PDF_SERVICE_URL = process.env.PDF_SERVICE_URL || 'http://localhost:8000';
-//'https://ahmfuad.pythonanywhere.com';
-// 'http://localhost:8000';
+// Primary Flask PDF service configuration
+const PDF_SERVICE_URL = process.env.PDF_SERVICE_URL || 'http://localhost:5000';
 const PDF_SERVICE_TIMEOUT = parseInt(process.env.PDF_SERVICE_TIMEOUT) || 30000;
 
 /**

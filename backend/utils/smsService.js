@@ -137,11 +137,6 @@ class SMSNotificationService {
       results: [single],
     };
   }
-/*BULKSMSBD_SMS_API_URL=http://bulksmsbd.net/api/smsapi
-BULKSMSBD_SMS_API_URL_MANY=http://bulksmsbd.net/api/smsapimany
-BULKSMSBD_BALANCE_API_URL=http://bulksmsbd.net/api/getbalanceApi
-BULKSMSBD_API_KEY=67CVP2VaVRoXVTmjUep7
-BULKSMSBD_SENDER_ID=8809617613121*/
   // Bengali registration confirmation for student
   async sendStudentRegistrationSMS({ to, name, schoolName, rollNumber, portalUrl,password }) {
     const site = portalUrl || process.env.PORTAL_URL || process.env.FRONTEND_URL || "http://localhost:5173";
@@ -151,46 +146,3 @@ BULKSMSBD_SENDER_ID=8809617613121*/
 }
 
 module.exports = new SMSNotificationService();
-
-
-
-/*import axios from "axios";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-export interface SmsResponse {
-  response_code: number;
-  success_message?: string;
-  error_message?: string;
-  [key: string]: any;
-}
-
-export interface BalanceResponse {
-  balance: number;
-  [key: string]: any;
-}
-
-export type SendSmsOptions = {
-  unicode?: boolean; // if true, send as unicode
-  senderIdOverride?: string; // override default sender id
-  timeoutMs?: number; // request timeout
-};
-
-class SMSNotificationService {
-  private smsApiUrl: string;
-  private smsApiManyUrl: string;
-  private balanceApiUrl: string;
-  private apiKey: string;
-  private senderId: string;
-  private http: ReturnType<typeof axios.create>;
-
-  constructor() {
-    // Defaults per provider docs
-    const defaultSingle = "http://bulksmsbd.net/api/smsapi";//http://bulksmsbd.net/api/smsapi
-    const defaultMany = "http://bulksmsbd.net/api/smsapimany";
-/*BULKSMSBD_SMS_API_URL=http://bulksmsbd.net/api/smsapi
-BULKSMSBD_SMS_API_URL_MANY=http://bulksmsbd.net/api/smsapimany
-BULKSMSBD_BALANCE_API_URL=http://bulksmsbd.net/api/getbalanceApi
-BULKSMSBD_API_KEY=67CVP2VaVRoXVTmjUep7
-BULKSMSBD_SENDER_ID=8809617613121*/
