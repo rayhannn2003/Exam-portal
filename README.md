@@ -61,16 +61,24 @@ Exam Portal brings those workflows into one system so maintainers can:
 - Scholarship-list and admit-card PDF generation
 - Bengali interface content and Bengali-friendly document templates
 
-## Screenshots
+## OMR Evaluation Workflow
 
-| Dashboard overview | Question-level statistics |
+OMR-assisted evaluation is the project's central workflow. The system processes
+a marked answer sheet, decodes the roll number and selected bubbles, compares
+responses with the configured answer key, and presents the evaluation for
+review before result submission.
+
+![Privacy-safe demonstration of marked OMR evaluation and its processed result](docs/images/omr-evaluation-workflow.png)
+
+### Additional Screenshots
+
+| Dashboard and activity overview | Question-level answer statistics |
 | --- | --- |
 | ![Admin dashboard with registration and activity charts](docs/images/dashboard.jpg) | ![Question-level answer statistics](docs/images/question.jpg) |
 
-![Class-based SMS reminder interface](docs/images/sms_feature.jpg)
-
-Screenshots containing student-identifiable information are intentionally
-excluded from the public repository.
+The OMR workflow image uses fictional demo data. Screenshots containing
+student-identifiable information are intentionally excluded from the public
+repository.
 
 ## Tech Stack
 
