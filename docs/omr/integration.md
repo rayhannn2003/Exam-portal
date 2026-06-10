@@ -1,8 +1,9 @@
 # OMR Integration Guide
 
-The OMR service processes uploaded answer-sheet images, detects the student roll
-number and marked answers, compares answers with the configured key, and sends
-the result through the main application workflow.
+Exam Portal exposes integration points for an OMR processor that can detect a
+student roll number and marked answers, compare answers with the configured
+key, and send the result through the main application workflow. The processor
+implementation is not bundled in this repository.
 
 ## Components
 
@@ -13,13 +14,13 @@ frontend/src/components/OMRUpload.jsx
 backend/routes/omr.js
         |
         v
-omr-service/app.py
+external OMR processor
         |
         +--> OpenCV processing
         +--> backend exam/student/result endpoints
 ```
 
-## Local Setup
+## Integration Setup
 
 Start the backend first:
 
@@ -29,17 +30,9 @@ npm install
 npm run dev
 ```
 
-Then start the OMR service:
-
-```bash
-cd omr-service
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python start.py
-```
-
-The service is available at:
+Configure `OMR_SERVICE_URL` in `backend/.env` and `VITE_OMR_SERVICE_URL` in
+`frontend/.env` for a compatible external processor. The expected local
+defaults are:
 
 - API: `http://localhost:8001`
 - OpenAPI docs: `http://localhost:8001/docs`
@@ -47,7 +40,7 @@ The service is available at:
 
 ## Important Endpoints
 
-### OMR service
+### External OMR processor
 
 - `POST /process-omr` - process one sheet
 - `POST /batch-process` - process multiple sheets
@@ -65,7 +58,7 @@ The service is available at:
 ## Request Flow
 
 1. The user selects an exam/class and uploads an OMR image.
-2. The backend forwards the image to the OMR service.
+2. The backend forwards the image to the external OMR processor.
 3. OpenCV aligns the sheet, decodes the roll number, and detects answer
    bubbles.
 4. The service retrieves student and answer-key data from the backend.
@@ -92,4 +85,3 @@ curl http://localhost:4000/api/omr/health
 
 For detection failures, verify that the full sheet is visible, the image is not
 blurred, lighting is even, and all alignment markers are present.
-

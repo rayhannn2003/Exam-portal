@@ -7,7 +7,7 @@ both single-sheet and batch processing.
 
 1. Select the relevant exam and class.
 2. Upload a JPG or JPEG image of the completed OMR sheet.
-3. The OMR service detects the roll number and marked answers.
+3. The external OMR processor detects the roll number and marked answers.
 4. The system looks up the student and answer key.
 5. Review the detected student, score, confidence, and processed sheet.
 6. Confirm the result before adding it to the result records.
@@ -55,4 +55,3 @@ according to the deployment's retention policy.
 - The processed-sheet overlay matches the original marks.
 - Correct, incorrect, skipped, and total counts are consistent.
 - A failed or partial scan does not create a result record.
-

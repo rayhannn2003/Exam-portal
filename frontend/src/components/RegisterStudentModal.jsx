@@ -47,7 +47,7 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
     'দুলারচর উচ্চ বিদ্যালয়',
     'বঙ্গবন্ধু উচ্চ বিদ্যালয়',
     'রামভদ্রপুর উচ্চ বিদ্যালয়',
-    'ইউএস বাংলা ফাউন্ডেশন',
+    'ইউরো বাংলা ফাউন্ডেশন',
     'নারায়নপুর উচ্চ বিদ্যালয়',
     'প্যাসিফিক ল্যাবেটরি উচ্চ বিদ্যালয়',
     'চরফিলিজ জয়নব হাইস্কুল এন্ড কলেজ',
@@ -55,8 +55,8 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
     'ফয়জুন করিম মেমোরিয়াল একাডেমি স্কুল এন্ড কলেজ',
     'আঃ গণি হাই স্কুল',
     'সখিপুর সোলাইমানিয়া ইসলামিয়া দাঃ মাঃ',
-    'দঃ সখিপুর মাধ্যমিক উচ্চ বিদ্যালয়'
-
+    'দঃ সখিপুর মাধ্যমিক উচ্চ বিদ্যালয়',
+    'কাঁচিকাটা আইডিয়াল স্কুল'
   ];
 
   // Pre-set classes (restricted to 6–10)
@@ -93,34 +93,46 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validation (Required: name, school, class, phone)
     if (!formData.name || !formData.school || !formData.student_class) {
-      error('প্রয়োজনীয় তথ্য পূরণ করুন: নাম, স্কুল, শ্রেণী');
+      error('প্রয়োজনীয় তথ্য পূরণ করুন: নাম, স্কুল, শ্রেণি');
       return;
     }
 
-    // Phone validation: required and must be exactly 11 digits
+    // Phone validation: mandatory and must be exactly 11 digits
     const trimmedPhone = (formData.phone || '').trim();
     if (!trimmedPhone) {
-      const msg = 'ফোন নম্বর প্রয়োজন — ১১ সংখ্যার সঠিক নম্বর দিন (যেমন: 01XXXXXXXXX)।';
+      const msg = '📱 ফোন নম্বর অবশ্যই প্রদান করতে হবে';
       setPhoneError(msg);
       error(msg);
       if (phoneInputRef.current) {
         phoneInputRef.current.focus();
       }
       return;
-    } else if (!/^\d{11}$/.test(trimmedPhone)) {
-      const msg = 'ফোন নম্বরে ভুল হয়েছে — ১১ সংখ্যার সঠিক নম্বর দিন (যেমন: 01XXXXXXXXX)।';
-      setPhoneError(msg);
-      error(msg);
-      if (phoneInputRef.current) {
-        phoneInputRef.current.focus();
-      }
-      return;
-    } else {
-      setPhoneError('');
     }
+
+    if (!/^\d{11}$/.test(trimmedPhone)) {
+      const msg = '❌ ফোন নম্বর সঠিক নয়! অনুগ্রহ করে ১১ সংখ্যার সঠিক বাংলাদেশি মোবাইল নম্বর দিন (যেমন: 01712345678)';
+      setPhoneError(msg);
+      error(msg);
+      if (phoneInputRef.current) {
+        phoneInputRef.current.focus();
+      }
+      return;
+    }
+
+    if (!trimmedPhone.startsWith('01')) {
+      const msg = '❌ বাংলাদেশি মোবাইল নম্বর ০১ দিয়ে শুরু হতে হবে (যেমন: 01712345678)';
+      setPhoneError(msg);
+      error(msg);
+      if (phoneInputRef.current) {
+        phoneInputRef.current.focus();
+      }
+      return;
+    }
+
+    setPhoneError('');
 
     // Ensure entry fee is a valid number, default to 40 if empty
     const entryFeeToSend = formData.entry_fee && /^\d+(\.\d{1,2})?$/.test(formData.entry_fee)
@@ -129,24 +141,24 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
 
     try {
       setLoading(true);
-      
+
       // Get admin ID from token
       const adminId = getAdminId();
-      
-      // Prepare data with admin ID
+
+      // Prepare data with admin ID; phone is now mandatory
       const registrationData = {
         ...formData,
         phone: trimmedPhone,
         entry_fee: entryFeeToSend,
         registered_by: adminId
       };
-      
+
       const response = await registerStudent(registrationData);
-      
+
       success('ছাত্র নিবন্ধন সফল হয়েছে!');
       onSuccess(response);
       onClose();
-      
+
       // Reset form
       setFormData({
         name: '',
@@ -224,7 +236,7 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
               <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                 ব্যক্তিগত তথ্য
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
@@ -291,13 +303,13 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
               <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                 শিক্ষাগত তথ্য
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                     স্কুলের নাম *
                   </label>
-                  
+
                   {/* School Input Type Toggle */}
                   <div className="flex space-x-2 mb-2">
                     <button
@@ -377,7 +389,7 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    শ্রেণীর রোল নম্বর
+                    শ্রেণির রোল নম্বর
                   </label>
                   <input
                     type="text"
@@ -385,7 +397,7 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
                     value={formData.class_roll}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    placeholder="শ্রেণীর রোল নম্বর"
+                    placeholder="শ্রেণির রোল নম্বর"
                   />
                 </div>
 
@@ -410,7 +422,7 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
               <h3 className="text-lg font-semibold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                 যোগাযোগ ও ফি তথ্য
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
@@ -424,9 +436,9 @@ const RegisterStudentModal = ({ isOpen, onClose, onSuccess }) => {
                     ref={phoneInputRef}
                     aria-invalid={!!phoneError}
                     inputMode="numeric"
-                    title="১১ সংখ্যার মোবাইল নম্বর দিন (যেমন: 01XXXXXXXXX)"
+                    title="১১ সংখ্যার মোবাইল নম্বর দিন (যেমন: 01712345678)"
                     className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent ${phoneError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-green-500'}`}
-                    placeholder="ফোন নম্বর (যেমন: 01XXXXXXXXX)"
+                    placeholder="ফোন নম্বর (যেমন: 01712345678)"
                     required
                   />
                   {phoneError && (

@@ -1,111 +1,173 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 
-const PDFLoadingModal = ({ isOpen, fileName = "PDF" }) => {
+const PDFLoadingModal = ({ isOpen, onClose, title, message, type = 'question' }) => {
+  const [dots, setDots] = useState('');
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Animated dots
+    const dotsInterval = setInterval(() => {
+      setDots(prev => {
+        if (prev === '...') return '';
+        return prev + '.';
+      });
+    }, 500);
+
+    // Simulated progress
+    const progressInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 95) return prev;
+        const increment = Math.random() * 15 + 5;
+        return Math.min(prev + increment, 95);
+      });
+    }, 800);
+
+    return () => {
+      clearInterval(dotsInterval);
+      clearInterval(progressInterval);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      setDots('');
+      setProgress(0);
+    }
+  }, [isOpen]);
+
+  // Icon based on PDF type
+  const getIcon = () => {
+    switch (type) {
+      case 'scholarship':
+        return '🎓';
+      case 'admit':
+        return '🎫';
+      default:
+        return '📄';
+    }
+  };
+
+  // Color scheme based on PDF type
+  const getColorScheme = () => {
+    switch (type) {
+      case 'scholarship':
+        return {
+          primary: 'from-purple-500 to-purple-600',
+          secondary: 'bg-purple-100 border-purple-200',
+          accent: 'text-purple-600'
+        };
+      case 'admit':
+        return {
+          primary: 'from-emerald-500 to-emerald-600',
+          secondary: 'bg-emerald-100 border-emerald-200',
+          accent: 'text-emerald-600'
+        };
+      default:
+        return {
+          primary: 'from-emerald-500 to-emerald-600',
+          secondary: 'bg-blue-100 border-blue-200',
+          accent: 'text-blue-600'
+        };
+    }
+  };
+
+  const colors = getColorScheme();
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white/95 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 shadow-2xl shadow-green-500/25 max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-green-500/25 border border-green-500/30">
-            <svg className="w-10 h-10 text-green-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="bg-white/95 backdrop-blur-xl border border-gray-200 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100">
+
+        {/* Header with animated gradient */}
+        <div className={`bg-gradient-to-r ${colors.primary} p-6 relative overflow-hidden`}>
+          <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
+          <div className="relative z-10 text-center">
+            <div className="text-5xl mb-3 animate-bounce">
+              {getIcon()}
+            </div>
+            <h2 className="text-xl font-bold text-white" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              {title || 'PDF তৈরি হচ্ছে'}
+            </h2>
           </div>
-          <h3 className="text-2xl font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-            PDF তৈরি হচ্ছে
-          </h3>
-          <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-            অনুগ্রহ করে অপেক্ষা করুন...
-          </p>
         </div>
 
-        {/* Progress Animation */}
-        <div className="space-y-6">
-          {/* Animated Progress Bar */}
-          <div className="relative">
+        {/* Content */}
+        <div className="p-8">
+          {/* Animated message */}
+          <div className="text-center mb-6">
+            <p className="text-gray-700 text-lg mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              {message || 'অনুগ্রহ করে অপেক্ষা করুন'}{dots}
+            </p>
+            <p className="text-gray-500 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              PDF তৈরি হতে কয়েক মিনিট সময় লাগতে পারে
+            </p>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-6">
+            <div className="flex justify-between text-sm text-gray-600 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              <span>অগ্রগতি</span>
+              <span>{Math.round(progress)}%</span>
+            </div>
             <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 rounded-full animate-pulse relative overflow-hidden">
-                {/* Shimmer effect */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform -skew-x-12 -translate-x-full animate-shimmer"></div>
-              </div>
-            </div>
-            <div className="flex justify-between mt-2 text-xs text-gray-500" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-              <span>0%</span>
-              <span className="animate-pulse">প্রক্রিয়াকরণ...</span>
-              <span>100%</span>
-            </div>
-          </div>
-
-          {/* File Info */}
-          <div className="bg-gray-50/80 border border-gray-200/50 rounded-xl p-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  {fileName}
-                </p>
-                <p className="text-xs text-gray-500" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  PDF ফাইল তৈরি হচ্ছে
-                </p>
+              <div
+                className={`h-full bg-gradient-to-r ${colors.primary} transition-all duration-1000 ease-out`}
+                style={{ width: `${progress}%` }}
+              >
+                <div className="h-full w-full bg-white/30 animate-pulse"></div>
               </div>
             </div>
           </div>
 
-          {/* Loading Steps */}
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+          {/* Status Steps */}
+          <div className={`${colors.secondary} rounded-xl p-4`}>
+            <div className="space-y-3">
+              <div className="flex items-center space-x-3">
+                <div className={`w-2 h-2 rounded-full ${progress > 20 ? 'bg-green-500' : 'bg-gray-300'} animate-pulse`}></div>
+                <span className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  ডেটা প্রস্তুত করা হচ্ছে
+                </span>
               </div>
-              <span className="text-sm text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                ডেটা প্রস্তুত করা হচ্ছে
-              </span>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center animate-spin">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+              <div className="flex items-center space-x-3">
+                <div className={`w-2 h-2 rounded-full ${progress > 50 ? 'bg-green-500' : 'bg-gray-300'} animate-pulse`}></div>
+                <span className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  টেমপ্লেট রেন্ডার করা হচ্ছে
+                </span>
               </div>
-              <span className="text-sm text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                PDF তৈরি হচ্ছে
-              </span>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <div className="w-6 h-6 bg-gray-300 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3" />
-                </svg>
+              <div className="flex items-center space-x-3">
+                <div className={`w-2 h-2 rounded-full ${progress > 80 ? 'bg-green-500' : 'bg-gray-300'} animate-pulse`}></div>
+                <span className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  PDF জেনারেট করা হচ্ছে
+                </span>
               </div>
-              <span className="text-sm text-gray-500" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                ডাউনলোড প্রস্তুত হচ্ছে
-              </span>
             </div>
           </div>
 
-          {/* Animated Dots */}
-          <div className="flex justify-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+          {/* Loading Animation */}
+          <div className="flex justify-center mt-6">
+            <div className="flex space-x-1">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className={`w-3 h-3 rounded-full bg-gradient-to-r ${colors.primary} animate-bounce`}
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                ></div>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Footer Message */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-            এটি কয়েক সেকেন্ড সময় নিতে পারে
-          </p>
+          {/* Warning Text */}
+          <div className="mt-6 text-center">
+            <p className="text-yellow-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              ⚠️ অনুগ্রহ করে এই উইন্ডো বন্ধ করবেন না
+            </p>
+            <p className="text-gray-500 text-xs mt-1" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              PDF তৈরি সম্পন্ন হলে স্বয়ংক্রিয়ভাবে ডাউনলোড শুরু হবে
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -113,4 +175,3 @@ const PDFLoadingModal = ({ isOpen, fileName = "PDF" }) => {
 };
 
 export default PDFLoadingModal;
-

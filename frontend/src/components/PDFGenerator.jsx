@@ -5,21 +5,15 @@ import PDFLoadingModal from './PDFLoadingModal';
 
 const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
   const [loading, setLoading] = useState(false);
-  const [isPDFLoading, setIsPDFLoading] = useState(false);
-  const [pdfFileName, setPdfFileName] = useState('');
+  const [showLoadingModal, setShowLoadingModal] = useState(false);
   const { success, error: showError } = useToast();
 
   const handleDownloadPDF = async () => {
-    const safeExamTitle = (examTitle || 'Bengali_Exam').replace(/[^\u0020-\u007E]/g, '').trim() || 'Exam';
-    const safeClassName = (className || 'Class').replace(/[^\u0020-\u007E]/g, '').trim() || 'Class';
-    const fileName = `${safeExamTitle}_${safeClassName}_${new Date().toISOString().split('T')[0]}.pdf`;
-
-    setPdfFileName(fileName);
-    setIsPDFLoading(true);
     setLoading(true);
+    setShowLoadingModal(true);
 
     try {
-      const blob = await downloadExamClassPDF(examId, classId, { 
+      const blob = await downloadExamClassPDF(examId, classId, {
         templateType: 'compact_bengali',
         customization: {
           organization_name: 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন',
@@ -27,18 +21,21 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
           show_instructions: false
         }
       });
-      
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileName;
-      
+      // Create safe filename without Bengali characters - use transliteration
+      const safeExamTitle = (examTitle || 'Bengali_Exam').replace(/[^\u0020-\u007E]/g, '').trim() || 'Exam';
+      const safeClassName = (className || 'Class').replace(/[^\u0020-\u007E]/g, '').trim() || 'Class';
+      a.download = `${safeExamTitle}_${safeClassName}_${new Date().toISOString().split('T')[0]}.pdf`;
+
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      
+
       window.URL.revokeObjectURL(url);
-      
+
       success('PDF প্রশ্নপত্র সফলভাবে ডাউনলোড হয়েছে!');
       onClose();
     } catch (err) {
@@ -46,14 +43,14 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
       showError('PDF তৈরি করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।');
     } finally {
       setLoading(false);
-      setIsPDFLoading(false);
+      setShowLoadingModal(false);
     }
   };
 
   const handlePreview = async () => {
     setLoading(true);
     try {
-      const html = await previewExamClassPDF(examId, classId, { 
+      const html = await previewExamClassPDF(examId, classId, {
         templateType: 'compact_bengali',
         customization: {
           organization_name: 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন',
@@ -61,7 +58,7 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
           show_instructions: false
         }
       });
-      
+
       const newWindow = window.open('', '_blank');
       newWindow.document.write(html);
       newWindow.document.close();
@@ -156,7 +153,7 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
           >
             {loading ? 'লোড হচ্ছে...' : 'প্রিভিউ'}
           </button>
-          
+
           <button
             onClick={handleDownloadPDF}
             disabled={loading}
@@ -168,9 +165,13 @@ const PDFGenerator = ({ examId, classId, examTitle, className, onClose }) => {
         </div>
       </div>
 
+      {/* PDF Loading Modal */}
       <PDFLoadingModal
-        isOpen={isPDFLoading}
-        fileName={pdfFileName}
+        isOpen={showLoadingModal}
+        onClose={() => setShowLoadingModal(false)}
+        title="প্রশ্নপত্র তৈরি হচ্ছে"
+        message="প্রশ্নপত্রের PDF তৈরি করা হচ্ছে"
+        type="question"
       />
     </div>
   );

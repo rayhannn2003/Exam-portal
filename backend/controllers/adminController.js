@@ -16,7 +16,39 @@ exports.loginAdmin = async (req, res) => {
 
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: admin.id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: admin.id, role: admin.role }, process.env.JWT_SECRET, { expiresIn: "2h" });
+
+    // Log admin login activity for user tracking
+    try {
+      // console.log("🟢 Attempting to log admin login activity for:", {
+      //   adminId: admin.id,
+      //   username: admin.username,
+      //   role: admin.role,
+      //   name: admin.name,
+      //   timestamp: new Date().toISOString()
+      // });
+
+      const logResult = await pool.query(
+        `INSERT INTO login_events (
+           user_id, role, identifier, name, ip_address, user_agent, platform, is_mobile
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [
+          admin.id,
+          admin.role,
+          admin.username,
+          admin.name || admin.username,
+          req.ip || req.connection.remoteAddress || 'Unknown',
+          req.get('User-Agent') || 'Unknown',
+          req.get('Sec-CH-UA-Platform') || 'Unknown',
+          req.get('Sec-CH-UA-Mobile') === '?1'
+        ]
+      );
+
+      console.log("✅ Admin login activity logged successfully:", logResult.rows[0]);
+    } catch (logError) {
+      console.error("❌ Error logging admin activity:", logError);
+      // Don't fail login if logging fails
+    }
 
     res.json({ message: "Login successful", token ,admin});
   } catch (err) {
@@ -45,8 +77,8 @@ exports.registerAdmin = async (req, res) => {
     // Validate role - must be 'admin' or 'superadmin' (no underscore)
     const validRoles = ['admin', 'superadmin'];
     if (!validRoles.includes(role)) {
-      return res.status(400).json({ 
-        error: `Invalid role. Must be one of: ${validRoles.join(', ')}` 
+      return res.status(400).json({
+        error: `Invalid role. Must be one of: ${validRoles.join(', ')}`
       });
     }
 
@@ -75,8 +107,8 @@ exports.updateAdmin = async (req, res) => {
     if (typeof role === "string") {
       const validRoles = ['admin', 'superadmin'];
       if (!validRoles.includes(role)) {
-        return res.status(400).json({ 
-          error: `Invalid role. Must be one of: ${validRoles.join(', ')}` 
+        return res.status(400).json({
+          error: `Invalid role. Must be one of: ${validRoles.join(', ')}`
         });
       }
     }

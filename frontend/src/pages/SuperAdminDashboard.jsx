@@ -4,6 +4,7 @@ import CreateExamModal from '../components/CreateExamModal';
 import EditExamModal from '../components/EditExamModal';
 import SetManagementModal from '../components/SetManagementModal';
 import ExamManagement from '../components/ExamManagement';
+import Activity from './Activity';
 import Results from './Results';
 import Scholarship from './Scholarship';
 import Students from './Students';
@@ -11,6 +12,8 @@ import Admins from './Admins';
 import Finance from './Finance';
 import { ToastProvider } from '../contexts/ToastContext';
 import { sendClassReminder } from '../assets/services/api';
+import { getAnalysis } from '../assets/services/api';
+
 
 // Logout function
 const handleLogout = () => {
@@ -35,13 +38,23 @@ const SuperAdminDashboard = () => {
   const [showSetManagementModal, setShowSetManagementModal] = useState(false);
   const [editingSet, setEditingSet] = useState(null);
   // Reminders tab state
-  const defaultReminderMessage = 'Dear Student, your UTCKS Scholarship Exam is tomorrow at 10 AM. Roll: {ROLL}. Please be present by 9:30 AM and bring your admit card. Best of luck!';
+  const defaultReminderMessage = 'Dear Student, your UTCKS Scholarship Exam is tomorrow at 9 AM. Roll: {ROLL}. Please be present by 8:30 AM and bring your admit card. Best of luck!';
   const [reminderSelectedClass, setReminderSelectedClass] = useState('');
   const [reminderMessage, setReminderMessage] = useState(defaultReminderMessage);
   const [reminderSending, setReminderSending] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [reminderStats, setReminderStats] = useState(null);
   const [superAdminName, setSuperAdminName] = useState(localStorage.getItem('name') || '');
+
+  // Exam Analysis state
+  const [examAnalysisData, setExamAnalysisData] = useState(null);
+  const [selectedAnalysisExam, setSelectedAnalysisExam] = useState(null);
+  const [selectedAnalysisClass, setSelectedAnalysisClass] = useState(null);
+  const [availableClasses, setAvailableClasses] = useState([]);
+  const [analysisLoading, setAnalysisLoading] = useState(false);
+  const [analysisView, setAnalysisView] = useState('exams'); // 'exams', 'classes', 'analysis'
+
+  // const [getAnalysis]
 
   useEffect(() => {
     fetchDashboardData();
@@ -54,16 +67,16 @@ const SuperAdminDashboard = () => {
       // Fetch exams data
       const examsData = await getAllExams();
       setExams(examsData);
-      
+
       // Fetch students data
       const studentsData = await getAllStudents();
       setStudents(studentsData);
-      
+
       // Fetch registration count over time
       const registrationCountData = await getRegistrationCountOverTime();
       console.log('Registration data:', registrationCountData); // Debug log
       setRegistrationData(registrationCountData);
-      
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -133,14 +146,74 @@ const SuperAdminDashboard = () => {
     }
   };
 
+  // Exam Analysis Functions
+  const handleAnalysisExamSelect = async (exam) => {
+    try {
+      const examWithClasses = await getExamWithClasses(exam.id);
+      setSelectedAnalysisExam(examWithClasses);
+      setAnalysisView('classes');
+      setAvailableClasses(examWithClasses.classes || []);
+      setSelectedAnalysisClass(null);
+      setExamAnalysisData(null);
+    } catch (error) {
+      console.error('Error fetching exam details:', error);
+      if (window.showToast) {
+        window.showToast('Failed to fetch exam classes', 'error');
+      }
+    }
+  };
+
+const handleAnalysisClassSelect = async (classData) => {
+  setSelectedAnalysisClass(classData);
+  setAnalysisView('analysis');
+  setAnalysisLoading(true);
+
+  try {
+    // Use the centralized API function
+    const data = await getAnalysis(selectedAnalysisExam.id, classData.id);
+
+    if (data.success) {
+      setExamAnalysisData(data.data);
+    } else {
+      if (window.showToast) {
+        window.showToast(data.message || 'Failed to fetch exam analysis', 'error');
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching exam analysis:', error);
+    if (window.showToast) {
+      window.showToast(error.message || 'Failed to fetch exam analysis', 'error');
+    }
+  } finally {
+    setAnalysisLoading(false);
+  }
+};
+
+
+  const handleBackToAnalysisExams = () => {
+    setAnalysisView('exams');
+    setSelectedAnalysisExam(null);
+    setAvailableClasses([]);
+    setSelectedAnalysisClass(null);
+    setExamAnalysisData(null);
+  };
+
+  const handleBackToAnalysisClasses = () => {
+    setAnalysisView('classes');
+    setSelectedAnalysisClass(null);
+    setExamAnalysisData(null);
+  };
+
   const tabs = [
     { id: 'overview', name: 'Overview', icon: '📊' },
     { id: 'exams', name: 'Exams', icon: '📝' },
+    { id: 'exam-analysis', name: 'Analysis', icon: '🔍' },
     { id: 'results', name: 'Results', icon: '📈' },
     { id: 'scholarship',name: 'Scholarship', icon: '🎓' },
     { id: 'students', name: 'Students', icon: '👥' },
     { id: 'admins', name: 'Admins', icon: '👨‍💼' },
     { id: 'finance', name: 'Finance', icon: '💰' },
+    { id: 'activity', name: 'Activity', icon: '📊' },
     { id: 'reminders', name: 'Reminders', icon: '📨' }
   ];
 
@@ -257,7 +330,7 @@ const SuperAdminDashboard = () => {
               </span>
             </div>
           </div>
-          
+
           {students.length > 0 ? (
             <div className="space-y-6">
               {(() => {
@@ -267,10 +340,10 @@ const SuperAdminDashboard = () => {
                   acc[className] = (acc[className] || 0) + 1;
                   return acc;
                 }, {});
-                
+
                 // Get max count for scaling
                 const maxCount = Math.max(...Object.values(classGroups), 1);
-                
+
                 // Define distinct colors for each bar
                 const barColors = [
                   'bg-gradient-to-t from-green-500 to-green-600', // Green
@@ -282,7 +355,7 @@ const SuperAdminDashboard = () => {
                   'bg-gradient-to-t from-lime-500 to-lime-600', // Lime
                   'bg-gradient-to-t from-orange-500 to-orange-600', // Orange
                 ];
-                
+
                 return (
                   <div className="space-y-6">
                     {/* Chart Area */}
@@ -305,14 +378,14 @@ const SuperAdminDashboard = () => {
                           0
                         </div>
                       </div>
-                      
+
                       {/* Chart Content */}
                       <div className="ml-10">
                         {/* Y-axis label */}
                         <div className="absolute -left-18 top-1/2 transform -rotate-90 text-sm font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                           Number of students
                         </div>
-                        
+
                         {/* Bars Container */}
                         <div className="flex items-end justify-between space-x-3 h-64">
                           {Object.entries(classGroups)
@@ -329,7 +402,7 @@ const SuperAdminDashboard = () => {
                             .map(([className, count], index) => {
                               const height = (count / maxCount) * 200; // Max height 200px
                               const colorClass = barColors[index % barColors.length];
-                              
+
                               return (
                                 <div key={className} className="group flex-1 flex flex-col items-center">
                                   {/* Tooltip */}
@@ -340,26 +413,26 @@ const SuperAdminDashboard = () => {
                                     </div>
                                     <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-white/95"></div>
                                   </div>
-                                  
+
                                   {/* Bar */}
                                   <div className="relative w-full flex flex-col items-center">
-                                    <div 
+                                    <div
                                       className={`w-full ${colorClass} rounded-t-lg shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-105 relative overflow-hidden`}
-                                      style={{ 
+                                      style={{
                                         height: `${height}px`,
                                         minHeight: '4px'
                                       }}
                                     >
                                       {/* Subtle texture overlay */}
                                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out"></div>
-                                      
+
                                       {/* Value display on top of bar */}
                                       <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 text-xs font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                                         {count}
                                       </div>
                                     </div>
                                   </div>
-                                  
+
                                   {/* X-axis label */}
                                   <div className="mt-3 text-xs text-gray-700 font-medium text-center" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                                     {className}
@@ -368,10 +441,10 @@ const SuperAdminDashboard = () => {
                               );
                             })}
                         </div>
-                        
+
                         {/* X-axis line */}
                         <div className="w-full h-0.5 bg-gray-400 mt-4"></div>
-                        
+
                         {/* X-axis label */}
                         <div className="text-center mt-2 text-sm font-semibold text-gray-700" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                           Class categories
@@ -415,7 +488,7 @@ const SuperAdminDashboard = () => {
               </span>
             </div>
           </div>
-          
+
           {registrationData && registrationData.length > 0 ? (
             <div className="space-y-4">
               {/* Chart Container with Grid */}
@@ -468,39 +541,39 @@ const SuperAdminDashboard = () => {
                     {(() => {
                       const maxCount = Math.max(...registrationData.map(d => Number(d.registration_count)), 1);
                       const chartMax = Math.ceil(maxCount * 1.5); // 1.5x the max value for better proportions
-                      
+
                       // Create smooth curve using cubic bezier
                       const createSmoothPath = (data) => {
                         if (data.length < 2) return '';
-                        
+
                         const points = data.map((item, index) => {
                           const x = data.length > 1 ? (index / (data.length - 1)) * 100 : 50;
                           const y = 100 - (Number(item.registration_count) / chartMax) * 100;
                           return { x, y };
                         });
-                        
+
                         let path = `M ${points[0].x} ${points[0].y}`;
-                        
+
                         for (let i = 1; i < points.length; i++) {
                           const prevPoint = points[i - 1];
                           const currentPoint = points[i];
                           const nextPoint = points[i + 1];
-                          
+
                           // Calculate control points for smooth curve
                           const cp1x = prevPoint.x + (currentPoint.x - prevPoint.x) / 3;
                           const cp1y = prevPoint.y;
                           const cp2x = currentPoint.x - (nextPoint ? (nextPoint.x - prevPoint.x) / 3 : (currentPoint.x - prevPoint.x) / 3);
                           const cp2y = currentPoint.y;
-                          
+
                           path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${currentPoint.x} ${currentPoint.y}`;
                         }
-                        
+
                         return path;
                       };
-                      
+
                       const smoothPath = createSmoothPath(registrationData);
                       const areaPath = smoothPath + ` L 100 100 L 0 100 Z`;
-                      
+
                       return (
                         <>
                           {/* Gradient Definitions */}
@@ -513,7 +586,7 @@ const SuperAdminDashboard = () => {
                               <stop offset="75%" stopColor="#3b82f6" stopOpacity="0.2" />
                               <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.2" />
                             </linearGradient>
-                            
+
                             {/* Line gradient */}
                             <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
                               <stop offset="0%" stopColor="#ef4444" />
@@ -522,20 +595,20 @@ const SuperAdminDashboard = () => {
                               <stop offset="75%" stopColor="#3b82f6" />
                               <stop offset="100%" stopColor="#06b6d4" />
                             </linearGradient>
-                            
+
                             {/* Drop shadow filter */}
                             <filter id="dropshadow" x="-50%" y="-50%" width="200%" height="200%">
                               <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.1"/>
                             </filter>
                           </defs>
-                          
+
                           {/* Area fill */}
                           <path
                             d={areaPath}
                             fill="url(#areaGradient)"
                             stroke="none"
                           />
-                          
+
                           {/* Smooth curved line */}
                           <path
                             d={smoothPath}
@@ -557,11 +630,11 @@ const SuperAdminDashboard = () => {
                     const chartMax = Math.ceil(maxCount * 1.5); // 1.5x the max value for better proportions
                     const x = registrationData.length > 1 ? (index / (registrationData.length - 1)) * 100 : 50;
                     const y = 100 - (Number(data.registration_count) / chartMax) * 100;
-                    
+
                     // Determine if this is a peak or valley for special highlighting
                     const isPeak = Number(data.registration_count) === maxCount;
                     const isValley = Number(data.registration_count) === Math.min(...registrationData.map(d => Number(d.registration_count)));
-                    
+
                     // Color based on position in gradient
                     const gradientPosition = index / (registrationData.length - 1);
                     let pointColor = '#ef4444'; // Default red
@@ -569,7 +642,7 @@ const SuperAdminDashboard = () => {
                     else if (gradientPosition < 0.5) pointColor = '#f97316'; // Orange
                     else if (gradientPosition < 0.75) pointColor = '#8b5cf6'; // Purple
                     else pointColor = '#3b82f6'; // Blue
-                    
+
                     return (
                       <div
                         key={index}
@@ -582,8 +655,8 @@ const SuperAdminDashboard = () => {
                       >
                         {/* Enhanced Tooltip */}
                         <div className={`absolute ${isPeak ? '-top-16' : isValley ? '-bottom-16' : '-top-12'} bg-white/95 backdrop-blur-xl text-gray-800 px-3 py-2 rounded-full text-xs font-bold shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 z-10 whitespace-nowrap border-2 ${
-                          isPeak ? 'border-pink-300 bg-pink-50' : 
-                          isValley ? 'border-purple-300 bg-purple-50' : 
+                          isPeak ? 'border-pink-300 bg-pink-50' :
+                          isValley ? 'border-purple-300 bg-purple-50' :
                           'border-gray-300'
                         }`} style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                           <div className="text-center">
@@ -595,17 +668,17 @@ const SuperAdminDashboard = () => {
                             </div>
                           </div>
                           {/* Tooltip arrow */}
-                          <div className={`absolute ${isPeak ? 'top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent' : 
-                            isValley ? 'bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent' : 
+                          <div className={`absolute ${isPeak ? 'top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent' :
+                            isValley ? 'bottom-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent' :
                             'top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent'} ${
-                            isPeak ? 'border-t-pink-50' : 
-                            isValley ? 'border-b-purple-50' : 
+                            isPeak ? 'border-t-pink-50' :
+                            isValley ? 'border-b-purple-50' :
                             'border-t-white/95'
                           }`}></div>
                         </div>
-                        
+
                         {/* Enhanced Data Point Circle */}
-                        <div 
+                        <div
                           className={`w-5 h-5 rounded-full border-3 border-white shadow-lg group-hover:scale-125 transition-all duration-300 ${
                             isPeak ? 'bg-gradient-to-r from-pink-400 to-pink-600' :
                             isValley ? 'bg-gradient-to-r from-purple-400 to-purple-600' :
@@ -618,10 +691,10 @@ const SuperAdminDashboard = () => {
                           {/* Inner glow effect */}
                           <div className="w-full h-full rounded-full bg-white/20"></div>
                         </div>
-                        
+
                         {/* Connecting line to tooltip */}
                         {(isPeak || isValley) && (
-                          <div 
+                          <div
                             className={`absolute w-px bg-gradient-to-b ${
                               isPeak ? 'from-pink-300 to-pink-500' : 'from-purple-300 to-purple-500'
                             } opacity-0 group-hover:opacity-100 transition-opacity duration-300`}
@@ -642,11 +715,11 @@ const SuperAdminDashboard = () => {
                 <div className="absolute bottom-0 left-10 right-0 h-8 flex justify-between items-end">
                   {registrationData.map((data, index) => {
                     const date = new Date(data.registration_date);
-                    const formattedDate = date.toLocaleDateString('bn-BD', { 
-                      month: 'short', 
-                      day: 'numeric' 
+                    const formattedDate = date.toLocaleDateString('bn-BD', {
+                      month: 'short',
+                      day: 'numeric'
                     });
-                    
+
                     return (
                       <div
                         key={index}
@@ -664,7 +737,7 @@ const SuperAdminDashboard = () => {
                   Date
                 </div>
               </div>
-              
+
               {/* Chart Summary */}
               <div className="mt-6 pt-4 border-t border-gray-300/50">
                 <div className="grid grid-cols-2 gap-4 text-center">
@@ -709,7 +782,7 @@ const SuperAdminDashboard = () => {
           <h3 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
             সাম্প্রতিক পরীক্ষা
           </h3>
-          <button 
+          <button
             onClick={() => setActiveTab('exams')}
             className="text-gray-700 hover:text-yellow-600 text-sm font-medium transition-colors bg-yellow-500/20 px-4 py-2 rounded-lg hover:bg-yellow-500/30 border border-yellow-500/50 backdrop-blur-xl"
             style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
@@ -717,7 +790,7 @@ const SuperAdminDashboard = () => {
             সব দেখুন →
           </button>
         </div>
-        
+
         <div className="space-y-4">
           {exams.slice(0, 3).map((exam) => (
             <div key={exam.id} className="bg-white/60 backdrop-blur-xl border border-yellow-500/30 rounded-xl p-4 hover:shadow-lg hover:shadow-yellow-500/25 transition-all duration-300 transform hover:scale-[1.02] hover:border-yellow-400/50">
@@ -750,7 +823,7 @@ const SuperAdminDashboard = () => {
           <h3 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
             সব পরীক্ষা
           </h3>
-          <button 
+          <button
             onClick={() => setActiveTab('exams')}
             className="text-gray-700 hover:text-green-600 text-sm font-medium transition-colors bg-green-500/20 px-4 py-2 rounded-lg hover:bg-green-500/30 border border-green-500/50 backdrop-blur-xl"
             style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
@@ -758,7 +831,7 @@ const SuperAdminDashboard = () => {
             সব দেখুন →
           </button>
         </div>
-        
+
         <div className="space-y-4">
           {exams.length > 0 ? (
             exams.map((exam) => (
@@ -785,14 +858,14 @@ const SuperAdminDashboard = () => {
                       {exam.class_count} ক্লাস
                     </span>
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => handleEditExam(exam)}
                         className="text-gray-700 hover:text-green-600 text-sm font-medium bg-green-500/20 px-3 py-1 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/50 backdrop-blur-xl"
                         style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                       >
                         সম্পাদনা
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleManageSets(exam)}
                         className="text-gray-700 hover:text-blue-600 text-sm font-medium bg-blue-500/20 px-3 py-1 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
                         style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
@@ -828,7 +901,7 @@ const SuperAdminDashboard = () => {
         <h2 className="text-3xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
           পরীক্ষা ব্যবস্থাপনা
         </h2>
-        <button 
+        <button
           onClick={handleCreateExam}
           className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold py-3 px-6 rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all transform hover:scale-105 shadow-lg shadow-green-500/25 border border-green-400/50 backdrop-blur-xl"
           style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
@@ -837,7 +910,7 @@ const SuperAdminDashboard = () => {
           নতুন পরীক্ষা
         </button>
       </div>
-      
+
       <div className="bg-white/80 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-green-500/25 transition-all duration-500">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -885,21 +958,21 @@ const SuperAdminDashboard = () => {
                   </td>
                   <td className="py-4 px-2">
                     <div className="flex space-x-2">
-                      <button 
+                      <button
                         onClick={() => handleEditExam(exam)}
                         className="text-gray-700 hover:text-green-600 text-sm font-medium bg-green-500/20 px-3 py-1 rounded-lg hover:bg-green-500/30 transition-colors border border-green-500/50 backdrop-blur-xl"
                         style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                       >
                         সম্পাদনা
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleManageSets(exam)}
                         className="text-gray-700 hover:text-blue-600 text-sm font-medium bg-blue-500/20 px-3 py-1 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
                         style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
                       >
                         ক্লাস
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleDeleteExam(exam.id)}
                         className="text-gray-700 hover:text-red-600 text-sm font-medium bg-red-500/20 px-3 py-1 rounded-lg hover:bg-red-500/30 transition-colors border border-red-500/50 backdrop-blur-xl"
                         style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
@@ -917,6 +990,354 @@ const SuperAdminDashboard = () => {
     </div>
   );
 
+  const renderExamAnalysis = () => {
+    // Render exam list (similar to exams tab)
+    if (analysisView === 'exams') {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-3xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              পরীক্ষা বিশ্লেষণ
+            </h2>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-blue-500/25 transition-all duration-500">
+            <h3 className="text-xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              বিশ্লেষণের জন্য পরীক্ষা নির্বাচন করুন
+            </h3>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-blue-500/30">
+                    <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      পরীক্ষার নাম
+                    </th>
+                    <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      প্রশ্ন সংখ্যা
+                    </th>
+                    <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      বছর
+                    </th>
+                    <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      ক্লাস সংখ্যা
+                    </th>
+                    <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      তৈরি হয়েছে
+                    </th>
+                    <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      কাজ
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exams.map((exam) => (
+                    <tr key={exam.id} className="border-b border-blue-500/20 hover:bg-blue-500/10 transition-colors">
+                      <td className="py-4 px-2 text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        {exam.exam_name}
+                      </td>
+                      <td className="py-4 px-2 text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        {exam.question_count}
+                      </td>
+                      <td className="py-4 px-2 text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        {exam.year}
+                      </td>
+                      <td className="py-4 px-2">
+                        <span className="bg-blue-500/20 text-blue-600 px-3 py-1 rounded-full text-sm font-medium border border-blue-500/50 backdrop-blur-xl">
+                          {exam.class_count}
+                        </span>
+                      </td>
+                      <td className="py-4 px-2 text-gray-500 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        {new Date(exam.created_at).toLocaleDateString('bn-BD')}
+                      </td>
+                      <td className="py-4 px-2">
+                        <button
+                          onClick={() => handleAnalysisExamSelect(exam)}
+                          className="text-gray-700 hover:text-blue-600 text-sm font-medium bg-blue-500/20 px-3 py-1 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
+                          style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                        >
+                          বিশ্লেষণ করুন
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Render class list for selected exam
+    if (analysisView === 'classes') {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleBackToAnalysisExams}
+                className="text-gray-700 hover:text-blue-600 bg-blue-500/20 px-4 py-2 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+              >
+                ← পরীক্ষার তালিকায় ফিরুন
+              </button>
+              <h2 className="text-3xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {selectedAnalysisExam?.exam_name} - ক্লাস নির্বাচন
+              </h2>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6 shadow-2xl hover:shadow-blue-500/25 transition-all duration-500">
+            <h3 className="text-xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+              বিশ্লেষণের জন্য ক্লাস নির্বাচন করুন
+            </h3>
+
+            {availableClasses.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-blue-500/30">
+                      <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        ক্লাস
+                      </th>
+
+                      <th className="text-left py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                        কাজ
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {availableClasses.map((classData) => (
+                      <tr key={classData.id} className="border-b border-blue-500/20 hover:bg-blue-500/10 transition-colors">
+                        <td className="py-4 px-2 text-gray-800 font-semibold" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          {bengaliClassName(classData.class_name)}
+                        </td>
+
+                        <td className="py-4 px-2">
+                          <button
+                            onClick={() => handleAnalysisClassSelect(classData)}
+                            className="text-gray-700 hover:text-blue-600 text-sm font-medium bg-blue-500/20 px-3 py-1 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
+                            style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+                          >
+                            বিশ্লেষণ দেখুন
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-blue-500/25 border border-blue-500/30">
+                  <span className="text-blue-600 text-2xl">📚</span>
+                </div>
+                <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  কোন ক্লাস পাওয়া যায়নি
+                </h4>
+                <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  এই পরীক্ষার জন্য কোন ক্লাস তৈরি করা হয়নি
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Render analysis results
+    if (analysisView === 'analysis') {
+      return (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={handleBackToAnalysisClasses}
+                className="text-gray-700 hover:text-blue-600 bg-blue-500/20 px-4 py-2 rounded-lg hover:bg-blue-500/30 transition-colors border border-blue-500/50 backdrop-blur-xl"
+                style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
+              >
+                ← ক্লাসের তালিকায় ফিরুন
+              </button>
+              <h2 className="text-2xl font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                {selectedAnalysisExam?.exam_name} - {bengaliClassName(selectedAnalysisClass?.class_name)} ({selectedAnalysisClass?.set_name})
+              </h2>
+            </div>
+          </div>
+
+          {/* Analysis Loading */}
+          {analysisLoading && (
+            <div className="bg-white/80 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-12 text-center shadow-2xl">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                বিশ্লেষণ লোড হচ্ছে...
+              </p>
+            </div>
+          )}
+
+          {/* Analysis Results */}
+          {examAnalysisData && !analysisLoading && (
+            <div className="space-y-6">
+              {/* Summary Statistics */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6 shadow-2xl">
+                  <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    মোট প্রশ্ন
+                  </h4>
+                  <p className="text-3xl font-bold text-blue-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {examAnalysisData.questions.length}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-r from-green-500/20 to-emerald-500/20 backdrop-blur-xl border border-green-500/30 rounded-2xl p-6 shadow-2xl">
+                  <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    গড় নির্ভুলতা
+                  </h4>
+                  <p className="text-3xl font-bold text-green-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {examAnalysisData.questions.length > 0 ?
+                      (examAnalysisData.questions.reduce((sum, q) => sum + q.accuracyPercent, 0) / examAnalysisData.questions.length).toFixed(2) : 0}%
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 backdrop-blur-xl border border-purple-500/30 rounded-2xl p-6 shadow-2xl">
+                  <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    মোট উত্তর
+                  </h4>
+                  <p className="text-3xl font-bold text-purple-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {examAnalysisData.questions.reduce((sum, q) => sum + q.totalAttempted, 0)}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-r from-red-500/20 to-rose-500/20 backdrop-blur-xl border border-red-500/30 rounded-2xl p-6 shadow-2xl">
+                  <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    সবচেয়ে কঠিন প্রশ্ন
+                  </h4>
+                  <p className="text-3xl font-bold text-red-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    #{examAnalysisData.questions.length > 0 ?
+                      examAnalysisData.questions.reduce((min, q) => q.accuracyPercent < min.accuracyPercent ? q : min, examAnalysisData.questions[0])?.questionNo : 'N/A'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Questions Analysis Cards */}
+              <div className="bg-white/80 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6 shadow-2xl">
+                <h3 className="text-2xl font-bold text-gray-800 mb-6" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  প্রশ্নভিত্তিক বিশ্লেষণ
+                </h3>
+
+                <div className="space-y-6">
+                  {examAnalysisData.questions.map((question) => (
+                    <div key={question.questionNo} className="bg-white/60 backdrop-blur-xl border border-blue-500/20 rounded-xl p-6 hover:shadow-lg hover:shadow-blue-500/25 transition-all duration-300">
+                      {/* Question Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-bold text-gray-800" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          প্রশ্ন নং {question.questionNo}
+                        </h4>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-20 bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
+                              style={{ width: `${Math.min(question.accuracyPercent, 100)}%` }}
+                            ></div>
+                          </div>
+                          <span className={`text-sm font-semibold ${question.accuracyPercent >= 70 ? 'text-green-600' : question.accuracyPercent >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                            {question.accuracyPercent}%
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Question Text */}
+                      <div className="mb-4">
+                        <p className="text-gray-800 leading-relaxed" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                          {question.questionText}
+                        </p>
+                      </div>
+
+                      {/* Options */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                        {question.options && Object.entries(question.options).map(([optionKey, optionValue]) => (
+                          <div
+                            key={optionKey}
+                            className={`p-3 rounded-lg border transition-all duration-200 ${
+                              optionKey === question.correctAnswer
+                                ? 'bg-green-500/20 border-green-500/50 text-green-800'
+                                : 'bg-gray-100/50 border-gray-300/50 text-gray-700'
+                            }`}
+                          >
+                            <span className="font-semibold mr-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                              {optionKey}.
+                            </span>
+                            <span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                              {optionValue}
+                            </span>
+                            {optionKey === question.correctAnswer && (
+                              <span className="ml-2 text-green-600 font-bold">✓</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Analysis Statistics */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-blue-500/20">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                            {question.totalAttempted}
+                          </div>
+                          <div className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                            মোট উত্তর
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                            {question.correctCount}
+                          </div>
+                          <div className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                            সঠিক উত্তর
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-red-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                            {question.incorrectCount}
+                          </div>
+                          <div className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                            ভুল উত্তর
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className={`text-2xl font-bold ${question.accuracyPercent >= 70 ? 'text-green-600' : question.accuracyPercent >= 50 ? 'text-yellow-600' : 'text-red-600'}`} style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                            {question.accuracyPercent}%
+                          </div>
+                          <div className="text-sm text-gray-600" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                            নির্ভুলতা
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* No Data Message */}
+          {!examAnalysisData && !analysisLoading && (
+            <div className="bg-white/80 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-12 text-center shadow-2xl">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-2xl shadow-blue-500/25 border border-blue-500/30">
+                <span className="text-blue-600 text-2xl">📊</span>
+              </div>
+              <h4 className="text-lg font-bold text-gray-800 mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                কোন বিশ্লেষণ ডেটা পাওয়া যায়নি
+              </h4>
+              <p className="text-gray-600 text-sm" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                এই ক্লাসের জন্য কোন ছাত্রের উত্তর জমা হয়নি
+              </p>
+            </div>
+          )}
+        </div>
+      );
+    }
+  };
+
   const renderContent = () => {
     console.log('Active tab:', activeTab);
     switch (activeTab) {
@@ -924,11 +1345,13 @@ const SuperAdminDashboard = () => {
         return renderOverview();
       case 'exams':
         return <ExamManagement />;
+      case 'exam-analysis':
+        return renderExamAnalysis();
       case 'results':
-        // console.log('Rendering Results component');
+        console.log('Rendering Results component');
         return <Results userRole="superadmin" />;
       case 'scholarship':
-        // console.log('Rendering Scholarship component');
+        console.log('Rendering Scholarship component');
         return <Scholarship />;
       case 'students':
         return <Students userRole="superadmin" />;
@@ -936,6 +1359,8 @@ const SuperAdminDashboard = () => {
         return <Admins />;
       case 'finance':
         return <Finance />;
+      case 'activity':
+        return <Activity />;
       case 'reminders':
         return renderReminders();
       default:
@@ -1086,7 +1511,7 @@ const SuperAdminDashboard = () => {
           <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
         </div>
-        
+
         <div className="text-center relative z-10">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-500 mx-auto mb-6 shadow-lg shadow-green-500/25"></div>
           <p className="text-gray-800 text-xl font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
@@ -1104,9 +1529,9 @@ const SuperAdminDashboard = () => {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 relative">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50 relative overflow-hidden">
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-green-500/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
@@ -1120,12 +1545,12 @@ const SuperAdminDashboard = () => {
               <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mr-4 shadow-lg shadow-green-500/25">
                 <span className="text-white text-xl font-bold">SA</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 drop-shadow-sm" 
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800 drop-shadow-sm"
                   style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}>
                 সুপার অ্যাডমিন ড্যাশবোর্ড
               </h1>
             </div>
-            
+
             <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="hidden sm:flex items-center space-x-3 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-full border border-green-500/20 shadow-lg">
                 <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
@@ -1143,7 +1568,7 @@ const SuperAdminDashboard = () => {
                   {superAdminName || 'সুপার অ্যাডমিন'}
                 </span>
               </div>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="bg-gradient-to-r from-red-500 to-red-600 text-white font-bold py-2 px-3 sm:px-6 rounded-lg hover:from-red-600 hover:to-red-700 transition-all transform hover:scale-105 shadow-lg shadow-red-500/25 border border-red-400 text-sm sm:text-base"
                 style={{ fontFamily: "'Hind Siliguri', sans-serif" }}
@@ -1159,21 +1584,21 @@ const SuperAdminDashboard = () => {
       {/* Navigation Tabs */}
       <div className="bg-white/70 backdrop-blur-md border-b border-green-500/20 sticky top-20 z-40 shadow-lg">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8">
-          <nav className="flex space-x-2 sm:space-x-8 overflow-x-auto scrollbar-hide">
+          <nav className="flex space-x-1 sm:space-x-2 md:space-x-4 lg:space-x-6 overflow-x-auto scrollbar-hide">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-3 sm:py-4 px-2 sm:px-4 text-xs sm:text-sm font-bold transition-all duration-300 border-b-2 whitespace-nowrap ${
+                className={`py-2 sm:py-3 px-1 sm:px-2 md:px-3 text-xs sm:text-sm font-bold transition-all duration-300 border-b-2 whitespace-nowrap flex-shrink-0 ${
                   activeTab === tab.id
                     ? 'border-green-500 text-green-700 bg-green-50/50 shadow-lg shadow-green-500/10'
                     : 'border-transparent text-gray-600 hover:text-green-600 hover:border-green-400 hover:bg-green-50/30'
                 }`}
                 style={{ fontFamily: "'Hind Siliguri', sans-serif", fontWeight: 'bold' }}
               >
-                <span className="mr-1 sm:mr-2 text-sm sm:text-base">{tab.icon}</span>
-                <span className="hidden xs:inline">{tab.name}</span>
-                <span className="xs:hidden">{tab.name.split(' ')[0]}</span>
+                <span className="mr-1 text-sm sm:text-base">{tab.icon}</span>
+                <span className="hidden sm:inline">{tab.name}</span>
+                <span className="sm:hidden text-xs">{tab.name.length > 8 ? tab.name.substring(0, 8) : tab.name}</span>
               </button>
             ))}
           </nav>

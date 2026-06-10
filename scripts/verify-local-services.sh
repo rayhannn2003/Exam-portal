@@ -6,7 +6,6 @@ checks=(
   "Frontend|http://localhost:5173"
   "Backend PDF integration|http://localhost:4000/api/pdf/health"
   "Primary Flask PDF service|http://localhost:5000/health"
-  "OMR service|http://localhost:8001/health"
 )
 
 failed=0
@@ -24,4 +23,3 @@ for check in "${checks[@]}"; do
 done
 
 exit "$failed"
-

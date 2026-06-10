@@ -67,5 +67,4 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: python -m compileall -q omr-service pdf_service pdf_service_flask
-
+      - run: python -m compileall -q pdf_service_flask

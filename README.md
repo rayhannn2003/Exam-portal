@@ -6,7 +6,7 @@ workflows, OMR-assisted result processing, analytics, and printable reports.**
 Exam Portal is designed for schools, scholarship examinations, and local
 educational organizations that need a practical way to manage exams and publish
 results. It combines a Bengali-friendly web interface, a Node.js API,
-PostgreSQL storage, OMR processing, and PDF generation.
+PostgreSQL storage, OMR integration, and PDF generation.
 
 The project is especially relevant to low-resource educational communities
 where exam administration is often manual, result publication is delayed, and
@@ -25,11 +25,10 @@ The repository contains:
 - An Express API for authentication, students, exams, results, finance, PDFs,
   and OMR integration
 - A clean PostgreSQL initial migration
-- A FastAPI and OpenCV OMR processing service
 - A primary Flask PDF service for question papers, scholarship reports, and
   admit cards
-- An experimental FastAPI PDF implementation retained for comparison and
-  future development
+- Backend and frontend integration points for an externally deployed OMR
+  processor
 
 ## Problem It Solves
 
@@ -80,9 +79,8 @@ excluded from the public repository.
 | Frontend | React 19, Vite 7, Axios, Tailwind CSS/PostCSS, JSZip |
 | Backend API | Node.js, Express, JWT, bcrypt, Multer, Axios |
 | Database | PostgreSQL, `pg`, `pgcrypto` |
-| OMR service | Python, FastAPI, OpenCV, NumPy, imutils, Pillow |
+| OMR integration | Express proxy routes and React upload workflows |
 | Primary PDF service | Flask, ReportLab, WeasyPrint, Jinja2 |
-| Experimental PDF service | FastAPI, ReportLab, Jinja2 |
 | Tooling | npm, pip, ESLint, Node test runner, GitHub Actions |
 
 ## Architecture
@@ -93,11 +91,10 @@ React frontend (5173)
         v
 Express API (4000) --------------------> PostgreSQL
         |
-        +------------------------------> OMR service (8001)
+        +------------------------------> External OMR processor (optional)
         |
         +------------------------------> Flask PDF service (5000)
 
-Experimental: FastAPI PDF service (8000)
 ```
 
 The frontend communicates with the Express API for application data. The
@@ -112,9 +109,7 @@ exam-portal/
 ├── backend/                  # Express API, migration, routes, and tests
 ├── docs/                     # Deployment, OMR, testing, and screenshots
 ├── frontend/                 # React/Vite web application
-├── omr-service/              # FastAPI/OpenCV OMR processing service
-├── pdf_service_flask/        # Primary Flask PDF service
-└── pdf_service/              # Experimental FastAPI PDF service
+└── pdf_service_flask/        # Flask PDF generation service
 ```
 
 ## Getting Started
@@ -141,10 +136,13 @@ Create a database and apply the clean initial migration:
 ```bash
 createdb exam_portal
 psql -d exam_portal -f backend/migrations/001_initial_schema.sql
+psql -d exam_portal -f backend/schema/student_tracking.sql
+psql -d exam_portal -f backend/schema/user_activity_migration.sql
 ```
 
-The migration intentionally creates no default admin credentials. Create the
-first super-admin with explicit one-time values:
+The initial migration intentionally creates no default admin credentials.
+Apply the activity migrations for the analytics features, then create the first
+super-admin with explicit one-time values:
 
 ```bash
 cd backend
@@ -178,19 +176,7 @@ npm run dev
 
 Open `http://localhost:5173`.
 
-### 5. Run the OMR Service
-
-```bash
-cd omr-service
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python start.py
-```
-
-Verify it at `http://localhost:8001/health`.
-
-### 6. Run the Primary PDF Service
+### 5. Run the PDF Service
 
 The active code paths use the Flask service on port `5000`. It is the only PDF
 implementation in the repository with admit-card endpoints.
@@ -206,9 +192,6 @@ cp .env.example .env
 
 Verify it at `http://localhost:5000/health`.
 
-The FastAPI service in `pdf_service/` remains available for experimentation,
-but it is not the primary application integration.
-
 ## Environment Variables
 
 Copy and edit the component examples:
@@ -216,12 +199,9 @@ Copy and edit the component examples:
 - [`backend/.env.example`](backend/.env.example)
 - [`frontend/.env.example`](frontend/.env.example)
 - [`pdf_service_flask/.env.example`](pdf_service_flask/.env.example)
-- [`pdf_service/.env.example`](pdf_service/.env.example)
 
 Never commit real credentials. The backend requires database settings and a
-strong `JWT_SECRET`. SMS settings are optional. The OMR service currently
-contains local backend URLs in code; making those environment-driven remains a
-roadmap item.
+strong `JWT_SECRET`. SMS settings and the external OMR processor are optional.
 
 ## Available Commands
 
@@ -235,7 +215,6 @@ roadmap item.
 | Backend | `npm start` | Start Express with Node.js |
 | Backend | `npm test` | Run backend middleware tests |
 | Backend | `npm run bootstrap:superadmin` | Create the first super-admin |
-| OMR service | `python start.py` | Start the FastAPI OMR service |
 | Primary PDF service | `./start_local.sh` | Start Flask on port `5000` |
 | Repository | `./scripts/verify-local-services.sh` | Check local service health |
 
@@ -250,12 +229,13 @@ sample files.
 - [OMR integration guide](docs/omr/integration.md)
 - [OMR result workflow](docs/omr/workflow.md)
 - [Postman testing guide](docs/testing/postman.md)
+- [Activity tracking overview](docs/activity/overview.md)
+- [Activity tracking testing guide](docs/activity/testing.md)
 - [Primary Flask PDF service](pdf_service_flask/README.md)
-- [Experimental FastAPI PDF service](pdf_service/README.md)
 
 ## Roadmap
 
-- Move all OMR and frontend service URLs into environment-based configuration
+- Document and package a compatible external OMR processor
 - Expand backend, frontend, OMR, and PDF automated test coverage
 - Resolve the existing frontend lint backlog and make lint blocking in CI
 - Strengthen production authentication, authorization, CORS, and upload limits

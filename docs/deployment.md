@@ -12,14 +12,15 @@ tested orchestration setup is contributed.
 | React frontend | `5173` | Static Vite build for production |
 | Express backend | `4000` | Main API and PostgreSQL access |
 | Flask PDF service | `5000` | Primary PDF implementation |
-| OMR service | `8001` | FastAPI/OpenCV image processing |
-| FastAPI PDF service | `8000` | Experimental alternative |
+| External OMR processor | `8001` | Optional; implementation not bundled |
 
 ## Production Checklist
 
 - Create environment-specific secrets outside Git.
 - Apply `backend/migrations/001_initial_schema.sql` to a new PostgreSQL
   database.
+- Apply `backend/schema/student_tracking.sql` and
+  `backend/schema/user_activity_migration.sql` for activity analytics.
 - Create the first super-admin through the explicit bootstrap command. The
   migration intentionally contains no default credentials.
 - Restrict CORS to the deployed frontend origin.
@@ -83,24 +84,11 @@ Verify:
 curl http://localhost:5000/health
 ```
 
-## OMR Service
+## External OMR Processor
 
-```bash
-cd omr-service
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app:app --host 0.0.0.0 --port 8001
-```
-
-Verify:
-
-```bash
-curl http://localhost:8001/health
-```
-
-The OMR service currently contains local backend URLs in code. Make those URLs
-environment-driven before deploying the service on a separate host.
+The backend can proxy OMR requests to `OMR_SERVICE_URL`, but the processor
+implementation is not bundled in this repository. Deploy a compatible service
+separately and verify its health endpoint before enabling OMR workflows.
 
 ## Reverse Proxy
 
@@ -110,8 +98,8 @@ A reverse proxy can expose the frontend and route private API traffic:
 /              -> frontend static files
 /api/          -> Express backend :4000
 /internal/pdf/ -> Flask PDF service :5000
-/internal/omr/ -> OMR service :8001
+/internal/omr/ -> external OMR processor :8001
 ```
 
-Keep the PDF and OMR services private when possible and allow the backend to
-proxy requests to them.
+Keep the PDF service and external OMR processor private when possible and allow
+the backend to proxy requests to them.

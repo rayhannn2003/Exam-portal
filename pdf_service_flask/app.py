@@ -9,6 +9,8 @@ import logging
 import os
 import base64
 from datetime import datetime
+import re
+import io
 
 from models.question_models import (
     QuestionPaperRequest,
@@ -64,6 +66,38 @@ app.config.update(
     DEBUG=os.getenv('DEBUG', 'False').lower() == 'true'
 )
 
+import matplotlib.pyplot as plt
+def latex_to_svg_matplotlib(latex_expr: str) -> str:
+    """
+    Render a limited LaTeX math expression to inline SVG using Matplotlib.
+    Works without a TeX installation.
+    """
+    fig, ax = plt.subplots(figsize=(0.01, 0.01))
+    ax.axis("off")
+    ax.text(0, 0, f"${latex_expr}$", fontsize=14)
+    buf = io.BytesIO()
+    plt.savefig(buf, format="svg", bbox_inches="tight", pad_inches=0.05)
+    plt.close(fig)
+    svg = buf.getvalue().decode("utf-8")
+    svg = svg.split("<svg", 1)[-1]
+    return "<svg" + svg
+
+
+def preprocess_latex_to_svg(payload):
+    """Finds $...$ LaTeX math and replaces with SVGs."""
+    pattern = r"\$(.*?)\$"
+
+    for q in payload["exam_set"]["questions"]:
+        def repl(match):
+            expr = match.group(1).strip()
+            return latex_to_svg_matplotlib(expr)
+
+        q["question"] = re.sub(pattern, repl, q["question"])
+        q["options"] = {k: re.sub(pattern, repl, v) for k, v in q["options"].items()}
+
+    return payload
+
+
 # Initialize services (exact copy from FastAPI)
 pdf_generator = PDFGenerator()
 template_engine = TemplateEngine()
@@ -96,10 +130,10 @@ def health_check():
 def generate_question_paper():
     """
     Generate a PDF question paper from exam data
-    
+
     Args:
         request: QuestionPaperRequest containing exam and question data
-        
+
     Returns:
         QuestionPaperResponse with PDF data and metadata
     """
@@ -107,19 +141,19 @@ def generate_question_paper():
         request_data = request.get_json()
         if not request_data:
             return jsonify({"error": "Request body is required"}), 400
-        
+
         # Validate request data
         try:
             pdf_request = QuestionPaperRequest(**request_data)
         except ValidationError as e:
             return jsonify({"error": f"Invalid request data: {str(e)}"}), 400
-        
+
         logger.info(f"Generating question paper for exam: {pdf_request.exam.title}")
-        
+
         # Validate request data
         if not pdf_request.exam or not pdf_request.exam_set:
             return jsonify({"error": "Exam and exam set data are required"}), 400
-        
+
         # Generate PDF (bytes) using WeasyPrint-based generator
         import asyncio
         pdf_bytes = asyncio.run(pdf_generator.generate_question_paper(
@@ -128,7 +162,7 @@ def generate_question_paper():
             template_type=pdf_request.template_type,
             customization=pdf_request.customization
         ))
-        
+
         # Create response
         # Base64 encode for JSON response compatibility
         pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
@@ -143,10 +177,10 @@ def generate_question_paper():
             total_marks=pdf_request.exam_set.total_marks or sum(q.marks for q in pdf_request.exam_set.questions),
             generated_at=datetime.now().isoformat()
         )
-        
+
         logger.info(f"Successfully generated question paper: {pdf_request.exam.title} - {pdf_request.exam_set.set_name}")
         return jsonify(response.dict())
-        
+
     except Exception as e:
         logger.error(f"Error generating question paper: {str(e)}")
         return jsonify({"error": f"Failed to generate question paper: {str(e)}"}), 500
@@ -155,10 +189,10 @@ def generate_question_paper():
 def download_question_paper():
     """
     Generate and directly download a PDF question paper
-    
+
     Args:
         request: QuestionPaperRequest containing exam and question data
-        
+
     Returns:
         PDF file as Response
     """
@@ -166,15 +200,16 @@ def download_question_paper():
         request_data = request.get_json()
         if not request_data:
             return jsonify({"error": "Request body is required"}), 400
-        
+
+        request_data = preprocess_latex_to_svg(request_data)
         # Validate request data
         try:
             pdf_request = QuestionPaperRequest(**request_data)
         except ValidationError as e:
             return jsonify({"error": f"Invalid request data: {str(e)}"}), 400
-        
+
         logger.info(f"Generating and downloading question paper for exam: {pdf_request.exam.title}")
-        
+
         # Generate PDF (bytes)
         import asyncio
         pdf_bytes = asyncio.run(pdf_generator.generate_question_paper(
@@ -183,11 +218,11 @@ def download_question_paper():
             template_type=pdf_request.template_type,
             customization=pdf_request.customization
         ))
-        
+
         # Create safe ASCII filename (no Bengali characters for HTTP header)
         safe_filename = f"Bengali_Exam_{pdf_request.exam_set.set_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         safe_filename = "".join(c for c in safe_filename if c.isascii() and (c.isalnum() or c in (' ', '-', '_'))).rstrip()
-        
+
         # Return PDF as download
         response = Response(
             pdf_bytes,
@@ -197,9 +232,9 @@ def download_question_paper():
                 "Content-Type": "application/pdf"
             }
         )
-        
+
         return response
-        
+
     except Exception as e:
         logger.error(f"Error downloading question paper: {str(e)}")
         return jsonify({"error": f"Failed to generate question paper: {str(e)}"}), 500
@@ -208,10 +243,10 @@ def download_question_paper():
 def preview_question_paper():
     """
     Generate HTML preview of question paper (without PDF conversion)
-    
+
     Args:
         request: QuestionPaperRequest containing exam and question data
-        
+
     Returns:
         HTML content as string
     """
@@ -219,15 +254,15 @@ def preview_question_paper():
         request_data = request.get_json()
         if not request_data:
             return jsonify({"error": "Request body is required"}), 400
-        
+
         # Validate request data
         try:
             pdf_request = QuestionPaperRequest(**request_data)
         except ValidationError as e:
             return jsonify({"error": f"Invalid request data: {str(e)}"}), 400
-        
+
         logger.info(f"Generating preview for exam: {pdf_request.exam.title}")
-        
+
         # Generate HTML content
         import asyncio
         html_content = asyncio.run(template_engine.render_question_paper_template(
@@ -236,9 +271,9 @@ def preview_question_paper():
             template_type=pdf_request.template_type,
             customization=pdf_request.customization
         ))
-        
+
         return Response(html_content, mimetype="text/html")
-        
+
     except Exception as e:
         logger.error(f"Error generating preview: {str(e)}")
         return jsonify({"error": f"Failed to generate preview: {str(e)}"}), 500
@@ -265,9 +300,9 @@ def get_templates():
                 "features": ["Student list", "Bengali text", "Professional layout"]
             }
         ]
-        
+
         return jsonify({"templates": templates})
-        
+
     except Exception as e:
         logger.error(f"Error getting templates: {str(e)}")
         return jsonify({"error": f"Failed to get templates: {str(e)}"}), 500
@@ -294,12 +329,12 @@ def get_template_info(template_name):
                 "features": ["Student list", "Bengali text", "Professional layout"]
             }
         }
-        
+
         if template_name not in template_info:
             return jsonify({"error": "Template not found"}), 404
-        
+
         return jsonify(template_info[template_name])
-        
+
     except Exception as e:
         logger.error(f"Error getting template info: {str(e)}")
         return jsonify({"error": f"Failed to get template info: {str(e)}"}), 500
@@ -329,9 +364,9 @@ def get_customization_options():
                 "custom_text": ""
             }
         }
-        
+
         return jsonify(options)
-        
+
     except Exception as e:
         logger.error(f"Error getting customization options: {str(e)}")
         return jsonify({"error": f"Failed to get customization options: {str(e)}"}), 500
@@ -340,10 +375,10 @@ def get_customization_options():
 def generate_scholarship_pdf():
     """
     Generate a PDF scholarship result list
-    
+
     Args:
         request: ScholarshipRequest containing scholarship data
-        
+
     Returns:
         ScholarshipResponse with PDF data and metadata
     """
@@ -351,23 +386,23 @@ def generate_scholarship_pdf():
         request_data = request.get_json()
         if not request_data:
             return jsonify({"error": "Request body is required"}), 400
-        
+
         # Validate request data
         try:
             scholarship_request = ScholarshipRequest(**request_data)
         except ValidationError as e:
             return jsonify({"error": f"Invalid request data: {str(e)}"}), 400
-        
+
         logger.info(f"Generating scholarship PDF for class: {scholarship_request.class_name}")
-        
+
         # Validate request data
         if not scholarship_request.students:
             return jsonify({"error": "Student data is required"}), 400
-        
+
         # Generate PDF (bytes) using WeasyPrint-based generator
         import asyncio
         pdf_bytes = asyncio.run(pdf_generator.generate_scholarship_pdf(scholarship_request))
-        
+
         # Create response
         # Base64 encode for JSON response compatibility
         pdf_b64 = base64.b64encode(pdf_bytes).decode("utf-8")
@@ -380,10 +415,10 @@ def generate_scholarship_pdf():
             total_students=len(scholarship_request.students),
             generated_at=datetime.now().isoformat()
         )
-        
+
         logger.info(f"Successfully generated scholarship PDF: {scholarship_request.class_name}")
         return jsonify(response.dict())
-        
+
     except Exception as e:
         logger.error(f"Error generating scholarship PDF: {str(e)}")
         return jsonify({"error": f"Failed to generate scholarship PDF: {str(e)}"}), 500
@@ -392,10 +427,10 @@ def generate_scholarship_pdf():
 def download_scholarship_pdf():
     """
     Generate and directly download a PDF scholarship result list
-    
+
     Args:
         request: ScholarshipRequest containing scholarship data
-        
+
     Returns:
         PDF file as Response
     """
@@ -403,23 +438,23 @@ def download_scholarship_pdf():
         request_data = request.get_json()
         if not request_data:
             return jsonify({"error": "Request body is required"}), 400
-        
+
         # Validate request data
         try:
             scholarship_request = ScholarshipRequest(**request_data)
         except ValidationError as e:
             return jsonify({"error": f"Invalid request data: {str(e)}"}), 400
-        
+
         logger.info(f"Generating and downloading scholarship PDF for class: {scholarship_request.class_name}")
-        
+
         # Generate PDF (bytes)
         import asyncio
         pdf_bytes = asyncio.run(pdf_generator.generate_scholarship_pdf(scholarship_request))
-        
+
         # Create safe ASCII filename (no Bengali characters for HTTP header)
         safe_filename = f"Scholarship_Class_{scholarship_request.class_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
         safe_filename = "".join(c for c in safe_filename if c.isascii() and (c.isalnum() or c in (' ', '-', '_'))).rstrip()
-        
+
         # Return PDF as download
         response = Response(
             pdf_bytes,
@@ -429,9 +464,9 @@ def download_scholarship_pdf():
                 "Content-Type": "application/pdf"
             }
         )
-        
+
         return response
-        
+
     except Exception as e:
         logger.error(f"Error downloading scholarship PDF: {str(e)}")
         return jsonify({"error": f"Failed to generate scholarship PDF: {str(e)}"}), 500
@@ -512,10 +547,10 @@ if __name__ == "__main__":
     port = app.config['PDF_SERVICE_PORT']
     host = app.config['PDF_SERVICE_HOST']
     debug = app.config['DEBUG']
-    
+
     logger.info(f"Starting PDF Service on {host}:{port}")
     logger.info(f"Debug mode: {debug}")
-    
+
     app.run(
         host=host,
         port=port,

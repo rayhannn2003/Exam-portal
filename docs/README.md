@@ -9,6 +9,8 @@ detailed for the root README.
 - [OMR integration](omr/integration.md)
 - [OMR result workflow](omr/workflow.md)
 - [PDF API testing with Postman](testing/postman.md)
+- [Activity tracking overview](activity/overview.md)
+- [Activity tracking testing](activity/testing.md)
 
 ## Images
 
@@ -23,6 +25,4 @@ Service-specific documentation stays beside the service:
 
 - [`pdf_service_flask/README.md`](../pdf_service_flask/README.md) - primary PDF
   service
-- [`pdf_service/README.md`](../pdf_service/README.md) - experimental FastAPI
-  PDF service
 - [`frontend/README.md`](../frontend/README.md) - frontend setup

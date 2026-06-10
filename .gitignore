@@ -29,6 +29,8 @@ uploads/
 
 # Generated documents and test output
 *.pdf
+*.zip
+*_base64.txt
 test_output.*
 test_*.html
 
@@ -42,6 +44,7 @@ test_*.html
 
 # Local integration artifacts
 backend/data.html/
+ip
 
 # Local screenshots containing student-identifiable data
 docs/images/analysis.jpg

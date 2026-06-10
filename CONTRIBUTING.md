@@ -33,12 +33,6 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ./start_local.sh
 
-# OMR service
-cd omr-service
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python start.py
 ```
 
 Create local `.env` files from the component `.env.example` files.
@@ -63,8 +57,9 @@ cd backend && npm test
 The frontend currently has known lint debt. Do not add new lint errors, and
 prefer reducing existing errors in files you modify.
 
-For PDF or OMR changes, also run the relevant service locally and describe the
-manual verification performed.
+For PDF changes, also run the service locally and describe the manual
+verification performed. For OMR integration changes, document the compatible
+external processor used for testing.
 
 ## Pull Requests
 
@@ -78,4 +73,3 @@ Include:
 
 By contributing, you agree that your contribution will be licensed under the
 MIT License.
-

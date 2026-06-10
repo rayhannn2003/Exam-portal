@@ -23,19 +23,18 @@ const ExamManagement = () => {
   const [showPDFGenerator, setShowPDFGenerator] = useState(false);
   const [selectedSetForPDF, setSelectedSetForPDF] = useState(null);
   const [openMenuSetId, setOpenMenuSetId] = useState(null);
-  const [isPDFLoading, setIsPDFLoading] = useState(false);
-  const [pdfFileName, setPdfFileName] = useState('');
+  const [showQuickPDFLoadingModal, setShowQuickPDFLoadingModal] = useState(false);
   const { success, error } = useToast();
 
   // Map numeric class to Bengali display
   const bengaliClassName = (cls) => {
     switch (String(cls)) {
-      case '6': return 'ষষ্ঠ শ্রেণী';
-      case '7': return 'সপ্তম শ্রেণী';
-      case '8': return 'অষ্টম শ্রেণী';
-      case '9': return 'নবম শ্রেণী';
-      case '10': return 'দশম শ্রেণী';
-      default: return `শ্রেণী ${cls}`;
+      case '6': return 'ষষ্ঠ শ্রেণি';
+      case '7': return 'সপ্তম শ্রেণি';
+      case '8': return 'অষ্টম শ্রেণি';
+      case '9': return 'নবম শ্রেণি';
+      case '10': return 'দশম শ্রেণি';
+      default: return `শ্রেণি ${cls}`;
     }
   };
 
@@ -159,17 +158,13 @@ const ExamManagement = () => {
 
   const handleDownloadPDF = async (set) => {
     if (!selectedExam) return;
-
-    const fileName = `${selectedExam.exam_name}_${set.class_name}_${new Date().toISOString().split('T')[0]}.pdf`;
-    setPdfFileName(fileName);
-    setIsPDFLoading(true);
-
+    setShowQuickPDFLoadingModal(true);
     try {
       const blob = await downloadExamClassPDF(selectedExam.id, set.id, { templateType: 'compact_bengali' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileName;
+      a.download = `${selectedExam.exam_name}_${set.class_name}_${new Date().toISOString().split('T')[0]}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -179,7 +174,7 @@ const ExamManagement = () => {
       console.error('Error downloading PDF:', err);
       error('Failed to download PDF');
     } finally {
-      setIsPDFLoading(false);
+      setShowQuickPDFLoadingModal(false);
     }
   };
 
@@ -495,9 +490,13 @@ const ExamManagement = () => {
         />
       )}
 
+      {/* Quick PDF Loading Modal */}
       <PDFLoadingModal
-        isOpen={isPDFLoading}
-        fileName={pdfFileName}
+        isOpen={showQuickPDFLoadingModal}
+        onClose={() => setShowQuickPDFLoadingModal(false)}
+        title="প্রশ্নপত্র তৈরি হচ্ছে"
+        message="প্রশ্নপত্রের PDF তৈরি করা হচ্ছে"
+        type="question"
       />
     </div>
   );

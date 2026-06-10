@@ -54,6 +54,30 @@ router.delete("/:examId", verifyAdmin, deleteExam);
 // Get single exam with classes
 router.get("/:examId", getExamWithClasses);
 
+// Get classes for an exam (for analysis)
+router.get("/:examId/classes", async (req, res) => {
+  try {
+    const { examId } = req.params;
+    const pool = require("../models/db");
+
+    const result = await pool.query(
+      `SELECT id, class_name, set_name FROM exam_class WHERE exam_id = $1 ORDER BY class_name, set_name`,
+      [examId]
+    );
+
+    res.json({
+      success: true,
+      classes: result.rows
+    });
+  } catch (err) {
+    console.error("Error fetching exam classes:", err.message);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+});
+
 // Get all exams (list)
 router.get("/", getAllExams);
 
@@ -68,16 +92,16 @@ router.get("/:examId/classes/:classId/answer-key", async (req, res) => {
   try {
     const { examId, classId } = req.params;
     const pool = require("../models/db");
-    
+
     const result = await pool.query(
       `SELECT answer_key FROM exam_class WHERE exam_id = $1 AND id = $2`,
       [examId, classId]
     );
-    
+
     if (result.rowCount === 0) {
       return res.status(404).json({ message: "Answer key not found" });
     }
-    
+
     res.json({ answer_key: result.rows[0].answer_key });
   } catch (err) {
     console.error("Error fetching answer key:", err.message);

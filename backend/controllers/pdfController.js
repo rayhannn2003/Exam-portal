@@ -5,8 +5,10 @@
 
 const axios = require('axios');
 const pool = require('../models/db');
+const StudentActivityService = require('../utils/studentActivityService');
+const { json } = require('body-parser');
 
-// Primary Flask PDF service configuration
+// PDF Service Configuration
 const PDF_SERVICE_URL = process.env.PDF_SERVICE_URL || 'http://localhost:5000';
 const PDF_SERVICE_TIMEOUT = parseInt(process.env.PDF_SERVICE_TIMEOUT) || 30000;
 
@@ -46,7 +48,7 @@ exports.generateQuestionPaperPDF = async (req, res) => {
 
     // Transform data for PDF service (matching the expected Pydantic model)
     const questions = Array.isArray(examClass.questions) ? examClass.questions : [];
-    
+
     const pdfRequest = {
       exam: {
         id: parseInt(exam.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to integer
@@ -117,17 +119,37 @@ exports.generateQuestionPaperPDF = async (req, res) => {
     // Create safe filename without Bengali characters for HTTP header
     const safeClassName = examClass.class_name.replace(/[^\x00-\x7F]/g, '').trim() || 'Class'; // Remove non-ASCII characters
     const filename = `exam_${safeClassName}_${new Date().toISOString().split('T')[0]}.pdf`;
-    
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('Content-Length', response.data.length);
 
+    // Log PDF download activity (for admin users)
+    try {
+      const userInfo = req.user || {}; // From JWT middleware
+      await StudentActivityService.logPDFDownload({
+        studentId: userInfo.userId || null,
+        rollNumber: userInfo.roll_number || 'ADMIN_USER',
+        studentName: userInfo.name || 'Admin User',
+        pdfType: 'question_paper',
+        fileName: filename,
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('User-Agent'),
+        fileSize: response.data.length,
+        success: true
+      });
+    } catch (trackingError) {
+      console.error('❌ Failed to log PDF download:', trackingError.message);
+      // Don't block the download if tracking fails
+    }
+
     // Send PDF data
+    console.log(JSON.stringify(pdfRequest));
     res.send(response.data);
 
   } catch (error) {
     console.error('Error generating PDF:', error.message);
-    
+
     if (error.response) {
       // PDF service error
       return res.status(error.response.status).json({
@@ -164,7 +186,7 @@ exports.generateQuestionPaperPDF = async (req, res) => {
 exports.generateQuestionPaperPreview = async (req, res) => {
   try {
     const { examId, classId } = req.params;
-    
+
     // Handle both GET and POST requests
     let templateType, customizationParams;
     if (req.method === 'POST') {
@@ -178,15 +200,15 @@ exports.generateQuestionPaperPreview = async (req, res) => {
       customizationParams = { ...queryParams };
       delete customizationParams.templateType; // Remove templateType from customization params
     }
-    
+
     // Log the parameters for debugging
     console.log('Preview method:', req.method);
     console.log('Template type:', templateType);
-    
+
     // Build customization object from parameters
     // Handle Bengali characters more robustly
     let organizationName = 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন';
-    
+
     // Try to get the organization name if it exists
     if (customizationParams.organization_name) {
       if (req.method === 'GET') {
@@ -202,7 +224,7 @@ exports.generateQuestionPaperPreview = async (req, res) => {
         organizationName = customizationParams.organization_name || 'উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন';
       }
     }
-    
+
     const customization = {
       organization_name: organizationName,
       duration_minutes: parseInt(customizationParams.duration_minutes) || 60,
@@ -232,11 +254,11 @@ exports.generateQuestionPaperPreview = async (req, res) => {
     }
 
     const examClass = classResult.rows[0];
-    
+
 
     // Transform data for PDF service (matching the expected Pydantic model)
     const questions = Array.isArray(examClass.questions) ? examClass.questions : [];
-    
+
     const pdfRequest = {
       exam: {
         id: parseInt(exam.id.replace(/-/g, '').substring(0, 8), 16), // Convert UUID to integer
@@ -273,7 +295,7 @@ exports.generateQuestionPaperPreview = async (req, res) => {
         show_answer_spaces: true
       }
     };
-    
+
 
     // Call PDF service for preview
     const response = await axios.post(
@@ -294,7 +316,7 @@ exports.generateQuestionPaperPreview = async (req, res) => {
   } catch (error) {
     console.error('Error generating preview:', error.message);
     console.error('Error stack:', error.stack);
-    
+
     if (error.response) {
       return res.status(error.response.status).json({
         message: 'Preview generation failed',
@@ -325,7 +347,7 @@ exports.getAvailableTemplates = async (req, res) => {
 
   } catch (error) {
     console.error('Error getting templates:', error.message);
-    
+
     if (error.response) {
       return res.status(error.response.status).json({
         message: 'Failed to get templates',
@@ -360,7 +382,7 @@ exports.getPDFServiceHealth = async (req, res) => {
 
   } catch (error) {
     console.error('PDF service health check failed:', error.message);
-    
+
     res.status(503).json({
       status: 'unhealthy',
       pdf_service: null,
@@ -386,7 +408,7 @@ exports.getCustomizationOptions = async (req, res) => {
 
   } catch (error) {
     console.error('Error getting customization options:', error.message);
-    
+
     if (error.response) {
       return res.status(error.response.status).json({
         message: 'Failed to get customization options',
@@ -410,7 +432,7 @@ function calculateTotalMarks(questions) {
   if (!questions || !Array.isArray(questions)) {
     return 0;
   }
-  
+
   // For the new schema, each question typically counts as 1 mark
   // unless specified otherwise
   return questions.reduce((total, question) => {
@@ -451,13 +473,13 @@ exports.validatePDFServiceConfig = () => {
 exports.generateScholarshipPDF = async (req, res) => {
   try {
     const { class_name } = req.params;
-    
+
     // Get scholarship results from database
     const scholarshipResult = await pool.query(
-      `SELECT s.name, s.roll_number, s.school, s.class, e.exam_name, e.year, r.* 
-       FROM results r 
-       JOIN students s ON s.id = r.student_id 
-       JOIN exams e ON e.id = r.exam_id 
+      `SELECT s.name, s.roll_number, s.school, s.class, e.exam_name, e.year, r.*
+       FROM results r
+       JOIN students s ON s.id = r.student_id
+       JOIN exams e ON e.id = r.exam_id
        WHERE r.scholarship = true AND s.class = $1
        ORDER BY r.percentage DESC`,
       [class_name]
@@ -500,32 +522,149 @@ exports.generateScholarshipPDF = async (req, res) => {
 
     // Set response headers for PDF download
     const filename = `Scholarship_${class_name}_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.pdf`;
-    
+
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${filename}"`,
       'Content-Length': response.data.length
     });
 
+    // Log PDF download activity (for admin users)
+    try {
+      const userInfo = req.user || {}; // From JWT middleware
+      await StudentActivityService.logPDFDownload({
+        studentId: userInfo.userId || null,
+        rollNumber: userInfo.roll_number || 'ADMIN_USER',
+        studentName: userInfo.name || 'Admin User',
+        pdfType: 'scholarship',
+        fileName: filename,
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('User-Agent'),
+        fileSize: response.data.length,
+        success: true
+      });
+    } catch (trackingError) {
+      console.error('❌ Failed to log scholarship PDF download:', trackingError.message);
+      // Don't block the download if tracking fails
+    }
+
     res.send(response.data);
 
   } catch (error) {
     console.error('Error generating scholarship PDF:', error.message);
-    
+
     if (error.response) {
       // PDF service returned an error
       const errorMessage = error.response.data?.error || error.response.data?.message || 'PDF service error';
-      return res.status(error.response.status).json({ 
-        message: `PDF service error: ${errorMessage}` 
+      return res.status(error.response.status).json({
+        message: `PDF service error: ${errorMessage}`
       });
     } else if (error.code === 'ECONNREFUSED') {
-      return res.status(503).json({ 
-        message: 'PDF service is not available. Please check if the service is running.' 
+      return res.status(503).json({
+        message: 'PDF service is not available. Please check if the service is running.'
       });
     } else {
-      return res.status(500).json({ 
+      return res.status(500).json({
         message: 'Failed to generate scholarship PDF',
-        error: error.message 
+        error: error.message
+      });
+    }
+  }
+};
+
+/**
+ * Generate admit card PDF for a student
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+exports.generateAdmitCardPDF = async (req, res) => {
+  try {
+    const admitCardRequest = req.body;
+
+    // Extract student info from request
+    const { roll_number, student_name } = admitCardRequest;
+
+    // Call Flask PDF service for admit card generation
+    const response = await axios.post(
+      `${PDF_SERVICE_URL}/generate-admit-card/download`,
+      admitCardRequest,
+      {
+        timeout: PDF_SERVICE_TIMEOUT,
+        responseType: 'arraybuffer',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    // Create filename for admit card
+    const filename = `admit_card_${roll_number}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+    // Set response headers for PDF download
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Content-Length': response.data.length
+    });
+
+    // Log PDF download activity
+    try {
+      const userInfo = req.user || {}; // From JWT middleware if student is logged in
+      await StudentActivityService.logPDFDownload({
+        studentId: userInfo.userId || null,
+        rollNumber: roll_number || userInfo.roll_number || 'UNKNOWN',
+        studentName: student_name || userInfo.name || 'Unknown Student',
+        pdfType: 'admit_card',
+        fileName: filename,
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('User-Agent'),
+        fileSize: response.data.length,
+        success: true
+      });
+    } catch (trackingError) {
+      console.error('❌ Failed to log admit card download:', trackingError.message);
+      // Don't block the download if tracking fails
+    }
+
+    // Send PDF data
+    res.send(response.data);
+
+  } catch (error) {
+    console.error('Error generating admit card PDF:', error.message);
+
+    // Log failed download attempt
+    try {
+      const { roll_number, student_name } = req.body || {};
+      const userInfo = req.user || {};
+      await StudentActivityService.logPDFDownload({
+        studentId: userInfo.userId || null,
+        rollNumber: roll_number || userInfo.roll_number || 'UNKNOWN',
+        studentName: student_name || userInfo.name || 'Unknown Student',
+        pdfType: 'admit_card',
+        fileName: `admit_card_${roll_number || 'unknown'}_${new Date().toISOString().slice(0, 10)}.pdf`,
+        ipAddress: req.ip || req.connection.remoteAddress,
+        userAgent: req.get('User-Agent'),
+        fileSize: null,
+        success: false,
+        errorMessage: error.message
+      });
+    } catch (trackingError) {
+      console.error('❌ Failed to log failed admit card download:', trackingError.message);
+    }
+
+    if (error.response) {
+      const errorMessage = error.response.data?.error || error.response.data?.message || 'PDF service error';
+      return res.status(error.response.status).json({
+        message: `Admit card generation failed: ${errorMessage}`
+      });
+    } else if (error.code === 'ECONNREFUSED') {
+      return res.status(503).json({
+        message: 'PDF service is not available. Please check if the service is running.'
+      });
+    } else {
+      return res.status(500).json({
+        message: 'Failed to generate admit card PDF',
+        error: error.message
       });
     }
   }

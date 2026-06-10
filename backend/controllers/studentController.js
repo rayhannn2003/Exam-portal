@@ -4,22 +4,23 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const moment = require("moment-timezone");
 const smsService = require("../utils/smsService");
+const StudentActivityService = require("../utils/studentActivityService");
 
 // Register a student
 exports.registerStudent = async (req, res) => {
   try {
     const { name, father_name, mother_name, school, email_id, student_class,class_roll, gender, phone, entry_fee ,registered_by} = req.body;
-    
+
     // Validate required fields (only name, school, and class are mandatory)
     if (!name?.trim() || !school?.trim() || !student_class) {
       return res.status(400).json({ error: "Name, School, and Class are required" });
     }
-    
+
     // Validate phone number format only if provided
     if (phone && phone.trim() && (!/^[0-9+\-\s()]+$/.test(phone) || phone.trim().length < 11)) {
       return res.status(400).json({ error: "Invalid phone number format" });
     }
-    
+
     // console.log("Generating roll number for class:", student_class);
     const roll_number = await generateRoll(student_class);
     //generate a random 6 digit password and hash it
@@ -61,6 +62,7 @@ exports.registerStudent = async (req, res) => {
 exports.loginStudent = async (req, res) => {
   try {
     const { roll_number, password } = req.body;
+    // console.log("Login attempt for roll number:", roll_number);
     const result = await pool.query("SELECT * FROM students WHERE roll_number = $1", [roll_number]);
 
     if (result.rows.length === 0) return res.status(401).json({ error: "Invalid credentials" });
@@ -70,9 +72,51 @@ exports.loginStudent = async (req, res) => {
 
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
 
-    const token = jwt.sign({ id: student.id, role: "student" }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const token = jwt.sign({ id: student.id, role: "student", roll_number: student.roll_number, name: student.name }, process.env.JWT_SECRET, { expiresIn: "2h" });
 
-    res.json({ message: "Login successful", token });
+    // Log student login activity
+    try {
+      // console.log("🟢 Attempting to log student login activity for:", {
+      //   studentId: student.id,
+      //   rollNumber: student.roll_number,
+      //   name: student.name,
+      //   timestamp: new Date().toISOString()
+      // });
+
+      // Also log to user_activity table for SuperAdmin tracking
+      const logResult = await pool.query(
+        `INSERT INTO login_events (
+           user_id, role, identifier, name, ip_address, user_agent, platform, is_mobile
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+        [
+          student.id,
+          'student',
+          student.roll_number,
+          student.name,
+          req.ip || req.connection.remoteAddress || 'Unknown',
+          req.get('User-Agent') || 'Unknown',
+          req.get('Sec-CH-UA-Platform') || 'Unknown',
+          req.get('Sec-CH-UA-Mobile') === '?1'
+        ]
+      );
+
+      // console.log("✅ Student login activity logged successfully:", logResult.rows[0]);
+    } catch (logError) {
+      console.error("❌ Error logging student activity:", logError);
+      // Don't fail login if logging fails
+    }
+
+    res.json({
+      message: "Login successful",
+      token,
+      student: {
+        id: student.id,
+        name: student.name,
+        roll_number: student.roll_number,
+        class: student.class,
+        school: student.school
+      }
+    });
   } catch (err) {
     console.error("❌ Error logging in student:", err);
     res.status(500).json({ error: "Internal Server Error" });
@@ -123,7 +167,7 @@ exports.verifyStudentPassword = async (req, res) => {
   }
 };
 
-// Get student by roll number 
+// Get student by roll number
 exports.getStudentByRoll = async (req, res) => {
   try {
     const { roll } = req.params;
@@ -144,7 +188,7 @@ exports.getStudentByRoll = async (req, res) => {
 exports.updateStudent = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatable = ["name", "school", "class", "email_id", "gender", "phone", "payment_status", "entry_fee"];
+    const updatable = ["name", "school", "email_id", "gender", "payment_status", "entry_fee"];
     const entries = Object.entries(req.body).filter(([k]) => updatable.includes(k));
 
     if (entries.length === 0) {

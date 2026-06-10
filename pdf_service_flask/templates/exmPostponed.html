@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="bn" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>পরীক্ষা স্থগিত ও পুনঃনির্ধারণ বিজ্ঞপ্তি</title>
+    <style>
+        /* Prioritizing Hind Siliguri for a cleaner, official document look, with Noto Sans as fallback */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Hind Siliguri', 'Noto Sans Bengali', Arial, sans-serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: #000000;
+            font-weight: 500;
+            background: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            background: white;
+            padding: 10px;
+        }
+
+        /* New: Bismillah Line */
+        .bismillah {
+            font-size: 10pt;
+            font-weight: 600;
+            color: #000000;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+
+        /* New: Motto/Categories Line (শিক্ষা - ক্রীড়া - সেবা) */
+        .motto-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10pt;
+            color: #34495e;
+            margin-bottom: 10px;
+            padding: 0 50px;
+            font-weight: 600;
+        }
+
+        /* Header Section */
+        .header {
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 20px; /* Reduced margin */
+            position: relative;
+            padding-bottom: 20px; /* Reduced padding */
+            border-bottom: 3px double #000000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0;
+        }
+
+        /* Logo Styling - FIXED: Increased size to 130px */
+        .logo-image {
+            width: 130px;
+            height: 130px;
+            object-fit: contain;
+            border: none;
+            margin: 0;
+        }
+
+        /* Spacer to balance the logo on the right, keeping org-info centered */
+        .spacer {
+            width: 130px; /* Matched logo size */
+            height: 130px;
+        }
+
+        .org-info {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        .org-name {
+            font-size: 22pt;
+            font-weight: 800;
+            color: #000000;
+            margin-bottom: 5px;
+            line-height: 1.1;
+        }
+
+        .org-details {
+            font-size: 12pt;
+            color: #333;
+            margin-bottom: 0;
+            line-height: 1.4;
+        }
+
+        .motto {
+            font-size: 10pt;
+            color: #555;
+            margin-bottom: 5px;
+            font-style: italic;
+        }
+
+        .exam-title {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #e74c3c; /* Red accent for urgency */
+            text-align: center;
+            margin: 15px auto 0 auto;
+            display: inline-block;
+            padding: 5px 20px;
+            border: 2px solid #e74c3c;
+            border-radius: 20px;
+            background-color: #fffaf0;
+        }
+
+        /* --- STYLES FOR NOTICE BODY --- */
+        .notice-section {
+            margin: 15px 0 25px 0; /* Reduced margins */
+            padding: 0 20px;
+        }
+
+        .notice-heading {
+            font-size: 16pt;
+            font-weight: 700;
+            color: #34495e;
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #bdc3c7;
+            padding-bottom: 5px;
+        }
+
+        .notice-body p {
+            font-size: 12pt;
+            text-align: justify;
+            text-indent: 40px;
+            margin-bottom: 12px; /* Reduced margin */
+        }
+
+        .notice-emphasis {
+            font-weight: 700;
+            color: #e74c3c; /* Applied for bolded text in the notice body */
+        }
+
+        .apology {
+            color: #34495e;
+            font-weight: 600;
+            display: block;
+            text-align: center;
+            margin-top: 10px; /* Reduced margin */
+        }
+        /* ---------------------------------- */
+
+
+        /* --- STYLES FOR DATE TABLE --- */
+        .date-table-container {
+            margin: 20px auto; /* Reduced margins */
+            width: 90%;
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .date-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .date-table caption {
+            font-size: 14pt;
+            font-weight: 700;
+            color: #34495e;
+            padding: 10px 0;
+            background-color: #e6f0f7;
+            border-bottom: 2px solid #34495e;
+            /* FIX: Explicitly ensure text is centered for better print compatibility */
+            text-align: center;
+        }
+
+        .date-table th, .date-table td {
+            padding: 10px; /* Reduced padding */
+            text-align: center;
+            border: 1px solid #bdc3c7;
+            font-size: 12pt;
+            vertical-align: middle;
+        }
+
+        .date-table th {
+            background: #34495e;
+            color: white;
+            font-weight: 600;
+            width: 25%;
+        }
+
+        .date-table tr:nth-child(even) {
+            background-color: #f7f7f7;
+        }
+
+        .date-table .new-date {
+            background-color: #fcebeb; /* Light red background */
+            color: #e74c3c; /* Red text for emphasis */
+            font-weight: 800;
+            border-left: 3px solid #e74c3c;
+        }
+        /* ---------------------------------- */
+
+        /* Signature Section */
+        .signature-section {
+            margin-top: 25px; /* Reduced from 30px */
+            margin-bottom: 0px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 40%;
+        }
+
+        .signature-image {
+            width: 150px;
+            height: 50px;
+            object-fit:scale-down;
+            margin-bottom: -5px;
+        }
+
+        .signature-line {
+            border-top: 1.5px dashed #2c3e50;
+            width: 220px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .signature-title {
+            font-size: 12pt;
+            font-weight: 700;
+            color: #000;
+            margin-top: 5px;
+        }
+
+        /* Footer Styles - Margin reduced */
+        .footer {
+            display: block;
+            margin-top: 10px; /* Reduced margin-top */
+            padding-top: 10px;
+            text-align: center;
+        }
+
+        .footer-time {
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 5px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 5px;
+        }
+
+        .bottom-line {
+            font-size: 10pt;
+            font-weight: 700;
+            color: #34495e;
+            padding: 5px 0;
+        }
+
+        /* A. STYLES FOR THE WATERMARK OVERLAY */
+        .watermark-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            /* Placeholder for a faint logo watermark */
+            background-image: url("https://imgur.com/gwVn3kD.png");
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 40%;
+            opacity: 0.1;
+        }
+
+        /* Print styles - FIXED: Further adjustments to margins/padding for single-page fitting */
+        @media print {
+            body {
+                font-size: 11pt;
+                padding: 0; /* Minimized padding */
+                margin: 0; /* Minimized margin */
+            }
+            .container {
+                max-width: none;
+                box-shadow: none;
+                padding: 10px; /* Small inner padding */
+            }
+            .header {
+                margin-bottom: 15px;
+                padding-bottom: 15px;
+            }
+            .notice-section {
+                margin: 10px 0 15px 0; /* Reduced vertical space */
+            }
+            .date-table-container {
+                margin: 15px auto; /* Reduced vertical space */
+            }
+            .signature-section {
+                margin-top: 15px; /* Minimum space above signatures */
+                page-break-inside: avoid;
+            }
+            .footer {
+                margin-top: 5px; /* Reduced space above footer */
+            }
+            .watermark-overlay {
+                opacity: 0.08;
+                background-size: 50%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="watermark-overlay"></div>
+    <div class="container">
+        <!-- Bismillah and Motto Line (Top Text) -->
+        <div class="bismillah">বিসমিল্লাহির রাহমানির রাহিম</div>
+        <div class="motto-line">
+            <span>শিক্ষা</span>
+            <span>ক্রীড়া</span>
+            <span>সেবা</span>
+        </div>
+
+        <!-- Header Section -->
+        <div class="header">
+            <div class="header-top">
+                <!-- 1. Logo adjusted for new size (130px) -->
+                  <img src="https://i.imgur.com/gwVn3kD.png"  alt="Logo" class="logo-image">
+                <div class="org-info">
+                    <div class="motto">"দৃষ্টিভঙ্গি বদলান, জীবন বদলে যাবে"</div>
+                    <div class="org-name">উত্তর তারাবুনিয়া ছাত্রকল্যাণ সংগঠন</div>
+                    <div class="org-details">স্থাপিত - ২০০৪ </div>
+                    <div class="org-details">উত্তর তারাবুনিয়া , সখিপুর , ভেদরগঞ্জ , শরীয়তপুর</div>
+                </div>
+                <!-- 2. Spacer adjusted for new size (130px) -->
+                <div class="spacer"></div>
+            </div>
+            <!-- Main Title -->
+            <div class="exam-title">জরুরী বিজ্ঞপ্তি: পরীক্ষা স্থগিতকরণ ও পুনঃনির্ধারণ</div>
+        </div>
+
+        <!-- Notice Body -->
+        <div class="notice-section">
+            <div class="notice-heading">পরীক্ষা স্থগিত ও পুনঃনির্ধারণ সংক্রান্ত ঘোষণা</div>
+
+            <div class="notice-body">
+                <p>
+                    এতদ্বারা সকল শিক্ষার্থী, অভিভাবক ও প্রতিষ্ঠানের শিক্ষকদের জানানো যাচ্ছে যে, মাধ্যমিক পযার্যে শনি বার শ্রেণির পাঠ দান শুরু হওয়াতে, অনিবার্য প্রশাসনিক কারণে আমাদের <span class="notice-emphasis">২০তম উপবৃত্তি পরীক্ষা</span> তারিখ পরিবর্তন করা হচ্ছে।
+                </p>
+
+                <p class="apology">
+                    এই অনাকাঙ্ক্ষিত ও আকস্মিক অসুবিধার জন্য আমরা আন্তরিক ভাবে দূঃখ প্রকাশ করছি।
+                </p>
+
+                <p>
+                    পূর্বনির্ধারিত তারিখ <span class="notice-emphasis">২৫-১০-২৫</span> রোজ শনি বারের পরিবর্তে, পরীক্ষাটি এখন আগামী <span class="notice-emphasis">০৭-১১-২৫</span> তারিখ রোজ শুক্রবার, <span class="notice-emphasis">সকাল ৯ টা</span> থেকে অনুষ্ঠিত হবে। বিস্তারিত সময়সূচী নিচের সারণীতে দেওয়া হলো।
+                </p>
+            </div>
+        </div>
+
+        <!-- Date Table -->
+        <div class="date-table-container">
+            <table class="date-table">
+                <caption>পরিবর্তিত সময়সূচী</caption>
+                <thead>
+                    <tr>
+                        <th>পরীক্ষার নাম</th>
+                        <th>পূর্ববর্তী তারিখ ও বার</th>
+                        <th>পরিবর্তিত তারিখ ও বার</th>
+                        <th>সময়</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>২০ তম উপবৃত্তি পরীক্ষা</td>
+                        <td class="old_date">২৫ অক্টোবর, ২০২৫ শনিবার</td>
+                        <td class="new-date">০৭ নভেম্বর, ২০২৫ শুক্রবার</td>
+                        <td class="new-date">সকাল ৯ টা</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Final Instruction Note -->
+        <div class="notice-section" style="margin-top: 10px; padding: 0 40px;">
+            <p style="text-indent: 0; font-size: 11pt; font-weight: 500; color: #555;">
+                <span style="font-weight: 700; color: #000;">বিশেষ দ্রষ্টব্য:</span> পরীক্ষার প্রবেশপত্র ও অন্যান্য বিষয় অপরিবর্তিত থাকবে। সকল পরীক্ষার্থীকে নতুন নির্ধারিত তারিখে <span class="notice-emphasis">সকাল ৮ঃ৩০ টায়</span> কেন্দ্রে উপস্থিত থাকার জন্য অনুরোধ করা হচ্ছে।
+            </p>
+        </div>
+
+
+        <!-- Signature Section -->
+        <div class="signature-section">
+            <div class="signature-box">
+             <img src="https://i.imgur.com/kfAJFZz.png" alt="সাধারণ সম্পাদক স্বাক্ষর" class="signature-image">
+                <div class="signature-line"></div>
+                <div class="signature-title">সাধারণ সম্পাদক</div>
+            </div>
+            <div class="signature-box">
+                    <img src="https://i.imgur.com/BgVaO19.png"
+               alt="সভাপতি স্বাক্ষর" class="signature-image">
+                <div class="signature-line"></div>
+                <div class="signature-title">সভাপতি</div>
+            </div>
+        </div>
+
+        <!-- Footer (Generation Time and Company Bottom Line) -->
+        <div class="footer">
+            <div class="footer-time">
+                <!-- Mock date and time inserted -->
+                ডকুমেন্ট তৈরির সময়: ২২ অক্টোবর , ২০২৫ ০৫:০০ অপরাহ্ন
+            </div>
+            <div class="bottom-line">
+                <p>Powered by : Daftar-E</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
