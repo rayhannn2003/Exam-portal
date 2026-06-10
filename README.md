@@ -68,7 +68,7 @@ a marked answer sheet, decodes the roll number and selected bubbles, compares
 responses with the configured answer key, and presents the evaluation for
 review before result submission.
 
-![Privacy-safe demonstration of marked OMR evaluation and its processed result](docs/images/omr-evaluation-workflow.png)
+![Evaluated OMR sheet alongside its processed result](docs/images/omr-evaluation-workflow.png)
 
 ### Additional Screenshots
 
@@ -76,9 +76,8 @@ review before result submission.
 | --- | --- |
 | ![Admin dashboard with registration and activity charts](docs/images/dashboard.jpg) | ![Question-level answer statistics](docs/images/question.jpg) |
 
-The OMR workflow image uses fictional demo data. Screenshots containing
-student-identifiable information are intentionally excluded from the public
-repository.
+The combined OMR image preserves the original evaluation and processing
+screenshots without modifying their interface content.
 
 ## Tech Stack
 
